@@ -1,1 +1,1 @@
-# themas-quals-core
+# themis-quals-core
