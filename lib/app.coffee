@@ -6,7 +6,7 @@ app.get '/', (request, response) ->
     response.send 'Hello, world!'
 
 getServerPort = ->
-    parseInt(process.env.SERVER_PORT, 10) | 3000
+    parseInt(process.env.SERVER_PORT, 10) or 3000
 
 exports.run = ->
     server = app.listen getServerPort(), ->
