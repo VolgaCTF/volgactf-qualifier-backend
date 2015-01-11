@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+require('coffee-script/register');
+app = require('../lib/app.coffee');
+app.run()
