@@ -19,7 +19,9 @@
     "express": "~4.10.7",
     "coffee-script": "~1.8.0",
     "redis": "~0.12.1",
-    "hiredis": "~0.1.17"
+    "hiredis": "~0.1.17",
+    "body-parser": "~1.11.0",
+    "connect-busboy": "0.0.2"
   },
   "bin": {
     "app": "./bin/app"
