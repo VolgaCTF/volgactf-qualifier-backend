@@ -21,7 +21,8 @@
     "redis": "~0.12.1",
     "hiredis": "~0.1.17",
     "body-parser": "~1.11.0",
-    "connect-busboy": "0.0.2"
+    "connect-busboy": "0.0.2",
+    "mongoose": "~3.8.23"
   },
   "bin": {
     "app": "./bin/app"

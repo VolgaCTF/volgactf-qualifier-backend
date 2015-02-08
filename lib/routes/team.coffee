@@ -2,9 +2,14 @@ express = require 'express'
 bodyParser = require 'body-parser'
 busboy = require 'connect-busboy'
 inspect = require('util').inspect
+Team = require '../models/team'
 
 router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
+
+router.get '/', (request, response) ->
+    Team.find {}, (err, teams) ->
+        response.json teams
 
 router.post '/signin', urlencodedParser, (request, response) ->
     console.log request.body

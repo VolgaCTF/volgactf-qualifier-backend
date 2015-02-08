@@ -1,9 +1,9 @@
 express = require 'express'
 
-redis = require './redis'
+redis = require './utils/redis'
 client = redis.createClient()
 
-teamRouter = require './team'
+teamRouter = require './routes/team'
 
 app = express()
 
