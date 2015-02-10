@@ -22,7 +22,8 @@
     "hiredis": "~0.1.17",
     "body-parser": "~1.11.0",
     "connect-busboy": "0.0.2",
-    "mongoose": "~3.8.23"
+    "mongoose": "~3.8.23",
+    "bcrypt": "~0.8.1"
   },
   "bin": {
     "app": "./bin/app"

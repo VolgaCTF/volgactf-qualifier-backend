@@ -3,6 +3,7 @@ bodyParser = require 'body-parser'
 busboy = require 'connect-busboy'
 inspect = require('util').inspect
 Team = require '../models/team'
+TeamController = require '../controllers/team'
 
 router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
@@ -18,19 +19,25 @@ router.post '/signin', urlencodedParser, (request, response) ->
 multidataParser = busboy immediate: yes
 
 router.post '/signup', multidataParser, (request, response) ->
-    request.busboy.on 'file', (fieldname, file, filename, encoding, mimetype) ->
-        console.log "File [#{fieldname}]: filename: #{filename}"
+    teamInfo = {}
+    teamLogo = ''
+    request.busboy.on 'file', (fieldName, file, filename, encoding, mimetype) ->
         file.on 'data', (data) ->
-            console.log "File [#{fieldname}] got #{data.length} bytes"
+            if fieldName is 'logo'
+                teamLogo += data
 
         file.on 'end', ->
-            console.log "File [#{fieldname}] Finished"
+            console.log "File [#{fieldName}] Finished"
 
-    request.busboy.on 'field', (fieldname, val, fieldnameTruncated, valTruncated) ->
-      console.log "Field [#{fieldname}]: value: #{inspect(val)}"
+    request.busboy.on 'field', (fieldName, val, fieldNameTruncated, valTruncated) ->
+        teamInfo[fieldName] = val
 
     request.busboy.on 'finish', ->
-        console.log 'Done parsing form!'
-        response.json 'signup'
+        console.log inspect teamInfo
+        TeamController.new teamInfo, (err, team) ->
+            if err?
+                response.json error: inspect err
+            else
+                response.json success: yes
 
 module.exports = router
