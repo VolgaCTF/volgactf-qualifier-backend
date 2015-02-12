@@ -36,8 +36,8 @@ router.post '/signup', multidataParser, (request, response) ->
         console.log inspect teamInfo
         TeamController.new teamInfo, (err, team) ->
             if err?
-                response.json error: inspect err
+                response.status(400).json error: inspect err
             else
-                response.json success: yes
+                response.status(201).json success: yes
 
 module.exports = router
