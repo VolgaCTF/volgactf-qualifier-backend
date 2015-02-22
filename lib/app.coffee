@@ -4,6 +4,8 @@ redis = require './utils/redis'
 client = redis.createClient()
 
 teamRouter = require './routes/team'
+taskRouter = require './routes/task'
+categoryRouter = require './routes/category'
 
 app = express()
 
@@ -12,5 +14,7 @@ app.use (request, response, next) ->
     next()
 
 app.use '/team', teamRouter
+app.use '/task', taskRouter
+app.use '/category', categoryRouter
 
 module.exports = app

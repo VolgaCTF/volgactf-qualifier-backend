@@ -2,6 +2,7 @@
 
 require('coffee-script/register');
 var app = require('../lib/app');
+var logger = require('../lib/utils/logger');
 
 var getServerPort = function() {
     return parseInt(process.env.SERVER_PORT, 10) | 3000;
@@ -9,5 +10,5 @@ var getServerPort = function() {
 
 var server = app.listen(getServerPort(), function() {
     var port = server.address().port;
-    console.log('Server listening on port ' + port);
+    logger.info('Server listening on port ' + port);
 });

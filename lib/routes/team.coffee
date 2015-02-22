@@ -8,10 +8,6 @@ TeamController = require '../controllers/team'
 router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
 
-router.get '/', (request, response) ->
-    Team.find {}, (err, teams) ->
-        response.json teams
-
 router.post '/signin', urlencodedParser, (request, response) ->
     console.log request.body
     response.json 'signin'
