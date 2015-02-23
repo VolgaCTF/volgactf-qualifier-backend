@@ -59,6 +59,14 @@ app.post '/login', urlencodedParser, (request, response) ->
                     logger.error "Invalid password for #{request.body.username}"
                     response.status(400).json 'Invalid username or password!'
 
+app.post '/signout', (request, response) ->
+    if request.session.authenticated?
+        request.session.authenticated = no
+        request.session.destroy (err) ->
+            response.json ''
+    else
+        response.status(400).json 'Not authenticated!'
+
 
 app.get '/identity', (request, response) ->
     identity =
