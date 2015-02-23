@@ -8,14 +8,13 @@ class SupervisorController
             if supervisor?
                 callback 'Supervisor exists!', null
             else
-                security.getPasswordHashSalt options.password, (err, hash, salt) ->
+                security.getPasswordHash options.password, (err, hash) ->
                     if err?
                         callback err, null
                     else
                         supervisor = new Supervisor
                             username: options.username
                             passwordHash: hash
-                            passwordSalt: salt
                             rights: options.rights
                         supervisor.save (err, supervisor) ->
                             if err?
@@ -30,5 +29,18 @@ class SupervisorController
             else
                 callback null
 
+    @login: (username, password, callback) ->
+        supervisor = Supervisor.findOne username: username, (err, supervisor) ->
+            if supervisor?
+                security.checkPassword password, supervisor.passwordHash, (err, res) ->
+                    if err?
+                        callback err, null
+                    else
+                        if res
+                            callback null, supervisor
+                        else
+                            callback null, null
+            else
+                callback 'Supervisor does not exist!', null
 
 module.exports = SupervisorController

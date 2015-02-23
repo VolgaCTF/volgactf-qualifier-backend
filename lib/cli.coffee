@@ -1,5 +1,5 @@
 parser = require 'nomnom'
-winston = require 'winston'
+logger = require './utils/logger'
 SupervisorController = require './controllers/supervisor'
 
 
@@ -28,10 +28,10 @@ parser.command('create_supervisor')
             rights: opts.rights
         SupervisorController.create supervisorOpts, (err, supervisor) ->
             if err?
-                winston.error err
+                logger.error err
                 process.exit 1
             else
-                winston.info "Supervisor `#{supervisor.username}` has been created!"
+                logger.info "Supervisor `#{supervisor.username}` has been created!"
                 process.exit 0
 
 parser.command('remove_supervisor')
@@ -44,10 +44,10 @@ parser.command('remove_supervisor')
     .callback (opts) ->
         SupervisorController.remove opts.username, (err) ->
             if err?
-                winston.error err
+                logger.error err
                 process.exit 1
             else
-                winston.info "Supervisor `#{opts.username}` has been removed!"
+                logger.info "Supervisor `#{opts.username}` has been removed!"
                 process.exit 0
 
 module.exports.run = ->

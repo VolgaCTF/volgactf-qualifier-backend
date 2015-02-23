@@ -4,7 +4,6 @@ teamSchema = mongoose.Schema
     name: String
     email: String
     passwordHash: String
-    passwordSalt: String
     country: String
     locality: String
     institution: String

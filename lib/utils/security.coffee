@@ -1,15 +1,16 @@
 bcrypt = require 'bcrypt'
 
 
-getPasswordHashSalt = (password, callback) ->
-    bcrypt.genSalt 10, (err, salt) ->
+module.exports.getPasswordHash = (password, callback) ->
+    bcrypt.hash password, 10, (err, hash) ->
         if err?
-            callback err, null, null
+            callback err, null
         else
-            bcrypt.hash password, salt, (err, hash) ->
-                if err?
-                    callback err, null, null
-                else
-                    callback null, hash, salt
+            callback null, hash
 
-module.exports.getPasswordHashSalt = getPasswordHashSalt
+module.exports.checkPassword = (password, hash, callback) ->
+    bcrypt.compare password, hash, (err, res) ->
+        if err?
+            callback err, null
+        else
+            callback null, res

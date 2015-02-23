@@ -9,7 +9,7 @@ class TeamController
                 callback "Team exists!", null
             else
                 console.log "Team does not exist!"
-                security.getPasswordHashSalt options.password, (err, hash, salt) ->
+                security.getPasswordHash options.password, (err, hash) ->
                     if err?
                         callback err, null
                     else
@@ -17,7 +17,6 @@ class TeamController
                             name: options.team
                             email: options.email
                             passwordHash: hash
-                            passwordSalt: salt
                             country: options.country
                             locality: options.locality
                             institution: options.institution
