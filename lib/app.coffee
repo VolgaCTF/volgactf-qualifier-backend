@@ -13,6 +13,10 @@ SupervisorController = require './controllers/supervisor'
 redis = require './utils/redis'
 RedisStore = require('connect-redis') session
 
+Validator = require 'validator.js'
+validator = new Validator.Validator()
+constraints = require './utils/constraints'
+
 app = express()
 
 app.use (request, response, next) ->
@@ -44,20 +48,26 @@ app.post '/login', urlencodedParser, (request, response) ->
     if request.session.authenticated?
         response.status(400).json 'Already autheticated!'
     else
-        SupervisorController.login request.body.username, request.body.password, (err, supervisor) ->
-            if err?
-                logger.error err
-                response.status(400).json 'Invalid username or password!'
-            else
-                if supervisor?
-                    logger.info "Correct password for #{supervisor.username}"
-                    request.session.authenticated = yes
-                    request.session.role = supervisor.rights
-                    request.session.id = supervisor._id
-                    response.status(200).json 'Login successful!'
-                else
-                    logger.error "Invalid password for #{request.body.username}"
+        loginConstraints =
+            login: constraints.login
+            password: constraints.password
+
+        validationResult = validator.validate request.body, loginConstraints
+        if validationResult is true
+            SupervisorController.login request.body.username, request.body.password, (err, supervisor) ->
+                if err?
+                    logger.error err
                     response.status(400).json 'Invalid username or password!'
+                else
+                    if supervisor?
+                        request.session.authenticated = yes
+                        request.session.role = supervisor.rights
+                        request.session.id = supervisor._id
+                        response.status(200).json 'Login successful!'
+                    else
+                        response.status(400).json 'Invalid username or password!'
+        else
+            response.status(400).json 'Validation error!'
 
 app.post '/signout', (request, response) ->
     if request.session.authenticated?
