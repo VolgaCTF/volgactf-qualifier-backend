@@ -20,7 +20,7 @@ constraints = require './utils/constraints'
 app = express()
 
 app.use (request, response, next) ->
-    response.header 'Access-Control-Allow-Origin', process.env.CORS_ORIGIN
+    response.header 'Access-Control-Allow-Origin', 'http://' + process.env.DOMAIN
     response.header 'Access-Control-Allow-Credentials', 'true'
     next()
 
@@ -32,7 +32,7 @@ app.use session
     saveUninitialized: no
     name: 'themis-session-id'
     cookie:
-        domain: 'api.2015.volgactf-dev.org'
+        domain: 'api.' + process.env.DOMAIN
         path: '/'
         httpOnly: yes
         secure: false
