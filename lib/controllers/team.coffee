@@ -26,5 +26,18 @@ class TeamController
                             else
                                 callback null, team
 
+    @signin: (name, password, callback) ->
+        Team.findOne name: name, (err, team) ->
+            if team?
+                security.checkPassword password, team.passwordHash, (err, res) ->
+                    if err?
+                        callback err, null
+                    else
+                        if res
+                            callback null, team
+                        else
+                            callback null, null
+            else
+                callback 'Team does not exist!', null
 
 module.exports = TeamController

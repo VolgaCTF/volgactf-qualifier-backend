@@ -20,7 +20,18 @@ router.post '/signin', urlencodedParser, (request, response) ->
 
         validationResult = validator.validate request.body, signinConstraints
         if validationResult is true
-            response.json success: yes
+            TeamController.signin request.body.team, request.body.password, (err, team) ->
+                if err?
+                    logger.error err
+                    response.status(400).json 'Invalid team or password!'
+                else
+                    if supervisor?
+                        request.session.authenticated = yes
+                        request.session.role = 'team'
+                        request.session.id = team._id
+                        response.status(200).json success: yes
+                    else
+                        response.status(400).json 'Invalid team or password!'
         else
             response.status(400).json 'Validation error!'
 
