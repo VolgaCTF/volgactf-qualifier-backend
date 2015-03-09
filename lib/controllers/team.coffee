@@ -40,4 +40,11 @@ class TeamController
             else
                 callback 'Team does not exist!', null
 
+    @list: (callback) ->
+        Team.find (err, teams) ->
+            if err?
+                callback err, null
+            else
+                callback null, teams
+
 module.exports = TeamController

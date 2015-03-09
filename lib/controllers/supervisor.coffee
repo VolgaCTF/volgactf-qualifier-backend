@@ -43,4 +43,11 @@ class SupervisorController
             else
                 callback 'Supervisor does not exist!', null
 
+    @list: (callback) ->
+        Supervisor.find (err, supervisors) ->
+            if err?
+                callback err, null
+            else
+                callback null, supervisors
+
 module.exports = SupervisorController

@@ -61,8 +61,9 @@ app.post '/login', urlencodedParser, (request, response) ->
                 else
                     if supervisor?
                         request.session.authenticated = yes
-                        request.session.role = supervisor.rights
                         request.session.id = supervisor._id
+                        request.session.role = supervisor.rights
+                        request.session.name = supervisor.username
                         response.status(200).json 'Login successful!'
                     else
                         response.status(400).json 'Invalid username or password!'
@@ -80,12 +81,14 @@ app.post '/signout', (request, response) ->
 
 app.get '/identity', (request, response) ->
     identity =
-        role: 'guest'
         id: null
+        role: 'guest'
+        name: null
 
     if request.session.authenticated?
-        identity.role = request.session.role
         identity.id = request.session.id
+        identity.role = request.session.role
+        identity.name = request.session.name
 
     response.json identity
 

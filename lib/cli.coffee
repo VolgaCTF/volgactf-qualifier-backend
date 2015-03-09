@@ -1,6 +1,8 @@
 parser = require 'nomnom'
 logger = require './utils/logger'
+
 SupervisorController = require './controllers/supervisor'
+TeamController = require './controllers/team'
 
 
 parser.command('create_supervisor')
@@ -49,6 +51,31 @@ parser.command('remove_supervisor')
             else
                 logger.info "Supervisor `#{opts.username}` has been removed!"
                 process.exit 0
+
+parser.command('list_supervisors')
+    .help 'List all supervisors'
+    .callback (opts) ->
+        SupervisorController.list (err, supervisors) ->
+            if err?
+                logger.error err
+                process.exit 1
+            else
+                for supervisor in supervisors
+                    logger.info "Supervisor ##{supervisor._id} `#{supervisor.username}` (#{supervisor.rights})"
+                process.exit 0
+
+parser.command('list_teams')
+    .help 'List all teams'
+    .callback (opts) ->
+        TeamController.list (err, teams) ->
+            if err?
+                logger.error err
+                process.exit 1
+            else
+                for team in teams
+                    logger.info "Team `#{team.name}` <#{team.email}>"
+                process.exit 0
+
 
 module.exports.run = ->
     parser.parse()
