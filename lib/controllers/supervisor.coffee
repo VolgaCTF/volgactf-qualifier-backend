@@ -4,7 +4,7 @@ security = require '../utils/security'
 
 class SupervisorController
     @create: (options, callback) ->
-        supervisor = Supervisor.findOne username: options.username, (err, supervisor) ->
+        Supervisor.findOne username: options.username, (err, supervisor) ->
             if supervisor?
                 callback 'Supervisor exists!', null
             else
@@ -23,14 +23,14 @@ class SupervisorController
                                 callback null, supervisor
 
     @remove: (username, callback) ->
-        supervisor = Supervisor.remove username: username, (err) ->
+        Supervisor.remove username: username, (err) ->
             if err?
                 callback 'Supervisor does not exist!'
             else
                 callback null
 
     @login: (username, password, callback) ->
-        supervisor = Supervisor.findOne username: username, (err, supervisor) ->
+        Supervisor.findOne username: username, (err, supervisor) ->
             if supervisor?
                 security.checkPassword password, supervisor.passwordHash, (err, res) ->
                     if err?

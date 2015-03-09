@@ -61,7 +61,7 @@ parser.command('list_supervisors')
                 process.exit 1
             else
                 for supervisor in supervisors
-                    logger.info "Supervisor ##{supervisor._id} `#{supervisor.username}` (#{supervisor.rights})"
+                    logger.info "Supervisor ##{supervisor.id} `#{supervisor.username}` (#{supervisor.rights})"
                 process.exit 0
 
 parser.command('list_teams')

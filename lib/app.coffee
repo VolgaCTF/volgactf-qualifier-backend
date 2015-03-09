@@ -61,7 +61,7 @@ app.post '/login', urlencodedParser, (request, response) ->
                 else
                     if supervisor?
                         request.session.authenticated = yes
-                        request.session.id = supervisor._id
+                        request.session.identityID = supervisor.id
                         request.session.role = supervisor.rights
                         request.session.name = supervisor.username
                         response.status(200).json 'Login successful!'
@@ -86,7 +86,7 @@ app.get '/identity', (request, response) ->
         name: null
 
     if request.session.authenticated?
-        identity.id = request.session.id
+        identity.id = request.session.identityID
         identity.role = request.session.role
         identity.name = request.session.name
 

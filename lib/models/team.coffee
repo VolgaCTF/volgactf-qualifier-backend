@@ -2,8 +2,9 @@ mongoose = require '../utils/mongoose'
 autoIncrement = require 'mongoose-auto-increment'
 
 teamSchema = mongoose.Schema
-    name: String
-    email: String
+    name: { type: String, unique: yes }
+    email: { type: String, unique: yes }
+    emailConfirmed: Boolean
     passwordHash: String
     country: String
     locality: String

@@ -3,12 +3,11 @@ security = require '../utils/security'
 
 
 class TeamController
-    @new: (options, callback) ->
-        team = Team.findOne name: options.team, (err, team) ->
+    @create: (options, callback) ->
+        Team.findOne name: options.team, (err, team) ->
             if team?
                 callback "Team exists!", null
             else
-                console.log "Team does not exist!"
                 security.getPasswordHash options.password, (err, hash) ->
                     if err?
                         callback err, null
@@ -16,6 +15,7 @@ class TeamController
                         team = new Team
                             name: options.team
                             email: options.email
+                            emailConfirmed: no
                             passwordHash: hash
                             country: options.country
                             locality: options.locality
