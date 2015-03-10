@@ -4,13 +4,13 @@ security = require '../utils/security'
 
 class TeamController
     @create: (options, callback) ->
-        Team.findOne name: options.team, (err, team) ->
-            if team?
-                callback "Team exists!", null
+        Team.find().or([ {name: options.team}, {email: options.email} ]).count (err, count) ->
+            if count > 0
+                callback 'Specified credentials (team name or email) have been already used!', null
             else
                 security.getPasswordHash options.password, (err, hash) ->
                     if err?
-                        callback err, null
+                        callback 'Internal error! Please try again later.', null
                     else
                         team = new Team
                             name: options.team
@@ -22,7 +22,7 @@ class TeamController
                             institution: options.institution
                         team.save (err, team) ->
                             if err?
-                                callback err, null
+                                callback 'Internal error! Please try again later', null
                             else
                                 callback null, team
 

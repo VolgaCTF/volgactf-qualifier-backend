@@ -11,6 +11,6 @@ module.exports =
         new Assert().Regexp(pwdRegex, 'g')
     ]
     login: [new Assert().NotBlank(), new Assert().Length(min: 2, max: 100)]
-    country: [new Assert().NotBlank(), new Assert().Length(min:2, max: 150)]
-    locality: [new Assert().NotBlank(), new Assert().Length(min:2, max: 150)]
-    institution: [new Assert().NotBlank(), new Assert().Length(min:2, max: 150)]
+    country: [new Assert().Length(min: 0, max: 150)]
+    locality: [new Assert().Length(min: 0, max: 150)]
+    institution: [new Assert().Length(min: 0, max: 150)]

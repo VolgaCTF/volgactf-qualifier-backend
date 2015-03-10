@@ -29,10 +29,11 @@ router.post '/signin', urlencodedParser, (request, response) ->
                     logger.error err
                     response.status(400).json 'Invalid team or password!'
                 else
-                    if supervisor?
+                    if team?
                         request.session.authenticated = yes
+                        request.session.identityID = team._id
                         request.session.role = 'team'
-                        request.session.id = team._id
+                        request.session.name = team.name
                         response.status(200).json success: yes
                     else
                         response.status(400).json 'Invalid team or password!'
@@ -76,7 +77,11 @@ router.post '/signup', multidataParser, (request, response) ->
                         if size.width < 48
                             response.status(400).json 'Image should be wider than 48px!'
                         else
-                            response.status(400).json 'Everything seems ok, next logic is not implemented yet'
+                            TeamController.create teamInfo, (err, team) ->
+                                if err?
+                                    response.status(400).json err
+                                else
+                                    response.status(200).json success: yes
             else
                 response.status(400).json 'Validation error!'
 
