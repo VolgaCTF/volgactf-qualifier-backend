@@ -3,7 +3,7 @@ logger = require './logger'
 autoIncrement = require 'mongoose-auto-increment'
 
 
-mongoose.connect 'mongodb://localhost/themis'
+mongoose.connect process.env.MONGODB_URI
 autoIncrement.initialize mongoose.connection
 
 mongoose.connection
