@@ -32,7 +32,8 @@
     "validator.js": "~1.0.1",
     "mongoose-auto-increment": "~3.2.0",
     "gm": "~1.17.0",
-    "tmp": "0.0.25"
+    "tmp": "0.0.25",
+    "dotenv": "~1.0.0"
   },
   "bin": {
     "app": "./bin/app"
