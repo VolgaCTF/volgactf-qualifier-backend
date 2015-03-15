@@ -1,5 +1,9 @@
 Team = require '../models/team'
 security = require '../utils/security'
+fs = require 'fs'
+path = require 'path'
+gm = require 'gm'
+queue = require '../utils/queue'
 
 
 class TeamController
@@ -24,6 +28,10 @@ class TeamController
                             if err?
                                 callback 'Internal error! Please try again later', null
                             else
+                                if options.logoFilename?
+                                    createLogoQueue = queue 'createLogoQueue'
+                                    createLogoQueue.add id: team._id, filename: options.logoFilename
+
                                 callback null, team
 
     @signin: (name, password, callback) ->

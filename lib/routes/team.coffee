@@ -6,6 +6,7 @@ constraints = require '../utils/constraints'
 tmp = require 'tmp'
 fs = require 'fs'
 gm = require 'gm'
+path = require 'path'
 
 Team = require '../models/team'
 TeamController = require '../controllers/team'
@@ -13,6 +14,20 @@ Validator = require 'validator.js'
 validator = new Validator.Validator()
 router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
+
+router.get '/logo/:teamId', (request, response) ->
+    Team.findOne _id: request.params.teamId, (err, team) ->
+        if err?
+            response.status(404).send ''
+        else
+            filename = path.join process.env.LOGOS_DIR, "team-#{request.params.teamId}.png"
+            fs.lstat filename, (err, stats) ->
+                if err?
+                    nologoFilename = path.join __dirname, '..', '..', 'nologo.png'
+                    response.sendFile nologoFilename
+                else
+                    response.sendFile filename
+
 
 router.post '/signin', urlencodedParser, (request, response) ->
     if request.session.authenticated?
@@ -54,6 +69,7 @@ router.post '/signup', multidataParser, (request, response) ->
             file.on 'data', (data) ->
                 if fieldName is 'logo'
                     fs.appendFileSync teamLogo.name, data
+                    teamInfo['logoFilename'] = teamLogo.name
 
         request.busboy.on 'field', (fieldName, val, fieldNameTruncated, valTruncated) ->
             teamInfo[fieldName] = val
