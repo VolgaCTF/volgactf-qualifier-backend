@@ -92,6 +92,8 @@ router.post '/signup', multidataParser, (request, response) ->
                     else
                         if size.width < 48
                             response.status(400).json 'Image should be wider than 48px!'
+                        else if size.width != size.height
+                            response.status(400).json 'Image width should equal image height!'
                         else
                             TeamController.create teamInfo, (err, team) ->
                                 if err?
