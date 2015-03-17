@@ -38,9 +38,6 @@
     "mandrill-api": "~1.0.41",
     "base64url": "~1.0.4"
   },
-  "bin": {
-    "app": "./bin/app"
-  },
   "devDependencies": {
     "mocha": "~2.1.0",
     "supertest": "~0.15.0"
