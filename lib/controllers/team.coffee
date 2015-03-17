@@ -4,6 +4,7 @@ fs = require 'fs'
 path = require 'path'
 gm = require 'gm'
 queue = require '../utils/queue'
+token = require '../utils/token'
 
 
 class TeamController
@@ -19,7 +20,9 @@ class TeamController
                         team = new Team
                             name: options.team
                             email: options.email
+                            createdAt: new Date()
                             emailConfirmed: no
+                            emailConfirmationToken: token.generate()
                             passwordHash: hash
                             country: options.country
                             locality: options.locality
@@ -29,8 +32,14 @@ class TeamController
                                 callback 'Internal error! Please try again later', null
                             else
                                 if options.logoFilename?
-                                    createLogoQueue = queue 'createLogoQueue'
-                                    createLogoQueue.add id: team._id, filename: options.logoFilename
+                                    queue('createLogoQueue').add
+                                        id: team._id
+                                        filename: options.logoFilename
+
+                                queue('sendEmailQueue').add
+                                    name: team.name
+                                    email: team.email
+                                    token: team.emailConfirmationToken
 
                                 callback null, team
 
