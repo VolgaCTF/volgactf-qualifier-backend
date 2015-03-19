@@ -36,7 +36,8 @@
     "dotenv": "~1.0.0",
     "bull": "~0.2.4",
     "mandrill-api": "~1.0.41",
-    "base64url": "~1.0.4"
+    "base64url": "~1.0.4",
+    "mustache": "~1.1.0"
   },
   "devDependencies": {
     "mocha": "~2.1.0",
