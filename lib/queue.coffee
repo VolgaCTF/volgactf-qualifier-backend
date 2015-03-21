@@ -39,6 +39,7 @@ queue('sendEmailQueue').process (job, done) ->
             trans_clicks: yes
             auto_text: no
             auto_html: no
+            url_strip_qs: no
         async: no
 
     onSend = (result) ->
