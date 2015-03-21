@@ -10,3 +10,6 @@ module.exports =
 
     decode: (encoded) ->
         base64url.toBuffer encoded
+
+    decodeString: (encoded) ->
+        base64url.decode encoded

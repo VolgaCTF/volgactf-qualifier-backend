@@ -21,6 +21,7 @@ queue('sendEmailQueue').process (job, done) ->
     welcomeMessage = EmailController.generateWelcomeEmail
         name: job.data.name
         domain: process.env.DOMAIN
+        team: token.encode job.data.email
         code: token.encode job.data.token
 
     params =

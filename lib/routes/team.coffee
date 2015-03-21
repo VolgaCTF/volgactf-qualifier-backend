@@ -29,6 +29,22 @@ router.get '/logo/:teamId', (request, response) ->
                     response.sendFile filename
 
 
+router.post '/verify-email', urlencodedParser, (request, response) ->
+    verifyConstraints =
+        team: constraints.base64url
+        code: constraints.base64url
+
+    validationResult = validator.validate request.body, verifyConstraints
+    if validationResult is true
+        TeamController.verifyEmail request.body.team, request.body.code, (err) ->
+            if err?
+                response.status(400).json err
+            else
+                response.status(200).json success: yes
+    else
+        response.status(400).json 'Validation error!'
+
+
 router.post '/signin', urlencodedParser, (request, response) ->
     if request.session.authenticated?
         response.status(400).json 'Already authenticated!'

@@ -5,6 +5,7 @@ path = require 'path'
 gm = require 'gm'
 queue = require '../utils/queue'
 token = require '../utils/token'
+logger = require '../utils/logger'
 
 
 class TeamController
@@ -63,5 +64,28 @@ class TeamController
                 callback err, null
             else
                 callback null, teams
+
+    @verifyEmail: (encodedEmail, encodedToken, callback) ->
+        try
+            email = token.decodeString encodedEmail
+            token = token.decode encodedToken
+        catch e
+            logger.error e
+            callback 'Invalid verification URL!'
+            return
+
+        params = email: email, emailConfirmationToken: token
+        Team.findOne params, (err, team) ->
+            if team?
+                team.emailConfirmed = yes
+                team.emailConfirmationToken = null
+                team.save (err, team) ->
+                    if err?
+                        callback 'Internal error! Please try again later'
+                    else
+                        callback null
+            else
+                callback 'Invalid verification URL!'
+
 
 module.exports = TeamController

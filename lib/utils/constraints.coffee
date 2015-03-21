@@ -1,6 +1,7 @@
 Assert = require('validator.js').Assert
 
 pwdRegex = "^[A-Za-z0-9\\[\\]\\(\\)\\{\\}~`!@#\\$%\\^&\\*\\-_=\\+'\":;|/\\\\\\.,\\?\\<\\>]{6,40}$"
+base64urlRegex = "^[A-Za-z0-9_\\-]{3,}$"
 
 module.exports =
     email: [new Assert().NotBlank(), new Assert().Email()]
@@ -14,3 +15,4 @@ module.exports =
     country: [new Assert().Length(min: 0, max: 150)]
     locality: [new Assert().Length(min: 0, max: 150)]
     institution: [new Assert().Length(min: 0, max: 150)]
+    base64url: [new Assert().Required(), new Assert().Regexp(base64urlRegex, 'g')]
