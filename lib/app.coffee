@@ -35,8 +35,8 @@ app.use session
         domain: 'api.' + process.env.DOMAIN
         path: '/'
         httpOnly: yes
-        secure: false
-        maxAge: 600000
+        secure: no
+        expires: no
 
 app.use '/team', teamRouter
 app.use '/task', taskRouter
@@ -89,6 +89,8 @@ app.get '/identity', (request, response) ->
         identity.id = request.session.identityID
         identity.role = request.session.role
         identity.name = request.session.name
+        if identity.role is 'team' and 'emailConfirmed' of request.session
+            identity.emailConfirmed = request.session.emailConfirmed
 
     response.json identity
 

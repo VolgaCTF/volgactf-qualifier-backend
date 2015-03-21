@@ -49,6 +49,7 @@ router.post '/signin', urlencodedParser, (request, response) ->
                         request.session.identityID = team._id
                         request.session.role = 'team'
                         request.session.name = team.name
+                        request.session.emailConfirmed = team.emailConfirmed
                         response.status(200).json success: yes
                     else
                         response.status(400).json 'Invalid team or password!'
