@@ -58,6 +58,29 @@ class TeamController
             else
                 callback 'Team does not exist!', null
 
+    @changePassword: (id, currentPassword, newPassword, callback) ->
+        Team.findOne _id: id, (err, team) ->
+            if team?
+                security.checkPassword currentPassword, team.passwordHash, (err, res) ->
+                    if err?
+                        callback 'Invalid password!', null
+                    else
+                        if res
+                            security.getPasswordHash newPassword, (err, hash) ->
+                                if err?
+                                    callback 'Internal error! Please try again later.', null
+                                else
+                                    team.passwordHash = hash
+                                    team.save (err, team) ->
+                                        if err?
+                                            callback 'Internal error! Please try again later.', null
+                                        else
+                                            callback null, yes
+                        else
+                            callback 'Invalid password!', null
+            else
+                callback 'Team does not exist!', null
+
     @list: (callback) ->
         Team.find (err, teams) ->
             if err?

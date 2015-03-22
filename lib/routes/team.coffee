@@ -45,6 +45,25 @@ router.post '/verify-email', urlencodedParser, (request, response) ->
         response.status(400).json 'Validation error!'
 
 
+router.post '/change-password', urlencodedParser, (request, response) ->
+    if not request.session.authenticated? or not request.session.role is 'team'
+        response.status(400).json 'Not authenticated!'
+    else
+        changeConstraints =
+            currentPassword: constraints.password
+            newPassword: constraints.password
+
+        validationResult = validator.validate request.body, changeConstraints
+        if validationResult is true
+            TeamController.changePassword request.session.identityID, request.body.currentPassword, request.body.newPassword, (err, res) ->
+                if err?
+                    response.status(400).json err
+                else
+                    response.json success: yes
+        else
+            response.status(400).json 'Validation error!'
+
+
 router.get '/profile/:teamId', (request, response) ->
     Team.findOne _id: request.params.teamId, (err, team) ->
         if err?
