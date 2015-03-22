@@ -45,6 +45,22 @@ router.post '/verify-email', urlencodedParser, (request, response) ->
         response.status(400).json 'Validation error!'
 
 
+router.get '/profile/:teamId', (request, response) ->
+    Team.findOne _id: request.params.teamId, (err, team) ->
+        if err?
+            response.status(404).json 'Team not found!'
+        else
+            result =
+                id: team._id
+                name: team.name
+                country: team.country
+                locality: team.locality
+                institution: team.institution
+            if request.session.authenticated? and request.session.role is 'team' and request.session.identityID == team._id
+                result.email = team.email
+            response.json result
+
+
 router.post '/signin', urlencodedParser, (request, response) ->
     if request.session.authenticated?
         response.status(400).json 'Already authenticated!'
