@@ -68,13 +68,13 @@ class TeamController
     @verifyEmail: (encodedEmail, encodedToken, callback) ->
         try
             email = token.decodeString encodedEmail
-            token = token.decode encodedToken
+            code = token.decode encodedToken
         catch e
             logger.error e
             callback 'Invalid verification URL!'
             return
 
-        params = email: email, emailConfirmationToken: token
+        params = email: email, emailConfirmationToken: code
         Team.findOne params, (err, team) ->
             if team?
                 team.emailConfirmed = yes
@@ -87,5 +87,11 @@ class TeamController
             else
                 callback 'Invalid verification URL!'
 
+    @get: (id, callback) ->
+        Team.findOne _id: id, (err, team) ->
+            if err?
+                callback 'Team not found!', null
+            else
+                callback null, team
 
 module.exports = TeamController

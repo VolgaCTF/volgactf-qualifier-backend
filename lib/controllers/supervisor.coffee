@@ -50,4 +50,12 @@ class SupervisorController
             else
                 callback null, supervisors
 
+    @get: (id, callback) ->
+        Supervisor.findOne _id: id, (err, supervisor) ->
+            if err?
+                callback 'Supervisor not found!', null
+            else
+                callback null, supervisor
+
+
 module.exports = SupervisorController

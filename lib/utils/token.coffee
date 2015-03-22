@@ -2,7 +2,7 @@ crypto = require 'crypto'
 base64url = require 'base64url'
 
 module.exports =
-    generate:  (size = 64) ->
+    generate: (size = 64) ->
         crypto.randomBytes size
 
     encode: (buf) ->

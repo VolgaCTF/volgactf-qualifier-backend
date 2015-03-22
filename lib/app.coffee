@@ -16,6 +16,8 @@ RedisStore = require('connect-redis') session
 Validator = require 'validator.js'
 validator = new Validator.Validator()
 constraints = require './utils/constraints'
+_ = require 'underscore'
+TeamController = require './controllers/team'
 
 app = express()
 
@@ -63,7 +65,6 @@ app.post '/login', urlencodedParser, (request, response) ->
                         request.session.authenticated = yes
                         request.session.identityID = supervisor.id
                         request.session.role = supervisor.rights
-                        request.session.name = supervisor.username
                         response.status(200).json 'Login successful!'
                     else
                         response.status(400).json 'Invalid username or password!'
@@ -80,18 +81,29 @@ app.post '/signout', (request, response) ->
 
 
 app.get '/identity', (request, response) ->
-    identity =
-        id: null
-        role: 'guest'
-        name: null
-
     if request.session.authenticated?
-        identity.id = request.session.identityID
-        identity.role = request.session.role
-        identity.name = request.session.name
-        if identity.role is 'team' and 'emailConfirmed' of request.session
-            identity.emailConfirmed = request.session.emailConfirmed
-
-    response.json identity
+        if request.session.role is 'team'
+            TeamController.get request.session.identityID, (err, team) ->
+                if err?
+                    response.status(400).json err
+                else
+                    response.json
+                        id: request.session.identityID
+                        role: 'team'
+                        name: team.name
+                        emailConfirmed: team.emailConfirmed
+        else if _.contains ['admin', 'manager'], request.session.role
+            SupervisorController.get request.session.identityID, (err, supervisor) ->
+                if err?
+                    response.status(400).json err
+                else
+                    response.json
+                        id: request.session.identityID
+                        role: supervisor.rights
+                        name: supervisor.username
+        else
+            response.status(400).json 'Invalid identity!'
+    else
+        response.json role: 'guest'
 
 module.exports = app
