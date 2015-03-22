@@ -9,12 +9,14 @@ token = require './utils/token'
 
 queue('createLogoQueue').process (job, done) ->
     newFilename = path.join process.env.LOGOS_DIR, "team-#{job.data.id}.png"
-    gm(job.data.filename).write newFilename, (err) ->
-        if err?
-            logger.error err
-            throw err
-        else
-            done()
+    gm(job.data.filename)
+        .resize(48, 48)
+        .write newFilename, (err) ->
+            if err?
+                logger.error err
+                throw err
+            else
+                done()
 
 
 queue('sendEmailQueue').process (job, done) ->
