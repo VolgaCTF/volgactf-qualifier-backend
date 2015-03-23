@@ -861,6 +861,11 @@
       "version": "1.1.0",
       "from": "mustache@",
       "resolved": "https://registry.npmjs.org/mustache/-/mustache-1.1.0.tgz"
+    },
+    "underscore": {
+      "version": "1.8.2",
+      "from": "underscore@",
+      "resolved": "https://registry.npmjs.org/underscore/-/underscore-1.8.2.tgz"
     }
   }
 }
