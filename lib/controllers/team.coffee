@@ -58,6 +58,20 @@ class TeamController
             else
                 callback 'Team does not exist!', null
 
+    @editProfile: (id, country, locality, institution, callback) ->
+        Team.findOne _id: id, (err, team) ->
+            if team?
+                team.country = country
+                team.locality = locality
+                team.institution = institution
+                team.save (err, team) ->
+                    if err?
+                        callback 'Internal error! Please try again later.', null
+                    else
+                        callback null, yes
+            else
+                callback 'Team does not exist!', null
+
     @changePassword: (id, currentPassword, newPassword, callback) ->
         Team.findOne _id: id, (err, team) ->
             if team?
