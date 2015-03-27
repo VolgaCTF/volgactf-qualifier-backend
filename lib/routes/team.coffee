@@ -84,6 +84,35 @@ router.post '/edit-profile', urlencodedParser, (request, response) ->
             response.status(400).json 'Validation error!'
 
 
+router.post '/resend-confirmation-email', (request, response) ->
+    if not request.session.authenticated? or not request.session.role is 'team'
+        response.status(400).json 'Not authenticated!'
+    else
+        TeamController.resendConfirmationEmail request.session.identityID, (err, res) ->
+            if err?
+                response.status(400).json err
+            else
+                response.json success: yes
+
+
+router.post '/change-email', urlencodedParser, (request, response) ->
+    if not request.session.authenticated? or not request.session.role is 'team'
+        response.status(400).json 'Not authenticated!'
+    else
+        changeConstraints =
+            email: constraints.email
+
+        validationResult = validator.validate request.body, changeConstraints
+        if validationResult is true
+            TeamController.changeEmail request.session.identityID, request.body.email, (err, res) ->
+                if err?
+                    response.status(400).json err
+                else
+                    response.json success: yes
+        else
+            response.status(400).json 'Validation error!'
+
+
 router.get '/profile/:teamId', (request, response) ->
     Team.findOne _id: request.params.teamId, (err, team) ->
         if err?

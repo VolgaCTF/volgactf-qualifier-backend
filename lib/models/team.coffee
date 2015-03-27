@@ -3,7 +3,7 @@ autoIncrement = require 'mongoose-auto-increment'
 
 teamSchema = mongoose.Schema
     name: { type: String, unique: yes }
-    email: { type: String, unique: yes }
+    email: { type: String, unique: yes, lowercase: yes }
     createdAt: Date
     emailConfirmed: Boolean
     emailConfirmationToken: Buffer

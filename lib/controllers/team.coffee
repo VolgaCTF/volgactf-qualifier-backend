@@ -10,7 +10,7 @@ logger = require '../utils/logger'
 
 class TeamController
     @create: (options, callback) ->
-        Team.find().or([ {name: options.team}, {email: options.email} ]).count (err, count) ->
+        Team.find().or([ {name: options.team}, {email: options.email.toLowerCase()} ]).count (err, count) ->
             if count > 0
                 callback 'Specified credentials (team name or email) have been already used!', null
             else
@@ -55,6 +55,54 @@ class TeamController
                             callback null, team
                         else
                             callback null, null
+            else
+                callback 'Team does not exist!', null
+
+    @resendConfirmationEmail: (id, callback) ->
+        Team.findOne _id: id, (err, team) ->
+            if team?
+                if team.emailConfirmed
+                    callback 'Email already confirmed!', null
+                else
+                    team.emailConfirmationToken = token.generate()
+                    team.save (err, team) ->
+                        if err?
+                            callback 'Internal error! Please try again later', null
+                        else
+                            queue('sendEmailQueue').add
+                                name: team.name
+                                email: team.email
+                                token: team.emailConfirmationToken
+
+                            callback null, yes
+            else
+                callback 'Team does not exist!', null
+
+    @changeEmail: (id, email, callback) ->
+        Team.findOne _id: id, (err, team) ->
+            if team?
+                if team.emailConfirmed
+                    callback 'Email already confirmed!', null
+                else
+                    Team.find(email: email.toLowerCase()).count (err, count) ->
+                        if err?
+                            callback 'Internal error! Please try again later', null
+                        else
+                            if count > 0
+                                callback 'Email has already been used!', null
+                            else
+                                team.email = email
+                                team.emailConfirmationToken = token.generate()
+                                team.save (err, team) ->
+                                    if err?
+                                        callback 'Internal error! Please try again later', null
+                                    else
+                                        queue('sendEmailQueue').add
+                                            name: team.name
+                                            email: team.email
+                                            token: team.emailConfirmationToken
+
+                                        callback null, yes
             else
                 callback 'Team does not exist!', null
 
