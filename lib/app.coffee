@@ -51,7 +51,7 @@ app.post '/login', urlencodedParser, (request, response) ->
         response.status(400).json 'Already autheticated!'
     else
         loginConstraints =
-            login: constraints.login
+            username: constraints.username
             password: constraints.password
 
         validationResult = validator.validate request.body, loginConstraints
