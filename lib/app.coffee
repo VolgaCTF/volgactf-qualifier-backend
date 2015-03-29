@@ -19,6 +19,14 @@ constraints = require './utils/constraints'
 _ = require 'underscore'
 TeamController = require './controllers/team'
 
+errors = require './utils/errors'
+BaseError = errors.BaseError
+ValidationError = errors.ValidationError
+AlreadyAuthenticatedError = errors.AlreadyAuthenticatedError
+InvalidSupervisorCredentialsError = errors.InvalidSupervisorCredentialsError
+NotAuthenticatedError = errors.NotAuthenticatedError
+UnknownIdentityError = errors.UnknownIdentityError
+
 app = express()
 
 app.set 'x-powered-by', no
@@ -43,51 +51,53 @@ app.use session
         expires: no
 
 app.use '/team', teamRouter
-app.use '/task', taskRouter
-app.use '/category', categoryRouter
+# app.use '/task', taskRouter
+# app.use '/category', categoryRouter
+
 
 urlencodedParser = bodyParser.urlencoded extended: no
 
-app.post '/login', urlencodedParser, (request, response) ->
+app.post '/login', urlencodedParser, (request, response, next) ->
     if request.session.authenticated?
-        response.status(400).json 'Already autheticated!'
-    else
-        loginConstraints =
-            username: constraints.username
-            password: constraints.password
+        throw new AlreadyAuthenticatedError()
 
-        validationResult = validator.validate request.body, loginConstraints
-        if validationResult is true
-            SupervisorController.login request.body.username, request.body.password, (err, supervisor) ->
-                if err?
-                    logger.error err
-                    response.status(400).json 'Invalid username or password!'
-                else
-                    if supervisor?
-                        request.session.authenticated = yes
-                        request.session.identityID = supervisor.id
-                        request.session.role = supervisor.rights
-                        response.status(200).json 'Login successful!'
-                    else
-                        response.status(400).json 'Invalid username or password!'
+    loginConstraints =
+        username: constraints.username
+        password: constraints.password
+
+    validationResult = validator.validate request.body, loginConstraints
+    unless validationResult is true
+        throw new ValidationError()
+
+    SupervisorController.login request.body.username, request.body.password, (err, supervisor) ->
+        if err?
+            next err
         else
-            response.status(400).json 'Validation error!'
+            if supervisor?
+                request.session.authenticated = yes
+                request.session.identityID = supervisor.id
+                request.session.role = supervisor.rights
+                response.json success: yes
+            else
+                next new InvalidSupervisorCredentialsError()
 
-app.post '/signout', (request, response) ->
-    if request.session.authenticated?
-        request.session.authenticated = no
-        request.session.destroy (err) ->
-            response.json ''
-    else
-        response.status(400).json 'Not authenticated!'
+app.post '/signout', (request, response, next) ->
+    unless request.session.authenticated?
+        throw new NotAuthenticatedError()
 
+    request.session.authenticated = no
+    request.session.destroy (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
 
-app.get '/identity', (request, response) ->
+app.get '/identity', (request, response, next) ->
     if request.session.authenticated?
         if request.session.role is 'team'
             TeamController.get request.session.identityID, (err, team) ->
                 if err?
-                    response.status(400).json err
+                    next err
                 else
                     response.json
                         id: request.session.identityID
@@ -97,15 +107,25 @@ app.get '/identity', (request, response) ->
         else if _.contains ['admin', 'manager'], request.session.role
             SupervisorController.get request.session.identityID, (err, supervisor) ->
                 if err?
-                    response.status(400).json err
+                    next err
                 else
                     response.json
                         id: request.session.identityID
                         role: supervisor.rights
                         name: supervisor.username
         else
-            response.status(400).json 'Invalid identity!'
+            throw new UnknownIdentityError()
     else
         response.json role: 'guest'
+
+
+app.use (err, request, response, next) ->
+    if err instanceof BaseError
+        response.status err.getHttpStatus()
+        response.json err.message
+    else
+        logger.error err
+        response.status 500
+        response.json 'Internal Server Error'
 
 module.exports = app

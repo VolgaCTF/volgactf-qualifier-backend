@@ -6,142 +6,161 @@ gm = require 'gm'
 queue = require '../utils/queue'
 token = require '../utils/token'
 logger = require '../utils/logger'
+errors = require '../utils/errors'
 
 
 class TeamController
     @create: (options, callback) ->
         Team.find().or([ {name: options.team}, {email: options.email.toLowerCase()} ]).count (err, count) ->
-            if count > 0
-                callback 'Specified credentials (team name or email) have been already used!', null
+            if err?
+                logger.error err
+                callback err
             else
-                security.getPasswordHash options.password, (err, hash) ->
-                    if err?
-                        callback 'Internal error! Please try again later.', null
-                    else
-                        team = new Team
-                            name: options.team
-                            email: options.email
-                            createdAt: new Date()
-                            emailConfirmed: no
-                            emailConfirmationToken: token.generate()
-                            passwordHash: hash
-                            country: options.country
-                            locality: options.locality
-                            institution: options.institution
-                        team.save (err, team) ->
-                            if err?
-                                callback 'Internal error! Please try again later', null
-                            else
-                                if options.logoFilename?
-                                    queue('createLogoQueue').add
-                                        id: team._id
-                                        filename: options.logoFilename
+                if count > 0
+                    callback new errors.TeamCredentialsTakenError()
+                else
+                    security.getPasswordHash options.password, (err, hash) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError()
+                        else
+                            team = new Team
+                                name: options.team
+                                email: options.email
+                                createdAt: new Date()
+                                emailConfirmed: no
+                                emailConfirmationToken: token.generate()
+                                passwordHash: hash
+                                country: options.country
+                                locality: options.locality
+                                institution: options.institution
+                            team.save (err, team) ->
+                                if err?
+                                    logger.error err
+                                    callback new errors.InternalError()
+                                else
+                                    if options.logoFilename?
+                                        queue('createLogoQueue').add
+                                            id: team._id
+                                            filename: options.logoFilename
 
-                                queue('sendEmailQueue').add
-                                    name: team.name
-                                    email: team.email
-                                    token: team.emailConfirmationToken
+                                    queue('sendEmailQueue').add
+                                        name: team.name
+                                        email: team.email
+                                        token: team.emailConfirmationToken
 
-                                callback null, team
+                                    callback null
 
     @signin: (name, password, callback) ->
         Team.findOne name: name, (err, team) ->
-            if team?
-                security.checkPassword password, team.passwordHash, (err, res) ->
-                    if err?
-                        callback err, null
-                    else
-                        if res
-                            callback null, team
-                        else
-                            callback null, null
+            if err?
+                logger.error err
+                callback new errors.InvalidTeamCredentialsError(), null
             else
-                callback 'Team does not exist!', null
+                if team?
+                    security.checkPassword password, team.passwordHash, (err, res) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError(), null
+                        else
+                            if res
+                                callback null, team
+                            else
+                                callback new errors.InvalidTeamCredentialsError(), null
+                else
+                    callback new errors.InvalidTeamCredentialsError(), null
 
     @resendConfirmationEmail: (id, callback) ->
-        Team.findOne _id: id, (err, team) ->
-            if team?
+        TeamController.get id, (err, team) ->
+            if err?
+                callback err
+            else
                 if team.emailConfirmed
-                    callback 'Email already confirmed!', null
+                    callback new errors.EmailConfirmedError()
                 else
                     team.emailConfirmationToken = token.generate()
                     team.save (err, team) ->
                         if err?
-                            callback 'Internal error! Please try again later', null
+                            logger.error err
+                            callback new errors.InternalError()
                         else
                             queue('sendEmailQueue').add
                                 name: team.name
                                 email: team.email
                                 token: team.emailConfirmationToken
 
-                            callback null, yes
-            else
-                callback 'Team does not exist!', null
+                            callback null
 
     @changeEmail: (id, email, callback) ->
-        Team.findOne _id: id, (err, team) ->
-            if team?
+        TeamController.get id, (err, team) ->
+            if err?
+                callback err
+            else
                 if team.emailConfirmed
-                    callback 'Email already confirmed!', null
+                    callback new errors.EmailConfirmedError()
                 else
                     Team.find(email: email.toLowerCase()).count (err, count) ->
                         if err?
-                            callback 'Internal error! Please try again later', null
+                            logger.error err
+                            callback new errors.InternalError()
                         else
                             if count > 0
-                                callback 'Email has already been used!', null
+                                callback new errors.EmailTakenError()
                             else
                                 team.email = email
                                 team.emailConfirmationToken = token.generate()
                                 team.save (err, team) ->
                                     if err?
-                                        callback 'Internal error! Please try again later', null
+                                        logger.error err
+                                        callback new errors.InternalError()
                                     else
                                         queue('sendEmailQueue').add
                                             name: team.name
                                             email: team.email
                                             token: team.emailConfirmationToken
 
-                                        callback null, yes
-            else
-                callback 'Team does not exist!', null
+                                        callback null
 
     @editProfile: (id, country, locality, institution, callback) ->
-        Team.findOne _id: id, (err, team) ->
-            if team?
+        TeamController.get id, (err, team) ->
+            if err?
+                callback err
+            else
                 team.country = country
                 team.locality = locality
                 team.institution = institution
                 team.save (err, team) ->
                     if err?
-                        callback 'Internal error! Please try again later.', null
+                        logger.error err
+                        callback new errors.InternalError()
                     else
-                        callback null, yes
-            else
-                callback 'Team does not exist!', null
+                        callback null
 
     @changePassword: (id, currentPassword, newPassword, callback) ->
-        Team.findOne _id: id, (err, team) ->
-            if team?
+        TeamController.get id, (err, team) ->
+            if err?
+                callback err
+            else
                 security.checkPassword currentPassword, team.passwordHash, (err, res) ->
                     if err?
-                        callback 'Invalid password!', null
+                        logger.error err
+                        callback new errors.InternalError()
                     else
                         if res
                             security.getPasswordHash newPassword, (err, hash) ->
                                 if err?
-                                    callback 'Internal error! Please try again later.', null
+                                    logger.error err
+                                    callback new errors.InternalError()
                                 else
                                     team.passwordHash = hash
                                     team.save (err, team) ->
                                         if err?
-                                            callback 'Internal error! Please try again later.', null
+                                            logger.error err
+                                            callback new errors.InternalError()
                                         else
-                                            callback null, yes
+                                            callback null
                         else
-                            callback 'Invalid password!', null
-            else
-                callback 'Team does not exist!', null
+                            callback new errors.InvalidTeamPasswordError()
 
     @list: (callback) ->
         Team.find (err, teams) ->
@@ -156,7 +175,7 @@ class TeamController
             code = token.decode encodedToken
         catch e
             logger.error e
-            callback 'Invalid verification URL!'
+            callback new errors.InvalidVerificationURLError()
             return
 
         params = email: email, emailConfirmationToken: code
@@ -166,17 +185,21 @@ class TeamController
                 team.emailConfirmationToken = null
                 team.save (err, team) ->
                     if err?
-                        callback 'Internal error! Please try again later'
+                        logger.error err
+                        callback new errors.InternalError()
                     else
                         callback null
             else
-                callback 'Invalid verification URL!'
+                callback new errors.InvalidVerificationURLError()
 
     @get: (id, callback) ->
         Team.findOne _id: id, (err, team) ->
             if err?
-                callback 'Team not found!', null
+                callback new errors.TeamNotFoundError(), null
             else
-                callback null, team
+                if team?
+                    callback null, team
+                else
+                    callback new errors.TeamNotFoundError(), null
 
 module.exports = TeamController

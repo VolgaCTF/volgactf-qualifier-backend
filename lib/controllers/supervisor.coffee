@@ -1,5 +1,6 @@
 Supervisor = require '../models/supervisor'
 security = require '../utils/security'
+InvalidSupervisorCredentialsError = require('../utils/errors').InvalidSupervisorCredentialsError
 
 
 class SupervisorController
@@ -39,9 +40,9 @@ class SupervisorController
                         if res
                             callback null, supervisor
                         else
-                            callback null, null
+                            callback new InvalidSupervisorCredentialsError(), null
             else
-                callback 'Supervisor does not exist!', null
+                callback new InvalidSupervisorCredentialsError(), null
 
     @list: (callback) ->
         Supervisor.find (err, supervisors) ->
