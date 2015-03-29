@@ -21,6 +21,8 @@ TeamController = require './controllers/team'
 
 app = express()
 
+app.set 'x-powered-by', no
+
 app.use (request, response, next) ->
     response.header 'Access-Control-Allow-Origin', 'http://' + process.env.DOMAIN
     response.header 'Access-Control-Allow-Credentials', 'true'
