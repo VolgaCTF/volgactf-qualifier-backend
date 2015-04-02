@@ -136,6 +136,16 @@ class TeamController
                     else
                         callback null
 
+    @changeLogo: (id, logoFilename, callback) ->
+        TeamController.get id, (err, team) ->
+            if err?
+                callback err
+            else
+                queue('createLogoQueue').add
+                    id: team._id
+                    filename: logoFilename
+                callback null
+
     @changePassword: (id, currentPassword, newPassword, callback) ->
         TeamController.get id, (err, team) ->
             if err?

@@ -161,6 +161,35 @@ multidataParser = busboy
         fileSize: 1 * 1024 * 1024
         files: 1
 
+
+router.post '/upload-logo', multidataParser, (request, response, next) ->
+    if not request.session.authenticated? or not request.session.role is 'team'
+        throw new errors.NotAuthenticatedError()
+
+    teamLogo = tmp.fileSync()
+
+    request.busboy.on 'file', (fieldName, file, filename, encoding, mimetype) ->
+        file.on 'data', (data) ->
+            if fieldName is 'logo'
+                fs.appendFileSync teamLogo.name, data
+
+    request.busboy.on 'finish', ->
+        gm(teamLogo.name).size (err, size) ->
+            if err?
+                logger.error err
+                next new errors.InvalidImageError()
+            else
+                if size.width < 48
+                    next new errors.ImageDimensionsError()
+                else if size.width != size.height
+                    next new errors.ImageAspectRatioError()
+                else
+                    TeamController.changeLogo request.session.identityID, teamLogo.name, (err) ->
+                        if err?
+                            next err
+                        else
+                            response.json success: yes
+
 router.post '/signup', multidataParser, (request, response, next) ->
     if request.session.authenticated?
         throw new errors.AlreadyAuthenticatedError()
