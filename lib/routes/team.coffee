@@ -15,6 +15,7 @@ validator = new Validator.Validator()
 router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
 errors = require '../utils/errors'
+_ = require 'underscore'
 
 
 router.get '/logo/:teamId', (request, response) ->
@@ -115,6 +116,24 @@ router.post '/change-email', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
+router.get '/all', (request, response) ->
+    Team.find emailConfirmed: yes, (err, teams) ->
+        if err?
+            logger.error err
+            throw new errors.InternalError()
+        else
+            result = []
+            for team in teams
+                result.push
+                    id: team._id
+                    name: team.name
+                    country: team.country
+                    locality: team.locality
+                    institution: team.institution
+
+            response.json result
+
+
 router.get '/profile/:teamId', (request, response) ->
     Team.findOne _id: request.params.teamId, (err, team) ->
         if err?
@@ -126,8 +145,9 @@ router.get '/profile/:teamId', (request, response) ->
                 country: team.country
                 locality: team.locality
                 institution: team.institution
-            if request.session.authenticated? and request.session.role is 'team' and request.session.identityID == team._id
+            if request.session.authenticated? and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
                 result.email = team.email
+                result.emailConfirmed = team.emailConfirmed
             response.json result
 
 
