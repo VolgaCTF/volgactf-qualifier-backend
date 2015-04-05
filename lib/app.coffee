@@ -5,8 +5,9 @@ cookieParser = require 'cookie-parser'
 session = require 'express-session'
 
 teamRouter = require './routes/team'
-taskRouter = require './routes/task'
-categoryRouter = require './routes/category'
+# taskRouter = require './routes/task'
+# categoryRouter = require './routes/category'
+postRouter = require './routes/post'
 
 SupervisorController = require './controllers/supervisor'
 
@@ -26,6 +27,8 @@ AlreadyAuthenticatedError = errors.AlreadyAuthenticatedError
 InvalidSupervisorCredentialsError = errors.InvalidSupervisorCredentialsError
 NotAuthenticatedError = errors.NotAuthenticatedError
 UnknownIdentityError = errors.UnknownIdentityError
+
+subscriber = require './utils/subscriber'
 
 app = express()
 
@@ -51,6 +54,7 @@ app.use session
         expires: no
 
 app.use '/team', teamRouter
+app.use '/post', postRouter
 # app.use '/task', taskRouter
 # app.use '/category', categoryRouter
 
@@ -117,6 +121,47 @@ app.get '/identity', (request, response, next) ->
             throw new UnknownIdentityError()
     else
         response.json role: 'guest'
+
+
+realtime =
+    connections: []
+
+app.get '/events', (request, response, next) ->
+    request.socket.setTimeout Infinity
+
+    response.writeHead 200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': 'http://' + process.env.DOMAIN,
+        'Access-Control-Allow-Credentials': 'true'
+    }
+    response.write '\n'
+
+    logger.info 'Client opened event stream'
+    realtime.connections.push response
+
+    request.on 'close', ->
+        logger.info 'Client closed event stream'
+        ndx = realtime.connections.indexOf response
+        if ndx > -1
+            realtime.connections.splice ndx, 1
+
+
+subscriber.subscribe 'realtime'
+subscriber.on 'message', (channel, message) ->
+    now = new Date()
+    obj = JSON.parse message
+    name = obj.name
+    obj = _.omit obj, 'name'
+    message = JSON.stringify obj
+    logger.info "Event #{name} - #{message}"
+    logger.info "Sending event to #{realtime.connections.length} clients"
+
+    for connection in realtime.connections
+        connection.write "id: #{now.getTime()}\n"
+        connection.write "event: #{name}\n"
+        connection.write "data: #{message}\n\n"
 
 
 app.use (err, request, response, next) ->

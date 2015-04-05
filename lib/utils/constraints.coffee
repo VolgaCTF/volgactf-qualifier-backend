@@ -16,3 +16,5 @@ module.exports =
     institution: [new Assert().Length(min: 0, max: 150)]
     base64url: [new Assert().Required(), new Assert().Regexp(base64urlRegex, 'g')]
     username: [new Assert().Required(), new Assert().Length(min: 2, max: 100)]
+    postTitle: [new Assert().Required(), new Assert().Length(min: 2, max: 250)]
+    postDescription: [new Assert().Required(), new Assert().Length(min: 1, max: 4096)]
