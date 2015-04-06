@@ -44,6 +44,16 @@ class PostController
                     else
                         callback null, post
 
+                        publishData =
+                            name: 'updatePost'
+                            id: post._id
+                            title: post.title
+                            description: post.description
+                            createdAt: post.createdAt.getTime()
+                            updatedAt: post.updatedAt.getTime()
+
+                        publisher.publish 'realtime', publishData
+
     @remove: (id, callback) ->
         Post.remove _id: id, (err) ->
             if err?

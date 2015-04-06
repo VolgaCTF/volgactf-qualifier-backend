@@ -61,4 +61,25 @@ router.post '/:postId/remove', (request, response, next) ->
             response.json success: yes
 
 
+router.post '/:postId/update', urlencodedParser, (request, response, next) ->
+    if not request.session.authenticated? or not _.contains(['admin', 'manager'], request.session.role)
+        throw new errors.NotAuthenticatedError()
+
+    postId = parseInt request.params.postId, 10
+
+    updateConstraints =
+        title: constraints.postTitle
+        description: constraints.postDescription
+
+    validationResult = validator.validate request.body, updateConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    PostController.update postId, request.body.title, request.body.description, (err, post) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
 module.exports = router
