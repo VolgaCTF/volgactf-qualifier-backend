@@ -20,9 +20,7 @@ _ = require 'underscore'
 
 router.get '/logo/:teamId', (request, response) ->
     Team.findOne _id: request.params.teamId, (err, team) ->
-        if err?
-            response.status(404).send ''
-        else
+        if team?
             filename = path.join process.env.LOGOS_DIR, "team-#{request.params.teamId}.png"
             fs.lstat filename, (err, stats) ->
                 if err?
@@ -30,6 +28,10 @@ router.get '/logo/:teamId', (request, response) ->
                     response.sendFile nologoFilename
                 else
                     response.sendFile filename
+        else
+            if err?
+                logger.error err
+            response.status(404).json 'Team not found!'
 
 
 router.post '/verify-email', urlencodedParser, (request, response, next) ->
@@ -136,9 +138,7 @@ router.get '/all', (request, response) ->
 
 router.get '/profile/:teamId', (request, response) ->
     Team.findOne _id: request.params.teamId, (err, team) ->
-        if err?
-            response.status(404).json 'Team not found!'
-        else
+        if team?
             result =
                 id: team._id
                 name: team.name
@@ -149,6 +149,10 @@ router.get '/profile/:teamId', (request, response) ->
                 result.email = team.email
                 result.emailConfirmed = team.emailConfirmed
             response.json result
+        else
+            if err?
+                logger.error err
+            response.status(404).json 'Team not found!'
 
 
 router.post '/signin', urlencodedParser, (request, response, next) ->
