@@ -866,6 +866,10 @@
       "version": "1.8.2",
       "from": "underscore@",
       "resolved": "https://registry.npmjs.org/underscore/-/underscore-1.8.2.tgz"
+    },
+    "is_js": {
+      "version": "0.7.3",
+      "from": "is_js@"
     }
   }
 }
