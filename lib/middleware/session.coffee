@@ -9,6 +9,13 @@ module.exports.needsToBeUnauthorized = (request, response, next) ->
         next()
 
 
+module.exports.needsToBeAuthorized = (request, response, next) ->
+    if request.session.authenticated
+        next()
+    else
+        throw new errors.NotAuthenticatedError()
+
+
 module.exports.needsToBeAuthorizedTeam = (request, response, next) ->
     if request.session.authenticated and request.session.role is 'team'
         next()

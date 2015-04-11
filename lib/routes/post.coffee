@@ -12,6 +12,9 @@ urlencodedParser = bodyParser.urlencoded extended: no
 router = express.Router()
 
 sessionMiddleware = require '../middleware/session'
+securityMiddleware = require '../middleware/security'
+
+is_ = require 'is_js'
 
 
 router.get '/all', (request, response, next) ->
@@ -31,7 +34,7 @@ router.get '/all', (request, response, next) ->
             response.json result
 
 
-router.post '/create', sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
+router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     createConstraints =
         title: constraints.postTitle
         description: constraints.postDescription
@@ -47,19 +50,24 @@ router.post '/create', sessionMiddleware.needsToBeAuthorizedSupervisor, urlencod
             response.json success: yes
 
 
-router.post '/:postId/remove', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
-    postId = parseInt request.params.postId, 10
+router.param 'postId', (request, response, next, postId) ->
+    id = parseInt postId, 10
+    unless is_.number id
+        throw new errors.ValidationError()
 
-    PostController.remove postId, (err) ->
+    request.postId = id
+    next()
+
+
+router.post '/:postId/remove', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
+    PostController.remove request.postId, (err) ->
         if err?
             next err
         else
             response.json success: yes
 
 
-router.post '/:postId/update', sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
-    postId = parseInt request.params.postId, 10
-
+router.post '/:postId/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     updateConstraints =
         title: constraints.postTitle
         description: constraints.postDescription
@@ -68,7 +76,7 @@ router.post '/:postId/update', sessionMiddleware.needsToBeAuthorizedSupervisor, 
     unless validationResult is true
         throw new errors.ValidationError()
 
-    PostController.update postId, request.body.title, request.body.description, (err, post) ->
+    PostController.update request.postId, request.body.title, request.body.description, (err, post) ->
         if err?
             next err
         else

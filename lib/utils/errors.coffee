@@ -92,3 +92,8 @@ class module.exports.TeamCredentialsTakenError extends module.exports.BaseError
 class module.exports.PostNotFoundError extends module.exports.BaseError
     constructor: ->
         super 'Post not found!', 'PostNotFoundError', 400
+
+
+class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
+    constructor: ->
+        super 'Invalid CSRF token!', 'InvalidCSRFTokenError', 400

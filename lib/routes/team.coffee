@@ -16,95 +16,10 @@ router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
 errors = require '../utils/errors'
 _ = require 'underscore'
+is_ = require 'is_js'
+
 sessionMiddleware = require '../middleware/session'
-
-
-router.get '/logo/:teamId', (request, response) ->
-    Team.findOne _id: request.params.teamId, (err, team) ->
-        if team?
-            filename = path.join process.env.LOGOS_DIR, "team-#{request.params.teamId}.png"
-            fs.lstat filename, (err, stats) ->
-                if err?
-                    nologoFilename = path.join __dirname, '..', '..', 'nologo.png'
-                    response.sendFile nologoFilename
-                else
-                    response.sendFile filename
-        else
-            if err?
-                logger.error err
-            response.status(404).json 'Team not found!'
-
-
-router.post '/verify-email', urlencodedParser, (request, response, next) ->
-    verifyConstraints =
-        team: constraints.base64url
-        code: constraints.base64url
-
-    validationResult = validator.validate request.body, verifyConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
-
-    TeamController.verifyEmail request.body.team, request.body.code, (err) ->
-        if err?
-            next err
-        else
-            response.json success: yes
-
-
-router.post '/change-password', sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
-    changeConstraints =
-        currentPassword: constraints.password
-        newPassword: constraints.password
-
-    validationResult = validator.validate request.body, changeConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
-
-    TeamController.changePassword request.session.identityID, request.body.currentPassword, request.body.newPassword, (err) ->
-        if err?
-            next err
-        else
-            response.json success: yes
-
-
-router.post '/edit-profile', sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
-    editConstraints =
-        country: constraints.country
-        locality: constraints.locality
-        institution: constraints.institution
-
-    validationResult = validator.validate request.body, editConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
-
-    TeamController.editProfile request.session.identityID, request.body.country, request.body.locality, request.body.institution, (err) ->
-        if err?
-            next err
-        else
-            response.json success: yes
-
-
-router.post '/resend-confirmation-email', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
-    TeamController.resendConfirmationEmail request.session.identityID, (err) ->
-        if err?
-            next err
-        else
-            response.json success: yes
-
-
-router.post '/change-email', sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
-    changeConstraints =
-        email: constraints.email
-
-    validationResult = validator.validate request.body, changeConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
-
-    TeamController.changeEmail request.session.identityID, request.body.email, (err) ->
-        if err?
-            next err
-        else
-            response.json success: yes
+securityMiddleware = require '../middleware/security'
 
 
 router.get '/all', (request, response) ->
@@ -125,8 +40,33 @@ router.get '/all', (request, response) ->
             response.json result
 
 
-router.get '/profile/:teamId', (request, response) ->
-    Team.findOne _id: request.params.teamId, (err, team) ->
+router.param 'teamId', (request, response, next, teamId) ->
+    id = parseInt teamId, 10
+    unless is_.number id
+        throw new errors.ValidationError()
+
+    request.teamId = id
+    next()
+
+
+router.get '/:teamId/logo', (request, response) ->
+    Team.findOne _id: request.teamId, (err, team) ->
+        if team?
+            filename = path.join process.env.LOGOS_DIR, "team-#{request.params.teamId}.png"
+            fs.lstat filename, (err, stats) ->
+                if err?
+                    nologoFilename = path.join __dirname, '..', '..', 'nologo.png'
+                    response.sendFile nologoFilename
+                else
+                    response.sendFile filename
+        else
+            if err?
+                logger.error err
+            response.status(404).json 'Team not found!'
+
+
+router.get '/:teamId/profile', (request, response) ->
+    Team.findOne _id: request.teamId, (err, team) ->
         if team?
             result =
                 id: team._id
@@ -134,7 +74,7 @@ router.get '/profile/:teamId', (request, response) ->
                 country: team.country
                 locality: team.locality
                 institution: team.institution
-            if request.session.authenticated? and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
+            if request.session.authenticated and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
                 result.email = team.email
                 result.emailConfirmed = team.emailConfirmed
             response.json result
@@ -144,7 +84,79 @@ router.get '/profile/:teamId', (request, response) ->
             response.status(404).json 'Team not found!'
 
 
-router.post '/signin', sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
+router.post '/verify-email', securityMiddleware.checkToken, urlencodedParser, (request, response, next) ->
+    verifyConstraints =
+        team: constraints.base64url
+        code: constraints.base64url
+
+    validationResult = validator.validate request.body, verifyConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.verifyEmail request.body.team, request.body.code, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/change-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
+    changeConstraints =
+        currentPassword: constraints.password
+        newPassword: constraints.password
+
+    validationResult = validator.validate request.body, changeConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.changePassword request.session.identityID, request.body.currentPassword, request.body.newPassword, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/edit-profile', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
+    editConstraints =
+        country: constraints.country
+        locality: constraints.locality
+        institution: constraints.institution
+
+    validationResult = validator.validate request.body, editConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.editProfile request.session.identityID, request.body.country, request.body.locality, request.body.institution, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/resend-confirmation-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
+    TeamController.resendConfirmationEmail request.session.identityID, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/change-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
+    changeConstraints =
+        email: constraints.email
+
+    validationResult = validator.validate request.body, changeConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.changeEmail request.session.identityID, request.body.email, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/signin', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
     signinConstraints =
         team: constraints.team
         password: constraints.password
@@ -172,7 +184,7 @@ multidataParser = busboy
         files: 1
 
 
-router.post '/upload-logo', sessionMiddleware.needsToBeAuthorizedTeam, multidataParser, (request, response, next) ->
+router.post '/upload-logo', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, multidataParser, (request, response, next) ->
     teamLogo = tmp.fileSync()
 
     request.busboy.on 'file', (fieldName, file, filename, encoding, mimetype) ->
@@ -197,7 +209,8 @@ router.post '/upload-logo', sessionMiddleware.needsToBeAuthorizedTeam, multidata
                         else
                             response.json success: yes
 
-router.post '/signup', sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
+
+router.post '/signup', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
     teamInfo = {}
     teamLogo = tmp.fileSync()
 

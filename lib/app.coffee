@@ -30,6 +30,8 @@ UnknownIdentityError = errors.UnknownIdentityError
 
 subscriber = require './utils/subscriber'
 sessionMiddleware = require './middleware/session'
+tokenUtil = require './utils/token'
+securityMiddleware = require './middleware/security'
 
 app = express()
 
@@ -38,6 +40,7 @@ app.set 'x-powered-by', no
 app.use (request, response, next) ->
     response.header 'Access-Control-Allow-Origin', 'http://' + process.env.DOMAIN
     response.header 'Access-Control-Allow-Credentials', 'true'
+    response.header 'Access-Control-Allow-Headers', 'X-CSRF-Token'
     next()
 
 app.use cookieParser()
@@ -62,7 +65,7 @@ app.use '/post', postRouter
 
 urlencodedParser = bodyParser.urlencoded extended: no
 
-app.post '/login', sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
+app.post '/login', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
     loginConstraints =
         username: constraints.username
         password: constraints.password
@@ -83,10 +86,8 @@ app.post '/login', sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (r
             else
                 next new InvalidSupervisorCredentialsError()
 
-app.post '/signout', (request, response, next) ->
-    unless request.session.authenticated?
-        throw new NotAuthenticatedError()
 
+app.post '/signout', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorized, (request, response, next) ->
     request.session.authenticated = no
     request.session.destroy (err) ->
         if err?
@@ -94,7 +95,11 @@ app.post '/signout', (request, response, next) ->
         else
             response.json success: yes
 
+
 app.get '/identity', (request, response, next) ->
+    token = tokenUtil.encode tokenUtil.generate 32
+    request.session.token = token
+
     if request.session.authenticated?
         if request.session.role is 'team'
             TeamController.get request.session.identityID, (err, team) ->
@@ -106,6 +111,7 @@ app.get '/identity', (request, response, next) ->
                         role: 'team'
                         name: team.name
                         emailConfirmed: team.emailConfirmed
+                        token: token
         else if _.contains ['admin', 'manager'], request.session.role
             SupervisorController.get request.session.identityID, (err, supervisor) ->
                 if err?
@@ -115,10 +121,13 @@ app.get '/identity', (request, response, next) ->
                         id: request.session.identityID
                         role: supervisor.rights
                         name: supervisor.username
+                        token: token
         else
             throw new UnknownIdentityError()
     else
-        response.json role: 'guest'
+        response.json
+            role: 'guest'
+            token: token
 
 
 realtime =
@@ -132,7 +141,8 @@ app.get '/events', (request, response, next) ->
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': 'http://' + process.env.DOMAIN,
-        'Access-Control-Allow-Credentials': 'true'
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Headers', 'X-CSRF-Token'
     }
     response.write '\n'
 
