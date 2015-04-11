@@ -29,6 +29,7 @@ NotAuthenticatedError = errors.NotAuthenticatedError
 UnknownIdentityError = errors.UnknownIdentityError
 
 subscriber = require './utils/subscriber'
+sessionMiddleware = require './middleware/session'
 
 app = express()
 
@@ -61,10 +62,7 @@ app.use '/post', postRouter
 
 urlencodedParser = bodyParser.urlencoded extended: no
 
-app.post '/login', urlencodedParser, (request, response, next) ->
-    if request.session.authenticated?
-        throw new AlreadyAuthenticatedError()
-
+app.post '/login', sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
     loginConstraints =
         username: constraints.username
         password: constraints.password

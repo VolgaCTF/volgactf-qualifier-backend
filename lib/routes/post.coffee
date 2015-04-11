@@ -11,6 +11,8 @@ constraints = require '../utils/constraints'
 urlencodedParser = bodyParser.urlencoded extended: no
 router = express.Router()
 
+sessionMiddleware = require '../middleware/session'
+
 
 router.get '/all', (request, response, next) ->
     PostController.list (err, posts) ->
@@ -29,10 +31,7 @@ router.get '/all', (request, response, next) ->
             response.json result
 
 
-router.post '/create', urlencodedParser, (request, response, next) ->
-    if not request.session.authenticated? or not _.contains(['admin', 'manager'], request.session.role)
-        throw new errors.NotAuthenticatedError()
-
+router.post '/create', sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     createConstraints =
         title: constraints.postTitle
         description: constraints.postDescription
@@ -48,10 +47,7 @@ router.post '/create', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
-router.post '/:postId/remove', (request, response, next) ->
-    if not request.session.authenticated? or not _.contains(['admin', 'manager'], request.session.role)
-        throw new errors.NotAuthenticatedError()
-
+router.post '/:postId/remove', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
     postId = parseInt request.params.postId, 10
 
     PostController.remove postId, (err) ->
@@ -61,10 +57,7 @@ router.post '/:postId/remove', (request, response, next) ->
             response.json success: yes
 
 
-router.post '/:postId/update', urlencodedParser, (request, response, next) ->
-    if not request.session.authenticated? or not _.contains(['admin', 'manager'], request.session.role)
-        throw new errors.NotAuthenticatedError()
-
+router.post '/:postId/update', sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     postId = parseInt request.params.postId, 10
 
     updateConstraints =
