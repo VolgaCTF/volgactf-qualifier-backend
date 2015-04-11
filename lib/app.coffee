@@ -138,11 +138,11 @@ app.get '/events', (request, response, next) ->
     }
     response.write '\n'
 
-    logger.info 'Client opened event stream'
+    # logger.info 'Client opened event stream'
     realtime.connections.push response
 
     request.on 'close', ->
-        logger.info 'Client closed event stream'
+        # logger.info 'Client closed event stream'
         ndx = realtime.connections.indexOf response
         if ndx > -1
             realtime.connections.splice ndx, 1
@@ -155,13 +155,11 @@ subscriber.on 'message', (channel, message) ->
     name = obj.name
     obj = _.omit obj, 'name'
     message = JSON.stringify obj
-    logger.info "Event #{name} - #{message}"
-    logger.info "Sending event to #{realtime.connections.length} clients"
+    # logger.info "Event #{name} - #{message}"
+    # logger.info "Sending event to #{realtime.connections.length} clients"
 
     for connection in realtime.connections
-        connection.write "id: #{now.getTime()}\n"
-        connection.write "event: #{name}\n"
-        connection.write "data: #{message}\n\n"
+        connection.write "id: #{now.getTime()}\nevent: #{name}\ndata: #{message}\n\n"
 
 
 app.use (err, request, response, next) ->
