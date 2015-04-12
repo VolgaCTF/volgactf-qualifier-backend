@@ -23,19 +23,30 @@ securityMiddleware = require '../middleware/security'
 
 
 router.get '/all', (request, response) ->
-    Team.find emailConfirmed: yes, (err, teams) ->
+    isAuthorizedSupervisor = request.session.authenticated and _.contains(['admin', 'manager'], request.session.role)
+    conditions = emailConfirmed: yes
+    if isAuthorizedSupervisor
+        conditions = {}
+
+    Team.find conditions, (err, teams) ->
         if err?
             logger.error err
             throw new errors.InternalError()
         else
             result = []
             for team in teams
-                result.push
+                obj =
                     id: team._id
                     name: team.name
                     country: team.country
                     locality: team.locality
                     institution: team.institution
+
+                if isAuthorizedSupervisor
+                    obj.email = team.email
+                    obj.emailConfirmed = team.emailConfirmed
+
+                result.push obj
 
             response.json result
 
