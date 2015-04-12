@@ -2,7 +2,7 @@ mongoose = require '../utils/mongoose'
 autoIncrement = require 'mongoose-auto-increment'
 
 postSchema = mongoose.Schema
-    title: String
+    title: { type: String, unique: yes }
     description: String
     createdAt: Date
     updatedAt: Date

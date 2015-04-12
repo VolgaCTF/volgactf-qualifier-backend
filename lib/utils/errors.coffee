@@ -94,6 +94,11 @@ class module.exports.PostNotFoundError extends module.exports.BaseError
         super 'Post not found!', 'PostNotFoundError', 400
 
 
+class module.exports.DuplicatePostTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Post title should be unique!', 'DuplicatePostTitleError', 400
+
+
 class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
     constructor: ->
         super 'Invalid CSRF token!', 'InvalidCSRFTokenError', 400

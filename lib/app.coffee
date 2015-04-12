@@ -167,7 +167,7 @@ subscriber.on 'message', (channel, message) ->
     # logger.info "Sending event to #{realtime.connections.length} clients"
 
     for connection in realtime.connections
-        connection.write "id: #{now.getTime()}\nevent: #{name}\ndata: #{message}\n\n"
+        connection.write "id: #{now.getTime()}\nevent: #{name}\nretry: 5000\ndata: #{message}\n\n"
 
 
 app.use (err, request, response, next) ->

@@ -6,53 +6,69 @@ publisher = require '../utils/publisher'
 
 class PostController
     @create: (title, description, callback) ->
-        now = new Date()
-        post = new Post
-            title: title
-            description: description
-            createdAt: now
-            updatedAt: now
-        post.save (err, post) ->
+        Post.find(title: title).count (err, count) ->
             if err?
                 logger.error err
                 callback new errors.InternalError(), null
             else
-                callback null, post
+                if count > 0
+                    callback new errors.DuplicatePostTitleError(), null
+                else
+                    now = new Date()
+                    post = new Post
+                        title: title
+                        description: description
+                        createdAt: now
+                        updatedAt: now
+                    post.save (err, post) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError(), null
+                        else
+                            callback null, post
 
-                publishData =
-                    name: 'createPost'
-                    id: post._id
-                    title: post.title
-                    description: post.description
-                    createdAt: post.createdAt.getTime()
-                    updatedAt: post.updatedAt.getTime()
+                            publishData =
+                                name: 'createPost'
+                                id: post._id
+                                title: post.title
+                                description: post.description
+                                createdAt: post.createdAt.getTime()
+                                updatedAt: post.updatedAt.getTime()
 
-                publisher.publish 'realtime', publishData
+                            publisher.publish 'realtime', publishData
 
     @update: (id, title, description, callback) ->
         PostController.get id, (err, post) ->
             if err?
                 callback err, null
             else
-                post.title = title
-                post.description = description
-                post.updatedAt = new Date()
-                post.save (err, post) ->
+                Post.find(title: title).count (err, count) ->
                     if err?
                         logger.error err
                         callback new errors.InternalError(), null
                     else
-                        callback null, post
+                        if count > 0 and title != post.title
+                            callback new errors.DuplicatePostTitleError(), null
+                        else
+                            post.title = title
+                            post.description = description
+                            post.updatedAt = new Date()
+                            post.save (err, post) ->
+                                if err?
+                                    logger.error err
+                                    callback new errors.InternalError(), null
+                                else
+                                    callback null, post
 
-                        publishData =
-                            name: 'updatePost'
-                            id: post._id
-                            title: post.title
-                            description: post.description
-                            createdAt: post.createdAt.getTime()
-                            updatedAt: post.updatedAt.getTime()
+                                    publishData =
+                                        name: 'updatePost'
+                                        id: post._id
+                                        title: post.title
+                                        description: post.description
+                                        createdAt: post.createdAt.getTime()
+                                        updatedAt: post.updatedAt.getTime()
 
-                        publisher.publish 'realtime', publishData
+                                    publisher.publish 'realtime', publishData
 
     @remove: (id, callback) ->
         Post.remove _id: id, (err) ->
