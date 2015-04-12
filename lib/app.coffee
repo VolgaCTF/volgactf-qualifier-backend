@@ -5,8 +5,9 @@ cookieParser = require 'cookie-parser'
 session = require 'express-session'
 
 teamRouter = require './routes/team'
-taskRouter = require './routes/task'
-categoryRouter = require './routes/category'
+# taskRouter = require './routes/task'
+# categoryRouter = require './routes/category'
+postRouter = require './routes/post'
 
 SupervisorController = require './controllers/supervisor'
 
@@ -27,6 +28,11 @@ InvalidSupervisorCredentialsError = errors.InvalidSupervisorCredentialsError
 NotAuthenticatedError = errors.NotAuthenticatedError
 UnknownIdentityError = errors.UnknownIdentityError
 
+subscriber = require './utils/subscriber'
+sessionMiddleware = require './middleware/session'
+tokenUtil = require './utils/token'
+securityMiddleware = require './middleware/security'
+
 app = express()
 
 app.set 'x-powered-by', no
@@ -34,6 +40,7 @@ app.set 'x-powered-by', no
 app.use (request, response, next) ->
     response.header 'Access-Control-Allow-Origin', 'http://' + process.env.DOMAIN
     response.header 'Access-Control-Allow-Credentials', 'true'
+    response.header 'Access-Control-Allow-Headers', 'X-CSRF-Token'
     next()
 
 app.use cookieParser()
@@ -51,16 +58,14 @@ app.use session
         expires: no
 
 app.use '/team', teamRouter
+app.use '/post', postRouter
 # app.use '/task', taskRouter
 # app.use '/category', categoryRouter
 
 
 urlencodedParser = bodyParser.urlencoded extended: no
 
-app.post '/login', urlencodedParser, (request, response, next) ->
-    if request.session.authenticated?
-        throw new AlreadyAuthenticatedError()
-
+app.post '/login', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
     loginConstraints =
         username: constraints.username
         password: constraints.password
@@ -81,10 +86,8 @@ app.post '/login', urlencodedParser, (request, response, next) ->
             else
                 next new InvalidSupervisorCredentialsError()
 
-app.post '/signout', (request, response, next) ->
-    unless request.session.authenticated?
-        throw new NotAuthenticatedError()
 
+app.post '/signout', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorized, (request, response, next) ->
     request.session.authenticated = no
     request.session.destroy (err) ->
         if err?
@@ -92,7 +95,11 @@ app.post '/signout', (request, response, next) ->
         else
             response.json success: yes
 
+
 app.get '/identity', (request, response, next) ->
+    token = tokenUtil.encode tokenUtil.generate 32
+    request.session.token = token
+
     if request.session.authenticated?
         if request.session.role is 'team'
             TeamController.get request.session.identityID, (err, team) ->
@@ -104,6 +111,7 @@ app.get '/identity', (request, response, next) ->
                         role: 'team'
                         name: team.name
                         emailConfirmed: team.emailConfirmed
+                        token: token
         else if _.contains ['admin', 'manager'], request.session.role
             SupervisorController.get request.session.identityID, (err, supervisor) ->
                 if err?
@@ -113,10 +121,53 @@ app.get '/identity', (request, response, next) ->
                         id: request.session.identityID
                         role: supervisor.rights
                         name: supervisor.username
+                        token: token
         else
             throw new UnknownIdentityError()
     else
-        response.json role: 'guest'
+        response.json
+            role: 'guest'
+            token: token
+
+
+realtime =
+    connections: []
+
+app.get '/events', (request, response, next) ->
+    request.socket.setTimeout Infinity
+
+    response.writeHead 200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': 'http://' + process.env.DOMAIN,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Headers', 'X-CSRF-Token'
+    }
+    response.write '\n'
+
+    # logger.info 'Client opened event stream'
+    realtime.connections.push response
+
+    request.on 'close', ->
+        # logger.info 'Client closed event stream'
+        ndx = realtime.connections.indexOf response
+        if ndx > -1
+            realtime.connections.splice ndx, 1
+
+
+subscriber.subscribe 'realtime'
+subscriber.on 'message', (channel, message) ->
+    now = new Date()
+    obj = JSON.parse message
+    name = obj.name
+    obj = _.omit obj, 'name'
+    message = JSON.stringify obj
+    # logger.info "Event #{name} - #{message}"
+    # logger.info "Sending event to #{realtime.connections.length} clients"
+
+    for connection in realtime.connections
+        connection.write "id: #{now.getTime()}\nevent: #{name}\ndata: #{message}\n\n"
 
 
 app.use (err, request, response, next) ->

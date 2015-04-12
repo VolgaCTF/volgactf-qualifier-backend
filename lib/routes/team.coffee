@@ -16,13 +16,53 @@ router = express.Router()
 urlencodedParser = bodyParser.urlencoded extended: no
 errors = require '../utils/errors'
 _ = require 'underscore'
+is_ = require 'is_js'
+
+sessionMiddleware = require '../middleware/session'
+securityMiddleware = require '../middleware/security'
 
 
-router.get '/logo/:teamId', (request, response) ->
-    Team.findOne _id: request.params.teamId, (err, team) ->
+router.get '/all', (request, response) ->
+    isAuthorizedSupervisor = request.session.authenticated and _.contains(['admin', 'manager'], request.session.role)
+    conditions = emailConfirmed: yes
+    if isAuthorizedSupervisor
+        conditions = {}
+
+    Team.find conditions, (err, teams) ->
         if err?
-            response.status(404).send ''
+            logger.error err
+            throw new errors.InternalError()
         else
+            result = []
+            for team in teams
+                obj =
+                    id: team._id
+                    name: team.name
+                    country: team.country
+                    locality: team.locality
+                    institution: team.institution
+
+                if isAuthorizedSupervisor
+                    obj.email = team.email
+                    obj.emailConfirmed = team.emailConfirmed
+
+                result.push obj
+
+            response.json result
+
+
+router.param 'teamId', (request, response, next, teamId) ->
+    id = parseInt teamId, 10
+    unless is_.number id
+        throw new errors.ValidationError()
+
+    request.teamId = id
+    next()
+
+
+router.get '/:teamId/logo', (request, response) ->
+    Team.findOne _id: request.teamId, (err, team) ->
+        if team?
             filename = path.join process.env.LOGOS_DIR, "team-#{request.params.teamId}.png"
             fs.lstat filename, (err, stats) ->
                 if err?
@@ -30,9 +70,32 @@ router.get '/logo/:teamId', (request, response) ->
                     response.sendFile nologoFilename
                 else
                     response.sendFile filename
+        else
+            if err?
+                logger.error err
+            response.status(404).json 'Team not found!'
 
 
-router.post '/verify-email', urlencodedParser, (request, response, next) ->
+router.get '/:teamId/profile', (request, response) ->
+    Team.findOne _id: request.teamId, (err, team) ->
+        if team?
+            result =
+                id: team._id
+                name: team.name
+                country: team.country
+                locality: team.locality
+                institution: team.institution
+            if request.session.authenticated and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
+                result.email = team.email
+                result.emailConfirmed = team.emailConfirmed
+            response.json result
+        else
+            if err?
+                logger.error err
+            response.status(404).json 'Team not found!'
+
+
+router.post '/verify-email', securityMiddleware.checkToken, urlencodedParser, (request, response, next) ->
     verifyConstraints =
         team: constraints.base64url
         code: constraints.base64url
@@ -48,10 +111,7 @@ router.post '/verify-email', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
-router.post '/change-password', urlencodedParser, (request, response, next) ->
-    if not request.session.authenticated? or not request.session.role is 'team'
-        throw new errors.NotAuthenticatedError()
-
+router.post '/change-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
     changeConstraints =
         currentPassword: constraints.password
         newPassword: constraints.password
@@ -67,10 +127,7 @@ router.post '/change-password', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
-router.post '/edit-profile', urlencodedParser, (request, response, next) ->
-    if not request.session.authenticated? or not request.session.role is 'team'
-        throw new errors.NotAuthenticatedError()
-
+router.post '/edit-profile', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
     editConstraints =
         country: constraints.country
         locality: constraints.locality
@@ -87,10 +144,7 @@ router.post '/edit-profile', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
-router.post '/resend-confirmation-email', (request, response, next) ->
-    if not request.session.authenticated? or not request.session.role is 'team'
-        throw new errors.NotAuthenticatedError()
-
+router.post '/resend-confirmation-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
     TeamController.resendConfirmationEmail request.session.identityID, (err) ->
         if err?
             next err
@@ -98,10 +152,7 @@ router.post '/resend-confirmation-email', (request, response, next) ->
             response.json success: yes
 
 
-router.post '/change-email', urlencodedParser, (request, response, next) ->
-    if not request.session.authenticated? or not request.session.role is 'team'
-        throw new errors.NotAuthenticatedError()
-
+router.post '/change-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
     changeConstraints =
         email: constraints.email
 
@@ -116,45 +167,7 @@ router.post '/change-email', urlencodedParser, (request, response, next) ->
             response.json success: yes
 
 
-router.get '/all', (request, response) ->
-    Team.find emailConfirmed: yes, (err, teams) ->
-        if err?
-            logger.error err
-            throw new errors.InternalError()
-        else
-            result = []
-            for team in teams
-                result.push
-                    id: team._id
-                    name: team.name
-                    country: team.country
-                    locality: team.locality
-                    institution: team.institution
-
-            response.json result
-
-
-router.get '/profile/:teamId', (request, response) ->
-    Team.findOne _id: request.params.teamId, (err, team) ->
-        if err?
-            response.status(404).json 'Team not found!'
-        else
-            result =
-                id: team._id
-                name: team.name
-                country: team.country
-                locality: team.locality
-                institution: team.institution
-            if request.session.authenticated? and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
-                result.email = team.email
-                result.emailConfirmed = team.emailConfirmed
-            response.json result
-
-
-router.post '/signin', urlencodedParser, (request, response, next) ->
-    if request.session.authenticated?
-        throw new errors.AlreadyAuthenticatedError()
-
+router.post '/signin', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
     signinConstraints =
         team: constraints.team
         password: constraints.password
@@ -182,10 +195,7 @@ multidataParser = busboy
         files: 1
 
 
-router.post '/upload-logo', multidataParser, (request, response, next) ->
-    if not request.session.authenticated? or not request.session.role is 'team'
-        throw new errors.NotAuthenticatedError()
-
+router.post '/upload-logo', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, multidataParser, (request, response, next) ->
     teamLogo = tmp.fileSync()
 
     request.busboy.on 'file', (fieldName, file, filename, encoding, mimetype) ->
@@ -210,10 +220,8 @@ router.post '/upload-logo', multidataParser, (request, response, next) ->
                         else
                             response.json success: yes
 
-router.post '/signup', multidataParser, (request, response, next) ->
-    if request.session.authenticated?
-        throw new errors.AlreadyAuthenticatedError()
 
+router.post '/signup', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
     teamInfo = {}
     teamLogo = tmp.fileSync()
 

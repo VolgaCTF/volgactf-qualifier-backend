@@ -87,3 +87,13 @@ class module.exports.ImageAspectRatioError extends module.exports.BaseError
 class module.exports.TeamCredentialsTakenError extends module.exports.BaseError
     constructor: ->
         super 'Specified credentials (team name and/or email) already taken!', 'TeamCredentialsTakenError', 400
+
+
+class module.exports.PostNotFoundError extends module.exports.BaseError
+    constructor: ->
+        super 'Post not found!', 'PostNotFoundError', 400
+
+
+class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
+    constructor: ->
+        super 'Invalid CSRF token!', 'InvalidCSRFTokenError', 400
