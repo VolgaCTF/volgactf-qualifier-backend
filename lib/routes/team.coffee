@@ -41,6 +41,7 @@ router.get '/all', (request, response) ->
                     country: team.country
                     locality: team.locality
                     institution: team.institution
+                    createdAt: team.createdAt.getTime()
 
                 if isAuthorizedSupervisor
                     obj.email = team.email
@@ -85,6 +86,8 @@ router.get '/:teamId/profile', (request, response) ->
                 country: team.country
                 locality: team.locality
                 institution: team.institution
+                createdAt: team.createdAt.getTime()
+
             if request.session.authenticated and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
                 result.email = team.email
                 result.emailConfirmed = team.emailConfirmed
