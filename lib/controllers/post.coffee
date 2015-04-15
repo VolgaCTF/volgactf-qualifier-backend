@@ -2,9 +2,18 @@ Post = require '../models/post'
 logger = require '../utils/logger'
 errors = require '../utils/errors'
 publisher = require '../utils/publisher'
+_ = require 'underscore'
 
 
 class PostController
+    @serialize: (post) ->
+        result =
+            id: post._id
+            title: post.title
+            description: post.description
+            createdAt: post.createdAt.getTime()
+            updatedAt: post.updatedAt.getTime()
+
     @create: (title, description, callback) ->
         Post.find(title: title).count (err, count) ->
             if err?
@@ -29,11 +38,7 @@ class PostController
 
                             publishData =
                                 name: 'createPost'
-                                id: post._id
-                                title: post.title
-                                description: post.description
-                                createdAt: post.createdAt.getTime()
-                                updatedAt: post.updatedAt.getTime()
+                                post: PostController.serialize post
 
                             publisher.publish 'realtime', publishData
 
@@ -62,11 +67,7 @@ class PostController
 
                                     publishData =
                                         name: 'updatePost'
-                                        id: post._id
-                                        title: post.title
-                                        description: post.description
-                                        createdAt: post.createdAt.getTime()
-                                        updatedAt: post.updatedAt.getTime()
+                                        post: PostController.serialize post
 
                                     publisher.publish 'realtime', publishData
 
@@ -76,7 +77,7 @@ class PostController
                 callback new errors.PostNotFoundError()
             else
                 callback null
-                publisher.publish 'realtime', { name: 'removePost', id: id }
+                publisher.publish 'realtime', { name: 'removePost', post: id: id }
 
     @list: (callback) ->
         Post.find (err, posts) ->
