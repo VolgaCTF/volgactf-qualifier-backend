@@ -7,6 +7,56 @@ queue = require '../utils/queue'
 token = require '../utils/token'
 logger = require '../utils/logger'
 errors = require '../utils/errors'
+publisher = require '../utils/publisher'
+BaseEvent = require('../utils/events').BaseEvent
+
+
+serializeTeam = (team, exposeEmail=no) ->
+    obj =
+        id: team._id
+        name: team.name
+        country: team.country
+        locality: team.locality
+        institution: team.institution
+        createdAt: team.createdAt.getTime()
+
+    if exposeEmail
+        obj.email = team.email
+        obj.emailConfirmed = team.emailConfirmed
+
+    obj
+
+
+class UpdateTeamProfileEvent extends BaseEvent
+    constructor: (team) ->
+        super 'updateTeamProfile'
+        publicData = serializeTeam team
+        @data.guests = publicData
+        @data.teams = publicData
+
+        @data.supervisors = serializeTeam team, yes
+
+
+class QualifyTeamEvent extends BaseEvent
+    constructor: (team) ->
+        super 'qualifyTeam'
+        publicData = serializeTeam team
+        @data.guests = publicData
+        @data.teams = publicData
+
+        @data.supervisors = serializeTeam team, yes
+
+
+class CreateTeamEvent extends BaseEvent
+    constructor: (team) ->
+        super 'createTeam'
+        @data.supervisors = serializeTeam team, yes
+
+
+class ChangeTeamEmailEvent extends BaseEvent
+    constructor: (team) ->
+        super 'changeTeamEmail'
+        @data.supervisors = serializeTeam team, yes
 
 
 class TeamController
@@ -50,6 +100,7 @@ class TeamController
                                         token: team.emailConfirmationToken
 
                                     callback null
+                                    publisher.publish 'realtime', new CreateTeamEvent team
 
     @signin: (name, password, callback) ->
         Team.findOne name: name, (err, team) ->
@@ -120,6 +171,7 @@ class TeamController
                                             token: team.emailConfirmationToken
 
                                         callback null
+                                        publisher.publish 'realtime', new ChangeTeamEmailEvent team
 
     @editProfile: (id, country, locality, institution, callback) ->
         TeamController.get id, (err, team) ->
@@ -135,6 +187,7 @@ class TeamController
                         callback new errors.InternalError()
                     else
                         callback null
+                        publisher.publish 'realtime', new UpdateTeamProfileEvent team
 
     @changeLogo: (id, logoFilename, callback) ->
         TeamController.get id, (err, team) ->
@@ -199,6 +252,7 @@ class TeamController
                         callback new errors.InternalError()
                     else
                         callback null
+                        publisher.publish 'realtime', new QualifyTeamEvent team
             else
                 callback new errors.InvalidVerificationURLError()
 

@@ -34,6 +34,19 @@ module.exports.needsToBeAuthorizedSupervisor = (request, response, next) ->
         throw new errors.NotAuthenticatedError()
 
 
+module.exports.detectScope = (request, response, next) ->
+    if request.session.authenticated
+        if request.session.role == 'team'
+            request.scope = 'teams'
+        else if _.contains ['admin', 'manager'], request.session.role
+            request.scope = 'supervisors'
+        else
+            request.scope = null
+    else
+        request.scope = 'guests'
+    next()
+
+
 module.exports.main = session
     store: new RedisStore client: redis.createClient()
     secret: process.env.SESSION_SECRET

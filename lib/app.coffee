@@ -67,12 +67,22 @@ app.post '/signout', securityMiddleware.checkToken, sessionMiddleware.needsToBeA
             response.json success: yes
 
 
-app.get '/identity', (request, response, next) ->
+app.get '/identity', sessionMiddleware.detectScope, (request, response, next) ->
     token = tokenUtil.encode tokenUtil.generate 32
     request.session.token = token
 
-    if request.session.authenticated?
-        if request.session.role is 'team'
+    switch request.scope
+        when 'supervisors'
+            SupervisorController.get request.session.identityID, (err, supervisor) ->
+                if err?
+                    next err
+                else
+                    response.json
+                        id: request.session.identityID
+                        role: supervisor.rights
+                        name: supervisor.username
+                        token: token
+        when 'teams'
             TeamController.get request.session.identityID, (err, team) ->
                 if err?
                     next err
@@ -83,25 +93,18 @@ app.get '/identity', (request, response, next) ->
                         name: team.name
                         emailConfirmed: team.emailConfirmed
                         token: token
-        else if _.contains ['admin', 'manager'], request.session.role
-            SupervisorController.get request.session.identityID, (err, supervisor) ->
-                if err?
-                    next err
-                else
-                    response.json
-                        id: request.session.identityID
-                        role: supervisor.rights
-                        name: supervisor.username
-                        token: token
+        when 'guests'
+            response.json
+                role: 'guest'
+                token: token
         else
             throw new errors.UnknownIdentityError()
-    else
-        response.json
-            role: 'guest'
-            token: token
 
 
-app.get '/events', (request, response, next) ->
+app.get '/events', sessionMiddleware.detectScope, (request, response, next) ->
+    unless request.scope?
+        throw new errors.UnknownIdentityError()
+
     request.socket.setTimeout Infinity
 
     response.writeHead 200, {
@@ -117,9 +120,9 @@ app.get '/events', (request, response, next) ->
     pushEventFunc = (data) ->
         response.write data
 
-    eventStream.on 'message', pushEventFunc
+    eventStream.on "message:#{request.scope}", pushEventFunc
 
-    request.once 'end', ->
+    request.once 'close', ->
         eventStream.removeListener 'message', pushEventFunc
 
 

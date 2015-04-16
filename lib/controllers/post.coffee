@@ -3,17 +3,46 @@ logger = require '../utils/logger'
 errors = require '../utils/errors'
 publisher = require '../utils/publisher'
 _ = require 'underscore'
+BaseEvent = require('../utils/events').BaseEvent
+
+
+serializePost = (post) ->
+    result =
+        id: post._id
+        title: post.title
+        description: post.description
+        createdAt: post.createdAt.getTime()
+        updatedAt: post.updatedAt.getTime()
+
+
+class CreatePostEvent extends BaseEvent
+    constructor: (post) ->
+        super 'createPost'
+        postData = serializePost post
+        @data.supervisors = postData
+        @data.teams = postData
+        @data.guests = postData
+
+
+class UpdatePostEvent extends BaseEvent
+    constructor: (post) ->
+        super 'updatePost'
+        postData = serializePost post
+        @data.supervisors = postData
+        @data.teams = postData
+        @data.guests = postData
+
+
+class RemovePostEvent extends BaseEvent
+    constructor: (postId) ->
+        super 'removePost'
+        postData = id: postId
+        @data.supervisors postData
+        @data.teams = postData
+        @data.guests = postData
 
 
 class PostController
-    @serialize: (post) ->
-        result =
-            id: post._id
-            title: post.title
-            description: post.description
-            createdAt: post.createdAt.getTime()
-            updatedAt: post.updatedAt.getTime()
-
     @create: (title, description, callback) ->
         Post.find(title: title).count (err, count) ->
             if err?
@@ -36,11 +65,7 @@ class PostController
                         else
                             callback null, post
 
-                            publishData =
-                                name: 'createPost'
-                                post: PostController.serialize post
-
-                            publisher.publish 'realtime', publishData
+                            publisher.publish 'realtime', new CreatePostEvent post
 
     @update: (id, title, description, callback) ->
         PostController.get id, (err, post) ->
@@ -65,11 +90,7 @@ class PostController
                                 else
                                     callback null, post
 
-                                    publishData =
-                                        name: 'updatePost'
-                                        post: PostController.serialize post
-
-                                    publisher.publish 'realtime', publishData
+                                    publisher.publish 'realtime', new UpdatePostEvent post
 
     @remove: (id, callback) ->
         Post.remove _id: id, (err) ->
@@ -77,7 +98,7 @@ class PostController
                 callback new errors.PostNotFoundError()
             else
                 callback null
-                publisher.publish 'realtime', { name: 'removePost', post: id: id }
+                publisher.publish 'realtime', new RemovePostEvent id
 
     @list: (callback) ->
         Post.find (err, posts) ->

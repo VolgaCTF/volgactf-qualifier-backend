@@ -4,16 +4,32 @@ _ = require 'underscore'
 
 
 class EventStream extends EventEmitter
+    constructor: (maxListeners) ->
+        super()
+        @setMaxListeners maxListeners
+
+    format: (id, name, retry, obj) ->
+        "id: #{id}\nevent: #{name}\nretry: #{retry}\ndata: #{JSON.stringify obj}\n\n"
+
     run: ->
         subscriber.subscribe 'realtime'
-        subscriber.on 'message', (channel, message) =>
-            now = new Date()
-            obj = JSON.parse message
-            name = obj.name
-            obj = _.omit obj, 'name'
-            message = JSON.stringify obj
+        subscriber.on 'message', (channel, data) =>
+            message = JSON.parse data
 
-            @emit 'message', "id: #{now.getTime()}\nevent: #{name}\nretry: 5000\ndata: #{message}\n\n"
+            name = message.name
+            eventId = (new Date()).getTime()
+
+            dataForSupervisors = message.data.supervisors
+            if dataForSupervisors?
+                @emit 'message:supervisors', @format eventId, name, 5000, dataForSupervisors
+
+            dataForTeams = message.data.teams
+            if dataForTeams?
+                @emit 'message:teams', @format eventId, name, 5000, dataForTeams
+
+            dataForGuests = message.data.guests
+            if dataForGuests?
+                @emit 'message:guests', @format eventId, name, 5000, dataForGuests
 
 
-module.exports = new EventStream()
+module.exports = new EventStream 1024
