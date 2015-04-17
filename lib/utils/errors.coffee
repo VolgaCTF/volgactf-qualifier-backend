@@ -102,3 +102,8 @@ class module.exports.DuplicatePostTitleError extends module.exports.BaseError
 class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
     constructor: ->
         super 'Invalid CSRF token!', 'InvalidCSRFTokenError', 400
+
+
+class module.exports.ContestNotInitializedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest not initialized!', 'ContestNotInitializedError', 400
