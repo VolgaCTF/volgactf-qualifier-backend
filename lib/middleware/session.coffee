@@ -34,6 +34,13 @@ module.exports.needsToBeAuthorizedSupervisor = (request, response, next) ->
         throw new errors.NotAuthenticatedError()
 
 
+module.exports.needsToBeAuthorizedAdmin = (request, response, next) ->
+    if request.session.authenticated and request.session.role is 'admin'
+        next()
+    else
+        throw new errors.NotAuthenticatedError()
+
+
 module.exports.detectScope = (request, response, next) ->
     if request.session.authenticated
         if request.session.role == 'team'
