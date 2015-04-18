@@ -60,3 +60,12 @@ module.exports =
         new Assert().Required()
         new Assert().InstanceOf Date
     ]
+    taskCategoryTitle: [
+        new Assert().Required()
+        new Assert().Callback is_.string
+        new Assert().Length min: 2, max: 20
+    ]
+    taskCategoryDescription: [
+        new Assert().Callback is_.string
+        new Assert().Length min: 0, max: 150
+    ]

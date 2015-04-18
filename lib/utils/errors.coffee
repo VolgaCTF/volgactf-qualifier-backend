@@ -107,3 +107,13 @@ class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
 class module.exports.ContestNotInitializedError extends module.exports.BaseError
     constructor: ->
         super 'Contest not initialized!', 'ContestNotInitializedError', 400
+
+
+class module.exports.TaskCategoryNotFoundError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category not found!', 'TaskCategoryNotFoundError', 400
+
+
+class module.exports.DuplicateTaskCategoryTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category title should be unique!', 'DuplicateTaskCategoryTitleError', 400

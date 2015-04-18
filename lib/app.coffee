@@ -6,6 +6,7 @@ cookieParser = require 'cookie-parser'
 teamRouter = require './routes/team'
 postRouter = require './routes/post'
 contestRouter = require './routes/contest'
+taskRouter = require './routes/task'
 
 SupervisorController = require './controllers/supervisor'
 
@@ -34,6 +35,7 @@ app.use sessionMiddleware.main
 app.use '/team', teamRouter
 app.use '/post', postRouter
 app.use '/contest', contestRouter
+app.use '/task', taskRouter
 
 
 urlencodedParser = bodyParser.urlencoded extended: no
