@@ -1,4 +1,11 @@
+_ = require 'underscore'
+
 Contest = require '../models/contest'
+TeamScore = require '../models/team-score'
+TaskCategory = require '../models/task-category'
+
+TeamController = require '../controllers/team'
+
 errors = require '../utils/errors'
 constants = require '../utils/constants'
 logger = require '../utils/logger'
@@ -33,12 +40,39 @@ class ContestController
                 # Warning: this can be null. This is a normal situation.
                 callback null, contest
 
+    @getScores: (callback) ->
+        TeamController.listQualified (err, teams) ->
+            if err?
+                callback err, null
+            else
+                TeamScore.find {}, (err, teamScores) ->
+                    if err?
+                        callback err, null
+                    else
+                        result = _.map teams, (team) ->
+                            teamScore = _.findWhere teamScores, team: team.id
+                            unless teamScore?
+                                teamScore =
+                                    team: team._id
+                                    score: 0
+                                    updatedAt: null
+
+                            return teamScore
+
+                        callback null, result
+
     @update: (state, startsAt, finishesAt, callback) ->
         ContestController.get (err, contest) ->
             if err?
                 callback err, null
             else
-                # if state is constants.CONTEST_INITIAL
+                if state is constants.CONTEST_INITIAL
+                    if contest? and contest.state != state
+                        TaskCategory.remove {}, (err) ->
+                            if err?
+                                logger.error err
+                                callback new errors.InternalError(), null
+                                return
 
                 if contest?
                     contest.state = state

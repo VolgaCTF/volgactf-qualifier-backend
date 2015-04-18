@@ -21,35 +21,23 @@ is_ = require 'is_js'
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
 
+teamSerializer = require '../serializers/team'
 
-router.get '/all', (request, response) ->
-    isAuthorizedSupervisor = request.session.authenticated and _.contains(['admin', 'manager'], request.session.role)
-    conditions = emailConfirmed: yes
-    if isAuthorizedSupervisor
-        conditions = {}
 
-    Team.find conditions, (err, teams) ->
-        if err?
-            logger.error err
-            throw new errors.InternalError()
-        else
-            result = []
-            for team in teams
-                obj =
-                    id: team._id
-                    name: team.name
-                    country: team.country
-                    locality: team.locality
-                    institution: team.institution
-                    createdAt: team.createdAt.getTime()
+router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->
+    onFetch = (exposeEmail) ->
+        serializer = _.partial teamSerializer, _, exposeEmail: exposeEmail
+        (err, teams) ->
+            if err?
+                logger.error err
+                next new errors.InternalError()
+            else
+                response.json _.map teams, serializer
 
-                if isAuthorizedSupervisor
-                    obj.email = team.email
-                    obj.emailConfirmed = team.emailConfirmed
-
-                result.push obj
-
-            response.json result
+    if request.scope == 'supervisors'
+        TeamController.list onFetch yes
+    else
+        TeamController.listQualified onFetch no
 
 
 router.param 'teamId', (request, response, next, teamId) ->

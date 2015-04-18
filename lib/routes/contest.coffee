@@ -16,6 +16,10 @@ sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
 logger = require '../utils/logger'
 is_ = require 'is_js'
+_ = require 'underscore'
+
+teamScoreSerializer = require '../serializers/team-score'
+
 
 router.get '/', (request, response, next) ->
     ContestController.get (err, contest) ->
@@ -34,6 +38,14 @@ router.get '/', (request, response, next) ->
                     finishesAt: null
 
             response.json result
+
+
+router.get '/scores', (request, response, next) ->
+    ContestController.getScores (err, teamScores) ->
+        if err?
+            next err
+        else
+            response.json _.map teamScores, teamScoreSerializer
 
 
 router.post '/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->

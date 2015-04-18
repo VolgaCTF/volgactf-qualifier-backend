@@ -10,53 +10,39 @@ errors = require '../utils/errors'
 publisher = require '../utils/publisher'
 BaseEvent = require('../utils/events').BaseEvent
 
-
-serializeTeam = (team, exposeEmail=no) ->
-    obj =
-        id: team._id
-        name: team.name
-        country: team.country
-        locality: team.locality
-        institution: team.institution
-        createdAt: team.createdAt.getTime()
-
-    if exposeEmail
-        obj.email = team.email
-        obj.emailConfirmed = team.emailConfirmed
-
-    obj
+teamSerializer = require '../serializers/team'
 
 
 class UpdateTeamProfileEvent extends BaseEvent
     constructor: (team) ->
         super 'updateTeamProfile'
-        publicData = serializeTeam team
+        publicData = teamSerializer team
         @data.guests = publicData
         @data.teams = publicData
 
-        @data.supervisors = serializeTeam team, yes
+        @data.supervisors = teamSerializer team, exposeEmail: yes
 
 
 class QualifyTeamEvent extends BaseEvent
     constructor: (team) ->
         super 'qualifyTeam'
-        publicData = serializeTeam team
+        publicData = teamSerializer team
         @data.guests = publicData
         @data.teams = publicData
 
-        @data.supervisors = serializeTeam team, yes
+        @data.supervisors = teamSerializer team, exposeEmail: yes
 
 
 class CreateTeamEvent extends BaseEvent
     constructor: (team) ->
         super 'createTeam'
-        @data.supervisors = serializeTeam team, yes
+        @data.supervisors = teamSerializer team, exposeEmail: yes
 
 
 class ChangeTeamEmailEvent extends BaseEvent
     constructor: (team) ->
         super 'changeTeamEmail'
-        @data.supervisors = serializeTeam team, yes
+        @data.supervisors = teamSerializer team, exposeEmail: yes
 
 
 class TeamController
@@ -229,6 +215,14 @@ class TeamController
         Team.find (err, teams) ->
             if err?
                 callback err, null
+            else
+                callback null, teams
+
+    @listQualified: (callback) ->
+        Team.find emailConfirmed: yes, (err, teams) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
             else
                 callback null, teams
 

@@ -15,6 +15,9 @@ sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
 
 is_ = require 'is_js'
+_ = require 'underscore'
+
+postSerializer = require '../serializers/post'
 
 
 router.get '/all', (request, response, next) ->
@@ -22,16 +25,7 @@ router.get '/all', (request, response, next) ->
         if err?
             next err
         else
-            result = []
-            for post in posts
-                result.push
-                    id: post._id
-                    title: post.title
-                    description: post.description
-                    createdAt: post.createdAt.getTime()
-                    updatedAt: post.updatedAt.getTime()
-
-            response.json result
+            response.json _.map posts, postSerializer
 
 
 router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->

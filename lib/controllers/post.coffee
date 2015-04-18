@@ -5,20 +5,13 @@ publisher = require '../utils/publisher'
 _ = require 'underscore'
 BaseEvent = require('../utils/events').BaseEvent
 
-
-serializePost = (post) ->
-    result =
-        id: post._id
-        title: post.title
-        description: post.description
-        createdAt: post.createdAt.getTime()
-        updatedAt: post.updatedAt.getTime()
+postSerializer = require '../serializers/post'
 
 
 class CreatePostEvent extends BaseEvent
     constructor: (post) ->
         super 'createPost'
-        postData = serializePost post
+        postData = postSerializer post
         @data.supervisors = postData
         @data.teams = postData
         @data.guests = postData
@@ -27,7 +20,7 @@ class CreatePostEvent extends BaseEvent
 class UpdatePostEvent extends BaseEvent
     constructor: (post) ->
         super 'updatePost'
-        postData = serializePost post
+        postData = postSerializer post
         @data.supervisors = postData
         @data.teams = postData
         @data.guests = postData
@@ -37,7 +30,7 @@ class RemovePostEvent extends BaseEvent
     constructor: (postId) ->
         super 'removePost'
         postData = id: postId
-        @data.supervisors postData
+        @data.supervisors = postData
         @data.teams = postData
         @data.guests = postData
 
