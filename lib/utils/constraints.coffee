@@ -1,4 +1,6 @@
-Assert = require('validator.js').Assert
+Validator = require 'validator.js'
+Assert = Validator.Assert
+Constraint = Validator.Constraint
 is_ = require 'is_js'
 
 constants = require './constants'
@@ -50,7 +52,7 @@ module.exports =
     postDescription: [
         new Assert().Required()
         new Assert().Callback is_.string
-        new Assert().Length min: 1, max: 4096
+        new Assert().Length min: 2, max: 4096
     ]
     contestState: [
         new Assert().Required()
@@ -68,4 +70,41 @@ module.exports =
     taskCategoryDescription: [
         new Assert().Callback is_.string
         new Assert().Length min: 0, max: 150
+    ]
+    taskTitle: [
+        new Assert().Required()
+        new Assert().Callback is_.string
+        new Assert().Length min: 2, max: 50
+    ]
+    taskDescription: [
+        new Assert().Required()
+        new Assert().Callback is_.string
+        new Assert().Length min: 2, max: 4096
+    ]
+    taskHints: [
+        new Assert().Callback is_.all.string
+        new Assert().Length min: 0, max: constants.TASK_MAX_HINTS
+    ]
+    taskValue: [
+        new Assert().Required()
+        new Assert().Range constants.TASK_MIN_VALUE, constants.TASK_MAX_VALUE
+    ]
+    taskCategories: [
+        new Assert().Required()
+        new Assert().Callback is_.all.number
+        new Assert().Length min: 0, max: constants.TASK_MAX_CATEGORIES
+    ]
+    taskAnswers: [
+        new Assert().Required()
+        new Assert().Callback is_.all.string
+        new Assert().Length min: 1, max: constants.TASK_MAX_ANSWERS
+    ]
+    taskCaseSensitive: [
+        new Assert().Required()
+        new Assert().Range 0, 1
+    ]
+    taskAnswer: [
+        new Assert().Required()
+        new Assert().Callback is_.string
+        new Assert().Length min: 2, max: 256
     ]

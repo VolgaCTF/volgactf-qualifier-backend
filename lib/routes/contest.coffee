@@ -44,7 +44,7 @@ router.post '/update', securityMiddleware.checkToken, sessionMiddleware.needsToB
     if is_.number valState
         request.body.state = valState
     else
-        throw new ValidationError()
+        throw new errors.ValidationError()
 
     valStartsAt = parseInt request.body.startsAt, 10
     if is_.number valStartsAt

@@ -122,3 +122,18 @@ class module.exports.DuplicateTaskCategoryTitleError extends module.exports.Base
 class module.exports.ContestFinishedError extends module.exports.BaseError
     constructor: ->
         super 'Contest has finished!', 'ContestFinishedError', 400
+
+
+class module.exports.DuplicateTaskTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Task title should be unique!', 'DuplicateTaskTitleError', 400
+
+
+class module.exports.TaskNotFoundError extends module.exports.BaseError
+    constructor: ->
+        super 'Task not found!', 'TaskNotFoundError', 400
+
+
+class module.exports.WrongTaskAnswerError extends module.exports.BaseError
+    constructor: ->
+        super 'Wrong answer!', 'WrongTaskAnswerError', 400
