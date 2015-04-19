@@ -14,11 +14,13 @@ constants = require '../utils/constants'
 
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
+
 logger = require '../utils/logger'
 is_ = require 'is_js'
 _ = require 'underscore'
 
 teamScoreSerializer = require '../serializers/team-score'
+contestSerializer = require '../serializers/contest'
 
 
 router.get '/', (request, response, next) ->
@@ -26,18 +28,7 @@ router.get '/', (request, response, next) ->
         if err?
             next err
         else
-            if contest?
-                result =
-                    state: contest.state
-                    startsAt: contest.startsAt.getTime()
-                    finishesAt: contest.finishesAt.getTime()
-            else
-                result =
-                    state: constants.CONTEST_INITIAL
-                    startsAt: null
-                    finishesAt: null
-
-            response.json result
+            response.json contestSerializer contest
 
 
 router.get '/scores', (request, response, next) ->

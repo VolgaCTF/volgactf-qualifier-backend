@@ -20,6 +20,7 @@ is_ = require 'is_js'
 
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
+contestMiddleware = require '../middleware/contest'
 
 teamSerializer = require '../serializers/team'
 
@@ -212,7 +213,7 @@ router.post '/upload-logo', securityMiddleware.checkToken, sessionMiddleware.nee
                             response.json success: yes
 
 
-router.post '/signup', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
+router.post '/signup', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
     teamInfo = {}
     teamLogo = tmp.fileSync()
 

@@ -13,18 +13,13 @@ logger = require '../utils/logger'
 publisher = require '../utils/publisher'
 BaseEvent = require('../utils/events').BaseEvent
 
-
-serializeContest = (contest) ->
-    result =
-        state: contest.state
-        startsAt: contest.startsAt.getTime()
-        finishesAt: contest.finishesAt.getTime()
+contestSerializer = require '../serializers/contest'
 
 
 class UpdateContestEvent extends BaseEvent
     constructor: (contest) ->
         super 'updateContest'
-        contestData = serializeContest contest
+        contestData = contestSerializer contest
         @data.supervisors = contestData
         @data.teams = contestData
         @data.guests = contest

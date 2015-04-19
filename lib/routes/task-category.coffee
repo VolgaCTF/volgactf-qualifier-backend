@@ -8,6 +8,7 @@ taskCategorySerializer = require '../serializers/task-category'
 
 securityMiddleware = require '../middleware/security'
 sessionMiddleware = require '../middleware/session'
+contestMiddleware = require '../middleware/contest'
 
 Validator = require 'validator.js'
 validator = new Validator.Validator()
@@ -24,7 +25,7 @@ router.get '/all', (request, response, next) ->
         else
             response.json _.map taskCategories, taskCategorySerializer
 
-router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
+router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
     createConstraints =
         title: constraints.taskCategoryTitle
         description: constraints.taskCategoryDescription
@@ -49,7 +50,7 @@ router.param 'taskCategoryId', (request, response, next, taskCategoryId) ->
     next()
 
 
-router.post '/:taskCategoryId/remove', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
+router.post '/:taskCategoryId/remove', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
     TaskCategoryController.remove request.taskCategoryId, (err) ->
         if err?
             next err
@@ -57,7 +58,7 @@ router.post '/:taskCategoryId/remove', securityMiddleware.checkToken, sessionMid
             response.json success: yes
 
 
-router.post '/:taskCategoryId/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
+router.post '/:taskCategoryId/update', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
     updateConstraints =
         title: constraints.taskCategoryTitle
         description: constraints.taskCategoryDescription
