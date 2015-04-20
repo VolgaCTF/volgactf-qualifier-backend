@@ -16,8 +16,6 @@ class CreateTaskEvent extends BaseEvent
         super 'createTask'
         taskData = taskSerializer task, preview: yes
         @data.supervisors = taskData
-        @data.teams = taskData
-        @data.guests = taskData
 
 
 class TaskController
