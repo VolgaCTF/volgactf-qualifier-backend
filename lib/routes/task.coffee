@@ -84,6 +84,14 @@ router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.
                 next new errors.WrongTaskAnswerError()
 
 
+router.post '/:taskId/open', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
+    TaskController.open request.taskId, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
 router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     valValue = parseInt request.body.value, 10
     if is_.number valValue

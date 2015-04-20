@@ -21,3 +21,14 @@ module.exports.contestNotFinished = (request, response, next) ->
                 next new errors.ContestFinishedError()
             else
                 next()
+
+
+module.exports.contestIsStarted = (request, response, next) ->
+    ContestController.get (err, contest) ->
+        if err?
+            next err
+        else
+            if contest? and contest.isStarted()
+                next()
+            else
+                next new errors.ContestNotStartedError()

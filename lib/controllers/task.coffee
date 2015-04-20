@@ -18,6 +18,15 @@ class CreateTaskEvent extends BaseEvent
         @data.supervisors = taskData
 
 
+class OpenTaskEvent extends BaseEvent
+    constructor: (task) ->
+        super 'openTask'
+        taskData = taskSerializer task, preview: yes
+        @data.supervisors = taskData
+        @data.teams = taskData
+        @data.guests = taskData
+
+
 class TaskController
     @create: (options, callback) ->
         Task.find(title: options.title).count (err, count) ->
@@ -86,6 +95,29 @@ class TaskController
                         break
 
                 callback null, answerCorrect
+
+    @open: (id, callback) ->
+        TaskController.get id, (err, task) ->
+            if err?
+                callback err
+            else
+                unless task.isInitial()
+                    if task.isOpened()
+                        callback new errors.TaskAlreadyOpenedError()
+                    else if task.isClosed()
+                        callback new errors.TaskClosedError()
+                    else
+                        callback new errors.InternalError()
+
+                task.state = constants.TASK_OPENED
+                task.updatedAt = new Date()
+                task.save (err, task) ->
+                    if err?
+                        logger.error err
+                        callback new errors.InternalError()
+                    else
+                        callback null
+                        publisher.publish 'realtime', new OpenTaskEvent task
 
     @get: (id, callback) ->
         Task.findOne _id: id, (err, task) ->

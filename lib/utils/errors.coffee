@@ -137,3 +137,18 @@ class module.exports.TaskNotFoundError extends module.exports.BaseError
 class module.exports.WrongTaskAnswerError extends module.exports.BaseError
     constructor: ->
         super 'Wrong answer!', 'WrongTaskAnswerError', 400
+
+
+class module.exports.ContestNotStartedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest has not started or has already finished!', 'ContestNotStartedError', 400
+
+
+class module.exports.TaskAlreadyOpenedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been already opened!', 'TaskAlreadyOpenedError', 400
+
+
+class module.exports.TaskClosedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been closed!', 'TaskClosedError', 400
