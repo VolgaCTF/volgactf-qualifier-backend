@@ -86,70 +86,58 @@ class TaskController
                 else
                     callback null, tasks
 
-    @checkAnswer: (id, proposedAnswer, callback) ->
-        TaskController.get id, (err, task) ->
-            if err?
-                callback err, null
+    @checkAnswer: (task, proposedAnswer, callback) ->
+        unless task.caseSensitive
+            proposedAnswer = proposedAnswer.toLowerCase()
+
+        answerCorrect = no
+        for answer in task.answers
+            if task.caseSensitive
+                answerCorrect = proposedAnswer == answer
             else
-                unless task.caseSensitive
-                    proposedAnswer = proposedAnswer.toLowerCase()
+                answerCorrect = proposedAnswer == answer.toLowerCase()
+            if answerCorrect
+                break
 
-                answerCorrect = no
-                for answer in task.answers
-                    if task.caseSensitive
-                        answerCorrect = proposedAnswer == answer
-                    else
-                        answerCorrect = proposedAnswer == answer.toLowerCase()
-                    if answerCorrect
-                        break
+        callback null, answerCorrect
 
-                callback null, answerCorrect
-
-    @open: (id, callback) ->
-        TaskController.get id, (err, task) ->
-            if err?
-                callback err
-            else
-                if task.isInitial()
-                    task.state = constants.TASK_OPENED
-                    task.updatedAt = new Date()
-                    task.save (err, task) ->
-                        if err?
-                            logger.error err
-                            callback new errors.InternalError()
-                        else
-                            callback null
-                            publisher.publish 'realtime', new OpenTaskEvent task
+    @open: (task, callback) ->
+        if task.isInitial()
+            task.state = constants.TASK_OPENED
+            task.updatedAt = new Date()
+            task.save (err, task) ->
+                if err?
+                    logger.error err
+                    callback new errors.InternalError()
                 else
-                    if task.isOpened()
-                        callback new errors.TaskAlreadyOpenedError()
-                    else if task.isClosed()
-                        callback new errors.TaskClosedError()
-                    else
-                        callback new errors.InternalError()
-
-    @close: (id, callback) ->
-        TaskController.get id, (err, task) ->
-            if err?
-                callback err
+                    callback null
+                    publisher.publish 'realtime', new OpenTaskEvent task
+        else
+            if task.isOpened()
+                callback new errors.TaskAlreadyOpenedError()
+            else if task.isClosed()
+                callback new errors.TaskClosedError()
             else
-                if task.isOpened()
-                    task.state = constants.TASK_CLOSED
-                    task.updatedAt = new Date()
-                    task.save (err, task) ->
-                        if err?
-                            logger.error err
-                            callback new errors.InternalError()
-                        else
-                            callback null
-                            publisher.publish 'realtime', new CloseTaskEvent task
+                callback new errors.InternalError()
+
+    @close: (task, callback) ->
+        if task.isOpened()
+            task.state = constants.TASK_CLOSED
+            task.updatedAt = new Date()
+            task.save (err, task) ->
+                if err?
+                    logger.error err
+                    callback new errors.InternalError()
                 else
-                    if task.isInitial()
-                        callback new errors.TaskNotOpenedError()
-                    else if task.isClosed()
-                        callback  new errors.TaskAlreadyClosedError()
-                    else
-                        callback new errors.InternalError()
+                    callback null
+                    publisher.publish 'realtime', new CloseTaskEvent task
+        else
+            if task.isInitial()
+                callback new errors.TaskNotOpenedError()
+            else if task.isClosed()
+                callback  new errors.TaskAlreadyClosedError()
+            else
+                callback new errors.InternalError()
 
     @get: (id, callback) ->
         Task.findOne _id: id, (err, task) ->

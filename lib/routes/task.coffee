@@ -5,6 +5,7 @@ categoryRouter = require './task-category'
 securityMiddleware = require '../middleware/security'
 sessionMiddleware = require '../middleware/session'
 contestMiddleware = require '../middleware/contest'
+taskMiddleware = require '../middleware/task'
 
 constraints = require '../utils/constraints'
 logger = require '../utils/logger'
@@ -22,6 +23,7 @@ is_ = require 'is_js'
 _ = require 'underscore'
 
 TaskController = require '../controllers/task'
+TeamTaskProgressController = require '../controllers/team-task-progress'
 taskSerializer = require '../serializers/task'
 constants = require '../utils/constants'
 
@@ -66,7 +68,41 @@ router.get '/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
             response.json taskSerializer task
 
 
-router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
+router.post '/:taskId/submit', sessionMiddleware.detectScope, securityMiddleware.checkToken, contestMiddleware.getState, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
+    guestsEligible = request.scope is 'guests' and request.contest? and request.contest.isFinished()
+    teamsEligible = request.scope is 'teams' and request.contest? and (request.contest.isFinished() or request.contest.isStarted())
+
+    unless guestsEligible or teamsEligible
+        throw new errors.NotAuthenticatedError()
+
+    submitConstraints =
+        answer: constraints.taskAnswer
+
+    validationResult = validator.validate request.body, submitConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TaskController.checkAnswer request.task, request.body.answer, (err, checkResult) ->
+        if err?
+            next err
+        else
+            if checkResult
+                if request.contest.isFinished()
+                    response.json success: yes
+                else
+                    if request.scope is 'teams'
+                        TeamTaskProgressController.create request.session.identityID, request.task, (err, teamTaskProgress) ->
+                            if err?
+                                next err
+                            else
+                                response.json success: yes
+                    else
+                        next new errors.InternalError()
+            else
+                next new errors.WrongTaskAnswerError()
+
+
+router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
     reviseConstraints =
         answer: constraints.taskAnswer
 
@@ -74,7 +110,7 @@ router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.
     unless validationResult is true
         throw new errors.ValidationError()
 
-    TaskController.checkAnswer request.taskId, request.body.answer, (err, checkResult) ->
+    TaskController.checkAnswer request.task, request.body.answer, (err, checkResult) ->
         if err?
             next err
         else
@@ -84,16 +120,16 @@ router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.
                 next new errors.WrongTaskAnswerError()
 
 
-router.post '/:taskId/open', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
-    TaskController.open request.taskId, (err) ->
+router.post '/:taskId/open', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, (request, response, next) ->
+    TaskController.open request.task, (err) ->
         if err?
             next err
         else
             response.json success: yes
 
 
-router.post '/:taskId/close', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
-    TaskController.close request.taskId, (err) ->
+router.post '/:taskId/close', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, (request, response, next) ->
+    TaskController.close request.task, (err) ->
         if err?
             next err
         else
