@@ -92,6 +92,14 @@ router.post '/:taskId/open', contestMiddleware.contestIsStarted, securityMiddlew
             response.json success: yes
 
 
+router.post '/:taskId/close', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->
+    TaskController.close request.taskId, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
 router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
     valValue = parseInt request.body.value, 10
     if is_.number valValue

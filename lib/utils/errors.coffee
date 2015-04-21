@@ -152,3 +152,13 @@ class module.exports.TaskAlreadyOpenedError extends module.exports.BaseError
 class module.exports.TaskClosedError extends module.exports.BaseError
     constructor: ->
         super 'Task has been closed!', 'TaskClosedError', 400
+
+
+class module.exports.TaskNotOpenedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task is not opened now!', 'TaskNotOpenedError', 400
+
+
+class module.exports.TaskAlreadyClosedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been already closed!', 'TaskAlreadyClosedError', 400

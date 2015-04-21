@@ -27,6 +27,15 @@ class OpenTaskEvent extends BaseEvent
         @data.guests = taskData
 
 
+class CloseTaskEvent extends BaseEvent
+    constructor: (task) ->
+        super 'closeTask'
+        taskData = taskSerializer task, preview: yes
+        @data.supervisors = taskData
+        @data.teams = taskData
+        @data.guests = taskData
+
+
 class TaskController
     @create: (options, callback) ->
         Task.find(title: options.title).count (err, count) ->
@@ -101,7 +110,17 @@ class TaskController
             if err?
                 callback err
             else
-                unless task.isInitial()
+                if task.isInitial()
+                    task.state = constants.TASK_OPENED
+                    task.updatedAt = new Date()
+                    task.save (err, task) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError()
+                        else
+                            callback null
+                            publisher.publish 'realtime', new OpenTaskEvent task
+                else
                     if task.isOpened()
                         callback new errors.TaskAlreadyOpenedError()
                     else if task.isClosed()
@@ -109,15 +128,28 @@ class TaskController
                     else
                         callback new errors.InternalError()
 
-                task.state = constants.TASK_OPENED
-                task.updatedAt = new Date()
-                task.save (err, task) ->
-                    if err?
-                        logger.error err
-                        callback new errors.InternalError()
+    @close: (id, callback) ->
+        TaskController.get id, (err, task) ->
+            if err?
+                callback err
+            else
+                if task.isOpened()
+                    task.state = constants.TASK_CLOSED
+                    task.updatedAt = new Date()
+                    task.save (err, task) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError()
+                        else
+                            callback null
+                            publisher.publish 'realtime', new CloseTaskEvent task
+                else
+                    if task.isInitial()
+                        callback new errors.TaskNotOpenedError()
+                    else if task.isClosed()
+                        callback  new errors.TaskAlreadyClosedError()
                     else
-                        callback null
-                        publisher.publish 'realtime', new OpenTaskEvent task
+                        callback new errors.InternalError()
 
     @get: (id, callback) ->
         Task.findOne _id: id, (err, task) ->
