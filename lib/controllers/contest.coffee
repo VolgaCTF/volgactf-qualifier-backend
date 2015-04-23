@@ -16,6 +16,7 @@ publisher = require '../utils/publisher'
 BaseEvent = require('../utils/events').BaseEvent
 
 contestSerializer = require '../serializers/contest'
+teamScoreSerializer = require '../serializers/team-score'
 
 
 class UpdateContestEvent extends BaseEvent
@@ -25,6 +26,15 @@ class UpdateContestEvent extends BaseEvent
         @data.supervisors = contestData
         @data.teams = contestData
         @data.guests = contest
+
+
+class UpdateTeamScoreEvent extends BaseEvent
+    constructor: (teamScore) ->
+        super 'updateTeamScore'
+        teamScoreData = teamScoreSerializer teamScore
+        @data.supervisors = teamScoreData
+        @data.teams = teamScoreData
+        @data.guests = teamScoreData
 
 
 class ContestController
@@ -108,10 +118,8 @@ class ContestController
                                         callback err
                                     else
                                         for team in teams
-                                            logger.info "Team #{team.id}"
                                             teamScore = _.findWhere teamScores, teamId: team._id
                                             taskProgressEntries = _.where teamTaskProgress, teamId: team._id
-                                            logger.info "Found #{taskProgressEntries.length} entries!"
                                             totalScore = 0
                                             lastUpdatedAt = null
 
@@ -142,8 +150,7 @@ class ContestController
                                                     if err?
                                                         logger.error err
                                                     else
-                                                        logger.info "Recalculated score for #{teamScore.teamId}"
-                                                        # TODO: trigger event
+                                                        publisher.publish 'realtime', new UpdateTeamScoreEvent teamScore
 
                                         callback null
 
