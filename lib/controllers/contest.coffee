@@ -5,6 +5,8 @@ TeamScore = require '../models/team-score'
 TaskCategory = require '../models/task-category'
 
 TeamController = require '../controllers/team'
+TeamTaskProgressController = require '../controllers/team-task-progress'
+TaskController = require '../controllers/task'
 
 errors = require '../utils/errors'
 constants = require '../utils/constants'
@@ -45,10 +47,10 @@ class ContestController
                         callback err, null
                     else
                         result = _.map teams, (team) ->
-                            teamScore = _.findWhere teamScores, team: team.id
+                            teamScore = _.findWhere teamScores, teamId: team._id
                             unless teamScore?
                                 teamScore =
-                                    team: team._id
+                                    teamId: team._id
                                     score: 0
                                     updatedAt: null
 
@@ -87,6 +89,63 @@ class ContestController
                         callback null, contest
 
                         publisher.publish 'realtime', new UpdateContestEvent contest
+
+    @updateScores: (callback) ->
+        TeamController.listQualified (err, teams) ->
+            if err?
+                callback err
+            else
+                TeamScore.find {}, (err, teamScores) ->
+                    if err?
+                        callback err
+                    else
+                        TaskController.list (err, tasks) ->
+                            if err?
+                                callback err
+                            else
+                                TeamTaskProgressController.list (err, teamTaskProgress) ->
+                                    if err?
+                                        callback err
+                                    else
+                                        for team in teams
+                                            logger.info "Team #{team.id}"
+                                            teamScore = _.findWhere teamScores, teamId: team._id
+                                            taskProgressEntries = _.where teamTaskProgress, teamId: team._id
+                                            logger.info "Found #{taskProgressEntries.length} entries!"
+                                            totalScore = 0
+                                            lastUpdatedAt = null
+
+                                            for taskProgress in taskProgressEntries
+                                                task = _.findWhere tasks, _id: taskProgress.taskId
+                                                if task?
+                                                    totalScore += task.value
+                                                    if lastUpdatedAt?
+                                                        if lastUpdatedAt.getTime() > taskProgress.createdAt.getTime()
+                                                            lastUpdatedAt = taskProgress.createdAt
+                                                    else
+                                                        lastUpdatedAt = taskProgress.createdAt
+
+                                            needCreate = not teamScore? and totalScore > 0
+                                            needUpdate = teamScore? and totalScore > teamScore.score
+
+                                            if needUpdate
+                                                teamScore.score = totalScore
+                                                teamScore.updatedAt = lastUpdatedAt
+                                            else if needCreate
+                                                teamScore = new TeamScore
+                                                    teamId: team._id
+                                                    score: totalScore
+                                                    updatedAt: lastUpdatedAt
+
+                                            if needUpdate or needCreate
+                                                teamScore.save (err, teamScore) ->
+                                                    if err?
+                                                        logger.error err
+                                                    else
+                                                        logger.info "Recalculated score for #{teamScore.teamId}"
+                                                        # TODO: trigger event
+
+                                        callback null
 
 
 module.exports = ContestController

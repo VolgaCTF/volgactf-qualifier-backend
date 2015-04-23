@@ -23,6 +23,9 @@ securityMiddleware = require '../middleware/security'
 contestMiddleware = require '../middleware/contest'
 
 teamSerializer = require '../serializers/team'
+teamTaskProgressSerializer = require '../serializers/team-task-progress'
+
+teamTaskProgressController = require '../controllers/team-task-progress'
 
 
 router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->
@@ -85,6 +88,17 @@ router.get '/:teamId/profile', (request, response) ->
             if err?
                 logger.error err
             response.status(404).json 'Team not found!'
+
+
+router.get '/:teamId/tasks-progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
+    unless request.teamId == request.session.identityID
+        throw new errors.NotAuthenticatedError()
+
+    teamTaskProgressController.listForTeam request.session.identityID, (err, teamTaskProgress) ->
+        if err?
+            next err
+        else
+            response.json _.map teamTaskProgress, teamTaskProgressSerializer
 
 
 router.post '/verify-email', securityMiddleware.checkToken, urlencodedParser, (request, response, next) ->

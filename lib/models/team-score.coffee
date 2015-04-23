@@ -2,7 +2,7 @@ mongoose = require '../utils/mongoose'
 autoIncrement = require 'mongoose-auto-increment'
 
 teamScoreSchema = mongoose.Schema
-    team: { type: Number, ref: 'Team' }
+    teamId: Number
     score: Number
     updatedAt: Date
 

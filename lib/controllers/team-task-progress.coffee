@@ -10,7 +10,7 @@ class TeamTaskProgressController
             if err?
                 callback err, null
             else
-                TeamTaskProgress.find(team: team, task: task).count (err, count) ->
+                TeamTaskProgress.find(teamId: team._id, taskId: task._id).count (err, count) ->
                     if err?
                         logger.error err
                         callback new errors.InternalError(), null
@@ -19,8 +19,8 @@ class TeamTaskProgressController
                             callback new errors.TaskAlreadySolvedError(), null
                         else
                             teamTaskProgress = new TeamTaskProgress
-                                team: team
-                                task: task
+                                teamId: team._id
+                                taskId: task._id
                                 createdAt: new Date()
                             teamTaskProgress.save (err, teamTaskProgress) ->
                                 if err?
@@ -29,5 +29,20 @@ class TeamTaskProgressController
                                 else
                                     callback null, teamTaskProgress
 
+    @list: (callback) ->
+        TeamTaskProgress.find {}, (err, teamTaskProgress) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, teamTaskProgress
+
+    @listForTeam: (teamId, callback) ->
+        TeamTaskProgress.find teamId: teamId, (err, teamTaskProgress) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, teamTaskProgress
 
 module.exports = TeamTaskProgressController
