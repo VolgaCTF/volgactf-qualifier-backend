@@ -17,6 +17,8 @@ constraints = require '../utils/constraints'
 bodyParser = require 'body-parser'
 urlencodedParser = bodyParser.urlencoded extended: no
 
+taskCategoryParam = require '../params/task-category'
+
 
 router.get '/all', (request, response, next) ->
     TaskCategoryController.list (err, taskCategories) ->
@@ -41,13 +43,7 @@ router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.
             response.json success: yes
 
 
-router.param 'taskCategoryId', (request, response, next, taskCategoryId) ->
-    id = parseInt taskCategoryId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.taskCategoryId = id
-    next()
+router.param 'taskCategoryId', taskCategoryParam.id
 
 
 router.post '/:taskCategoryId/remove', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) ->

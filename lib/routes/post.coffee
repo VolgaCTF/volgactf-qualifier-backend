@@ -14,6 +14,8 @@ router = express.Router()
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
 
+postParam = require '../params/post'
+
 is_ = require 'is_js'
 _ = require 'underscore'
 
@@ -44,13 +46,7 @@ router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToB
             response.json success: yes
 
 
-router.param 'postId', (request, response, next, postId) ->
-    id = parseInt postId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.postId = id
-    next()
+router.param 'postId', postParam.id
 
 
 router.post '/:postId/remove', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->

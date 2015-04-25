@@ -26,15 +26,10 @@ TaskController = require '../controllers/task'
 TeamTaskProgressController = require '../controllers/team-task-progress'
 taskSerializer = require '../serializers/task'
 constants = require '../utils/constants'
+taskParam = require '../params/task'
 
 
-router.param 'taskId', (request, response, next, taskId) ->
-    id = parseInt taskId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.taskId = id
-    next()
+router.param 'taskId', taskParam.id
 
 
 router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->

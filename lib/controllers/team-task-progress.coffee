@@ -45,4 +45,13 @@ class TeamTaskProgressController
             else
                 callback null, teamTaskProgress
 
+    @listForTask: (taskId, callback) ->
+        TeamTaskProgress.find taskId: taskId, (err, teamTaskProgress) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, teamTaskProgress
+
+
 module.exports = TeamTaskProgressController

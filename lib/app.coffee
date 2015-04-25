@@ -124,10 +124,20 @@ app.get '/events', sessionMiddleware.detectScope, (request, response, next) ->
     pushEventFunc = (data) ->
         response.write data
 
-    eventStream.on "message:#{request.scope}", pushEventFunc
+    mainChannel = "message:#{request.scope}"
+    if request.scope is 'teams'
+        extraChannel = "message:team#{request.session.identityID}"
+    else
+        extraChannel = null
+
+    eventStream.on mainChannel, pushEventFunc
+    if extraChannel?
+        eventStream.on extraChannel, pushEventFunc
 
     request.once 'close', ->
-        eventStream.removeListener 'message', pushEventFunc
+        eventStream.removeListener mainChannel, pushEventFunc
+        if extraChannel
+            eventStream.removeListener extraChannel, pushEventFunc
 
 
 app.use (err, request, response, next) ->

@@ -26,6 +26,7 @@ teamSerializer = require '../serializers/team'
 teamTaskProgressSerializer = require '../serializers/team-task-progress'
 
 teamTaskProgressController = require '../controllers/team-task-progress'
+teamParam = require '../params/team'
 
 
 router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->
@@ -44,13 +45,7 @@ router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->
         TeamController.listQualified onFetch no
 
 
-router.param 'teamId', (request, response, next, teamId) ->
-    id = parseInt teamId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.teamId = id
-    next()
+router.param 'teamId', teamParam.id
 
 
 router.get '/:teamId/logo', (request, response) ->
@@ -88,17 +83,6 @@ router.get '/:teamId/profile', (request, response) ->
             if err?
                 logger.error err
             response.status(404).json 'Team not found!'
-
-
-router.get '/:teamId/tasks-progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
-    unless request.teamId == request.session.identityID
-        throw new errors.NotAuthenticatedError()
-
-    teamTaskProgressController.listForTeam request.session.identityID, (err, teamTaskProgress) ->
-        if err?
-            next err
-        else
-            response.json _.map teamTaskProgress, teamTaskProgressSerializer
 
 
 router.post '/verify-email', securityMiddleware.checkToken, urlencodedParser, (request, response, next) ->

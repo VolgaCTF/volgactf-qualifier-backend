@@ -21,6 +21,10 @@ _ = require 'underscore'
 
 teamScoreSerializer = require '../serializers/team-score'
 contestSerializer = require '../serializers/contest'
+teamParam = require '../params/team'
+
+teamTaskProgressController = require '../controllers/team-task-progress'
+teamTaskProgressSerializer = require '../serializers/team-task-progress'
 
 
 router.get '/', (request, response, next) ->
@@ -37,6 +41,20 @@ router.get '/scores', (request, response, next) ->
             next err
         else
             response.json _.map teamScores, teamScoreSerializer
+
+
+router.param 'teamId', teamParam.id
+
+
+router.get '/team/:teamId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
+    unless request.teamId == request.session.identityID
+        throw new errors.NotAuthenticatedError()
+
+    teamTaskProgressController.listForTeam request.session.identityID, (err, teamTaskProgressEntries) ->
+        if err?
+            next err
+        else
+            response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
 
 
 router.post '/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->

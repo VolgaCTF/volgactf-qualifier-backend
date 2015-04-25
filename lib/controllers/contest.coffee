@@ -128,7 +128,7 @@ class ContestController
                                                 if task?
                                                     totalScore += task.value
                                                     if lastUpdatedAt?
-                                                        if lastUpdatedAt.getTime() > taskProgress.createdAt.getTime()
+                                                        if lastUpdatedAt.getTime() < taskProgress.createdAt.getTime()
                                                             lastUpdatedAt = taskProgress.createdAt
                                                     else
                                                         lastUpdatedAt = taskProgress.createdAt
