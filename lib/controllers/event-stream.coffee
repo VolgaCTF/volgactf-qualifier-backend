@@ -1,6 +1,7 @@
 EventEmitter = require('events').EventEmitter
 subscriber = require '../utils/subscriber'
 _ = require 'underscore'
+logger = require '../utils/logger'
 
 
 class EventStream extends EventEmitter
@@ -30,6 +31,9 @@ class EventStream extends EventEmitter
             dataForGuests = message.data.guests
             if dataForGuests?
                 @emit 'message:guests', @format eventId, name, 5000, dataForGuests
+
+            for teamId, dataForTeam of message.data.team
+                @emit "message:team#{teamId}", @format eventId, name, 5000, dataForTeam
 
 
 module.exports = new EventStream 1024

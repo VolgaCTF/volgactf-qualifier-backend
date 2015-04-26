@@ -136,7 +136,7 @@ app.get '/events', sessionMiddleware.detectScope, (request, response, next) ->
 
     request.once 'close', ->
         eventStream.removeListener mainChannel, pushEventFunc
-        if extraChannel
+        if extraChannel?
             eventStream.removeListener extraChannel, pushEventFunc
 
 

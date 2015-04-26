@@ -6,6 +6,7 @@ class module.exports.BaseEvent
             supervisors: null
             teams: null
             guests: null
+            team: {}
 
     serialize: ->
         result =
@@ -14,3 +15,4 @@ class module.exports.BaseEvent
                 supervisors: @data.supervisors
                 teams: @data.teams
                 guests: @data.guests
+                team: @data.team

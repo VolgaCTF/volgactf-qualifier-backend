@@ -173,7 +173,6 @@ router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.
 
     validationResult = validator.validate request.body, createConstraints
     unless validationResult is true
-        logger.info validationResult
         throw new errors.ValidationError()
 
     TaskController.create request.body, (err, task) ->

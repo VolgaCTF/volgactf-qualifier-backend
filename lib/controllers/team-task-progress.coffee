@@ -2,6 +2,17 @@ TeamController = require '../controllers/team'
 TeamTaskProgress = require '../models/team-task-progress'
 logger = require '../utils/logger'
 errors = require '../utils/errors'
+BaseEvent = require('../utils/events').BaseEvent
+publisher = require '../utils/publisher'
+teamTaskProgressSerializer = require '../serializers/team-task-progress'
+
+
+class CreateTeamTaskProgressEvent extends BaseEvent
+    constructor: (teamTaskProgress) ->
+        super 'createTeamTaskProgress'
+        teamTaskProgressData = teamTaskProgressSerializer teamTaskProgress
+        @data.supervisors = teamTaskProgressData
+        @data.team[teamTaskProgress.teamId] = teamTaskProgressData
 
 
 class TeamTaskProgressController
@@ -28,6 +39,7 @@ class TeamTaskProgressController
                                     callback new errors.InternalError(), null
                                 else
                                     callback null, teamTaskProgress
+                                    publisher.publish 'realtime', new CreateTeamTaskProgressEvent teamTaskProgress
 
     @list: (callback) ->
         TeamTaskProgress.find {}, (err, teamTaskProgress) ->

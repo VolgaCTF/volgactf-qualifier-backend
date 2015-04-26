@@ -9,7 +9,6 @@ ContestController = require './controllers/contest'
 
 
 queue('updateScoresQueue').process (job, done) ->
-    logger.info "Start updating scores!"
     ContestController.updateScores (err) ->
         if err?
             logger.error err
