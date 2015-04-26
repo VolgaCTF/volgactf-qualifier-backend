@@ -29,6 +29,7 @@ constants = require '../utils/constants'
 taskParam = require '../params/task'
 
 LimitController = require '../controllers/limit'
+when_ = require 'when'
 
 
 router.param 'taskId', taskParam.id
@@ -63,6 +64,15 @@ router.get '/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
             next err
         else
             response.json taskSerializer task
+
+
+router.get '/:taskId/full', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
+    serializer = _.partial taskSerializer, _, full: yes
+    TaskController.get request.taskId, (err, task) ->
+        if err?
+            next err
+        else
+            response.json serializer task
 
 
 router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
@@ -129,55 +139,206 @@ router.post '/:taskId/close', contestMiddleware.contestIsStarted, securityMiddle
             response.json success: yes
 
 
-router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
-    valValue = parseInt request.body.value, 10
-    if is_.number valValue
-        request.body.value = valValue
-    else
-        throw new errors.ValidationError()
+sanitizeCreateTaskParams = (params, callback) ->
+    sanitizeTitle = ->
+        deferred = when_.defer()
+        deferred.resolve params.title
+        deferred.promise
 
-    valCaseSensitive = request.body.caseSensitive == 'true'
-    if is_.boolean valCaseSensitive
-        request.body.caseSensitive = valCaseSensitive
-    else
-        throw new errors.ValidationError()
+    sanitizeDescription = ->
+        deferred = when_.defer()
+        deferred.resolve params.description
+        deferred.promise
 
-    valCategories = request.body.categories
-    if is_.string valCategories
-        request.body.categories = [valCategories]
+    sanitizeHints = ->
+        deferred = when_.defer()
+        hints = params.hints
+        unless hints?
+            hints = []
+        if is_.string hints
+            hints = [hints]
+        hints = _.uniq hints
+        deferred.resolve hints
+        deferred.promise
 
-    valCategories = []
-    for valCategoryStr in request.body.categories
-        valCategory = parseInt valCategoryStr, 10
-        if is_.number valCategory
-            valCategories.push valCategory
-    request.body.categories = valCategories
+    sanitizeValue = ->
+        deferred = when_.defer()
+        value = parseInt params.value, 10
+        if is_.number value
+            deferred.resolve value
+        else
+            deferred.reject new errors.ValidationError()
+        deferred.promise
 
-    unless request.body.hints?
-        request.body.hints = []
+    sanitizeCategories = ->
+        deferred = when_.defer()
+        categories = params.categories
+        unless categories?
+            categories = []
+        if is_.string categories
+            categories = [categories]
 
-    valAnswers = request.body.answers
-    if is_.string valAnswers
-        request.body.answers = [valAnswers]
+        if is_.array categories
+            valCategories = []
+            for valCategoryStr in categories
+                valCategory = parseInt valCategoryStr, 10
+                if is_.number valCategory
+                    valCategories.push valCategory
+            deferred.resolve _.uniq valCategories
+        else
+            deferred.reject new errors.ValidationError()
+        deferred.promise
 
-    createConstraints =
-        title: constraints.taskTitle
-        description: constraints.taskDescription
-        hints: constraints.taskHints
-        value: constraints.taskValue
-        categories: constraints.taskCategories
-        answers: constraints.taskAnswers
-        caseSensitive: constraints.taskCaseSensitive
+    sanitizeAnswers = ->
+        deferred = when_.defer()
+        answers = params.answers
+        unless answers?
+            answers = []
+        if is_.string answers
+            answers = [answers]
 
-    validationResult = validator.validate request.body, createConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
+        if is_.array answers
+            deferred.resolve _.uniq answers
+        else
+            deferred.reject new errors.ValidationError()
+        deferred.promise
 
-    TaskController.create request.body, (err, task) ->
+    sanitizeCaseSensitive = ->
+        deferred = when_.defer()
+        caseSensitive = params.caseSensitive == 'true'
+        if is_.boolean caseSensitive
+            deferred.resolve caseSensitive
+        else
+            deferred.reject new errors.ValidationError()
+        deferred.promise
+
+    when_
+        .all [sanitizeTitle(), sanitizeDescription(), sanitizeHints(), sanitizeValue(), sanitizeCategories(), sanitizeAnswers(), sanitizeCaseSensitive()]
+        .then (res) ->
+            result =
+                title: res[0]
+                description: res[1]
+                hints: res[2]
+                value: res[3]
+                categories: res[4]
+                answers: res[5]
+                caseSensitive: res[6]
+            callback null, result
+        .catch (err) ->
+            callback err, null
+
+
+router.post '/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
+    sanitizeCreateTaskParams request.body, (err, taskParams) ->
         if err?
             next err
         else
-            response.json success: yes
+            createConstraints =
+                title: constraints.taskTitle
+                description: constraints.taskDescription
+                hints: constraints.taskHints
+                value: constraints.taskValue
+                categories: constraints.taskCategories
+                answers: constraints.taskAnswers
+                caseSensitive: constraints.taskCaseSensitive
+
+            validationResult = validator.validate taskParams, createConstraints
+            if validationResult is true
+                TaskController.create taskParams, (err, task) ->
+                    if err?
+                        next err
+                    else
+                        response.json success: yes
+            else
+                next new errors.ValidationError()
+
+
+sanitizeUpdateTaskParams = (params, task, callback) ->
+    sanitizeDescription = ->
+        deferred = when_.defer()
+        deferred.resolve params.description
+        deferred.promise
+
+    sanitizeHints = ->
+        deferred = when_.defer()
+        hints = params.hints
+        unless hints?
+            hints = []
+        if is_.string hints
+            hints = [hints]
+        hints = _.uniq hints
+        deferred.resolve hints
+        deferred.promise
+
+    sanitizeCategories = ->
+        deferred = when_.defer()
+        categories = params.categories
+        unless categories?
+            categories = []
+        if is_.string categories
+            categories = [categories]
+
+        if is_.array categories
+            valCategories = []
+            for valCategoryStr in categories
+                valCategory = parseInt valCategoryStr, 10
+                if is_.number valCategory
+                    valCategories.push valCategory
+            deferred.resolve _.uniq valCategories
+        else
+            logger.error 'YEAH'
+            deferred.reject new errors.ValidationError()
+        deferred.promise
+
+    sanitizeAnswers = ->
+        deferred = when_.defer()
+        answers = params.answers
+        unless answers?
+            answers = []
+        if is_.string answers
+            answers = [answers]
+
+        if is_.array answers
+            deferred.resolve _.uniq answers
+        else
+            logger.error 'HELL'
+            deferred.reject new errors.ValidationError()
+        deferred.promise
+
+    when_
+        .all [sanitizeDescription(), sanitizeHints(), sanitizeCategories(), sanitizeAnswers()]
+        .then (res) ->
+            result =
+                description: res[0]
+                hints: res[1]
+                categories: res[2]
+                answers: res[3]
+            callback null, result
+        .catch (err) ->
+            callback err, null
+
+
+router.post '/:taskId/update', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
+    sanitizeUpdateTaskParams request.body, request.task, (err, taskParams) ->
+        if err?
+            next err
+        else
+            updateConstraints =
+                description: constraints.taskDescription
+                hints: constraints.taskHints
+                categories: constraints.taskCategories
+                answers: constraints.taskAnswersExtra
+
+            validationResult = validator.validate taskParams, updateConstraints
+            if validationResult is true
+                TaskController.update request.task, taskParams, (err, task) ->
+                    if err?
+                        next err
+                    else
+                        response.json success: yes
+            else
+                logger.error validationResult
+                next new errors.ValidationError()
 
 
 module.exports = router

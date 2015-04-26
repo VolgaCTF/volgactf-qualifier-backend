@@ -3,6 +3,7 @@ _ = require 'underscore'
 module.exports = (task, options = {}) ->
     defaultOptions =
         preview: no
+        full: no
     options = _.extend defaultOptions, options
 
     result =
@@ -17,5 +18,11 @@ module.exports = (task, options = {}) ->
     if not options.preview
         result.description = task.description
         result.hints = task.hints
+
+    if options.full
+        result.description = task.description
+        result.hints = task.hints
+        result.answers = task.answers
+        result.caseSensitive = task.caseSensitive
 
     result

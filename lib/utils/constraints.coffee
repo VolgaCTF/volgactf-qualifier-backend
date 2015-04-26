@@ -99,6 +99,9 @@ module.exports =
         new Assert().Callback is_.all.string
         new Assert().Length min: 1, max: constants.TASK_MAX_ANSWERS
     ]
+    taskAnswersExtra: [
+        new Assert().Callback is_.all.string
+    ]
     taskCaseSensitive: [
         new Assert().Required()
         new Assert().Range 0, 1

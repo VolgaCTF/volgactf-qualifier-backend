@@ -18,6 +18,16 @@ class CreateTaskEvent extends BaseEvent
         @data.supervisors = taskData
 
 
+class UpdateTaskEvent extends BaseEvent
+    constructor: (task) ->
+        super 'updateTask'
+        taskData = taskSerializer task, preview: yes
+        @data.supervisors = taskData
+        unless task.isInitial()
+            @data.teams = taskData
+            @data.guests = taskData
+
+
 class OpenTaskEvent extends BaseEvent
     constructor: (task) ->
         super 'openTask'
@@ -66,6 +76,21 @@ class TaskController
                             callback null, task
 
                             publisher.publish 'realtime', new CreateTaskEvent task
+
+    @update: (task, options, callback) ->
+        task.description = options.description
+        task.categories = options.categories
+        task.hints = _.union task.hints, options.hints
+        task.answers = _.union task.answers, options.answers
+        task.updatedAt = new Date()
+        task.save (err, task) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, task
+
+                publisher.publish 'realtime', new UpdateTaskEvent task
 
     @list: (callback) ->
         Task.find (err, tasks) ->
