@@ -22,6 +22,7 @@ _ = require 'underscore'
 teamScoreSerializer = require '../serializers/team-score'
 contestSerializer = require '../serializers/contest'
 teamParam = require '../params/team'
+taskParam = require '../params/task'
 
 teamTaskProgressController = require '../controllers/team-task-progress'
 teamTaskProgressSerializer = require '../serializers/team-task-progress'
@@ -44,6 +45,15 @@ router.get '/scores', (request, response, next) ->
 
 
 router.param 'teamId', teamParam.id
+router.param 'taskId', taskParam.id
+
+
+router.get '/progress', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
+    teamTaskProgressController.list (err, teamTaskProgressEntries) ->
+        if err?
+            next err
+        else
+            response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
 
 
 router.get '/team/:teamId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
@@ -56,6 +66,13 @@ router.get '/team/:teamId/progress', sessionMiddleware.needsToBeAuthorizedTeam, 
         else
             response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
 
+
+router.get '/task/:taskId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
+    teamTaskProgressController.listForTask request.taskId, (err, teamTaskProgressEntries) ->
+        if err?
+            next err
+        else
+            response.json teamTaskProgressEntries.length
 
 router.post '/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
     valState = parseInt request.body.state, 10
