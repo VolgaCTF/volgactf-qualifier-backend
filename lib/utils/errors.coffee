@@ -177,3 +177,8 @@ class module.exports.TaskAlreadySolvedError extends module.exports.BaseError
 class module.exports.TaskCategoryAttachedError extends module.exports.BaseError
     constructor: ->
         super 'Task category is attached to one or more tasks!', 'TaskCategoryAttachedError', 400
+
+
+class module.exports.TaskSubmitAttemptsLimitError extends module.exports.BaseError
+    constructor: ->
+        super 'Too many submit attempts!', 'TaskSubmitAttemptsLimitError', 400

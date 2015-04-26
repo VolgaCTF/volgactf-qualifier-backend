@@ -28,6 +28,8 @@ taskSerializer = require '../serializers/task'
 constants = require '../utils/constants'
 taskParam = require '../params/task'
 
+LimitController = require '../controllers/limit'
+
 
 router.param 'taskId', taskParam.id
 
@@ -64,25 +66,33 @@ router.get '/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
 
 
 router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
-    submitConstraints =
-        answer: constraints.taskAnswer
-
-    validationResult = validator.validate request.body, submitConstraints
-    unless validationResult is true
-        throw new errors.ValidationError()
-
-    TaskController.checkAnswer request.task, request.body.answer, (err, checkResult) ->
+    limiter = new LimitController "themis__team#{request.session.identityID}__task#{request.taskId}__submit", timeout: constants.TASK_SUBMIT_LIMIT_TIME, maxAttempts: constants.TASK_SUBMIT_LIMIT_ATTEMPTS
+    limiter.check (err, limitExceeded) ->
         if err?
             next err
         else
-            if checkResult
-                TeamTaskProgressController.create request.session.identityID, request.task, (err, teamTaskProgress) ->
-                    if err?
-                        next err
-                    else
-                        response.json success: yes
+            if limitExceeded
+                next new errors.TaskSubmitAttemptsLimitError()
             else
-                next new errors.WrongTaskAnswerError()
+                submitConstraints =
+                    answer: constraints.taskAnswer
+
+                validationResult = validator.validate request.body, submitConstraints
+                if validationResult is true
+                    TaskController.checkAnswer request.task, request.body.answer, (err, checkResult) ->
+                        if err?
+                            next err
+                        else
+                            if checkResult
+                                TeamTaskProgressController.create request.session.identityID, request.task, (err, teamTaskProgress) ->
+                                    if err?
+                                        next err
+                                    else
+                                        response.json success: yes
+                            else
+                                next new errors.WrongTaskAnswerError()
+                else
+                    next new errors.ValidationError()
 
 
 router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->

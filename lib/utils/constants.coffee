@@ -13,3 +13,6 @@ module.exports.TASK_MAX_VALUE = 1000
 module.exports.TASK_MAX_HINTS = 10
 module.exports.TASK_MAX_CATEGORIES = 5
 module.exports.TASK_MAX_ANSWERS = 15
+
+module.exports.TASK_SUBMIT_LIMIT_TIME = 10
+module.exports.TASK_SUBMIT_LIMIT_ATTEMPTS = 3
