@@ -144,6 +144,11 @@ class module.exports.ContestNotStartedError extends module.exports.BaseError
         super 'Contest has not started or has already finished!', 'ContestNotStartedError', 400
 
 
+class module.exports.ContestPausedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest has been paused!', 'ContestPausedError', 400
+
+
 class module.exports.TaskAlreadyOpenedError extends module.exports.BaseError
     constructor: ->
         super 'Task has been already opened!', 'TaskAlreadyOpenedError', 400

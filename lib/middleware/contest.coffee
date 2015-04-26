@@ -31,4 +31,12 @@ module.exports.contestIsStarted = (request, response, next) ->
             if contest? and contest.isStarted()
                 next()
             else
-                next new errors.ContestNotStartedError()
+                if contest?
+                    if contest.isPaused()
+                        next new errors.ContestPausedError()
+                    else if contest.isFinished()
+                        next new errors.ContestFinishedError()
+                    else
+                        next new errors.ContestNotStartedError()
+                else
+                    next new errors.ContestNotStartedError()

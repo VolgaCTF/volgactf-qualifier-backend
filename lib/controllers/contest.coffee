@@ -3,6 +3,8 @@ _ = require 'underscore'
 Contest = require '../models/contest'
 TeamScore = require '../models/team-score'
 TaskCategory = require '../models/task-category'
+Task = require '../models/task'
+TeamTaskProgress = require '../models/team-task-progress'
 
 TeamController = require '../controllers/team'
 TeamTaskProgressController = require '../controllers/team-task-progress'
@@ -17,6 +19,8 @@ BaseEvent = require('../utils/events').BaseEvent
 
 contestSerializer = require '../serializers/contest'
 teamScoreSerializer = require '../serializers/team-score'
+
+when_ = require 'when'
 
 
 class UpdateContestEvent extends BaseEvent
@@ -73,32 +77,89 @@ class ContestController
             if err?
                 callback err, null
             else
+                alwaysResolves = ->
+                    deferred = when_.defer()
+                    deferred.resolve()
+                    deferred.promise
+
+                promises = []
                 if state is constants.CONTEST_INITIAL
                     if contest? and contest.state != state
-                        TaskCategory.remove {}, (err) ->
+                        removeTaskCategories = ->
+                            deferred = when_.defer()
+                            TaskCategory.remove {}, (err) ->
+                                if err?
+                                    logger.error err
+                                    deferred.reject new errors.InternalError()
+                                else
+                                    deferred.resolve()
+                            deferred.promise
+
+                        promises.push removeTaskCategories()
+
+                        removeTasks = ->
+                            deferred = when_.defer()
+                            Task.remove {}, (err) ->
+                                if err?
+                                    logger.error err
+                                    deferred.reject err
+                                else
+                                    deferred.resolve()
+                            deferred.promise
+
+                        promises.push removeTasks()
+
+                        removeTeamScores = ->
+                            deferred = when_.defer()
+                            TeamScore.remove {}, (err) ->
+                                if err?
+                                    logger.error err
+                                    deferred.reject err
+                                else
+                                    deferred.resolve()
+                            deferred.promise
+
+                        promises.push removeTeamScores()
+
+                        removeTeamTaskProgressEntries = ->
+                            deferred = when_.defer()
+                            TeamTaskProgress.remove {}, (err) ->
+                                if err?
+                                    logger.error err
+                                    deferred.reject err
+                                else
+                                    deferred.resolve()
+                            deferred.promise
+
+                        promises.push removeTeamTaskProgressEntries()
+                    else
+                        promises.push alwaysResolves()
+                else
+                    promises.push alwaysResolves()
+
+                when_
+                    .all promises
+                    .then ->
+                        if contest?
+                            contest.state = state
+                            contest.startsAt = startsAt
+                            contest.finishesAt = finishesAt
+                        else
+                            contest = new Contest
+                                state: state
+                                startsAt: startsAt
+                                finishesAt: finishesAt
+
+                        contest.save (err, contest) ->
                             if err?
                                 logger.error err
                                 callback new errors.InternalError(), null
-                                return
+                            else
+                                callback null, contest
 
-                if contest?
-                    contest.state = state
-                    contest.startsAt = startsAt
-                    contest.finishesAt = finishesAt
-                else
-                    contest = new Contest
-                        state: state
-                        startsAt: startsAt
-                        finishesAt: finishesAt
-
-                contest.save (err, contest) ->
-                    if err?
-                        logger.error err
-                        callback new errors.InternalError(), null
-                    else
-                        callback null, contest
-
-                        publisher.publish 'realtime', new UpdateContestEvent contest
+                                publisher.publish 'realtime', new UpdateContestEvent contest
+                    .catch (err) ->
+                        callback new error.InternalError(), null
 
     @updateScores: (callback) ->
         TeamController.listQualified (err, teams) ->

@@ -63,13 +63,7 @@ router.get '/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
             response.json taskSerializer task
 
 
-router.post '/:taskId/submit', sessionMiddleware.detectScope, securityMiddleware.checkToken, contestMiddleware.getState, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
-    guestsEligible = request.scope is 'guests' and request.contest? and request.contest.isFinished()
-    teamsEligible = request.scope is 'teams' and request.contest? and (request.contest.isFinished() or request.contest.isStarted())
-
-    unless guestsEligible or teamsEligible
-        throw new errors.NotAuthenticatedError()
-
+router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
     submitConstraints =
         answer: constraints.taskAnswer
 
@@ -82,17 +76,11 @@ router.post '/:taskId/submit', sessionMiddleware.detectScope, securityMiddleware
             next err
         else
             if checkResult
-                if request.contest.isFinished()
-                    response.json success: yes
-                else
-                    if request.scope is 'teams'
-                        TeamTaskProgressController.create request.session.identityID, request.task, (err, teamTaskProgress) ->
-                            if err?
-                                next err
-                            else
-                                response.json success: yes
+                TeamTaskProgressController.create request.session.identityID, request.task, (err, teamTaskProgress) ->
+                    if err?
+                        next err
                     else
-                        next new errors.InternalError()
+                        response.json success: yes
             else
                 next new errors.WrongTaskAnswerError()
 
