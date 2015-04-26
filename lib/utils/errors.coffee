@@ -94,6 +94,91 @@ class module.exports.PostNotFoundError extends module.exports.BaseError
         super 'Post not found!', 'PostNotFoundError', 400
 
 
+class module.exports.DuplicatePostTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Post title should be unique!', 'DuplicatePostTitleError', 400
+
+
 class module.exports.InvalidCSRFTokenError extends module.exports.BaseError
     constructor: ->
         super 'Invalid CSRF token!', 'InvalidCSRFTokenError', 400
+
+
+class module.exports.ContestNotInitializedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest not initialized!', 'ContestNotInitializedError', 400
+
+
+class module.exports.TaskCategoryNotFoundError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category not found!', 'TaskCategoryNotFoundError', 400
+
+
+class module.exports.DuplicateTaskCategoryTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category title should be unique!', 'DuplicateTaskCategoryTitleError', 400
+
+
+class module.exports.ContestFinishedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest has finished!', 'ContestFinishedError', 400
+
+
+class module.exports.DuplicateTaskTitleError extends module.exports.BaseError
+    constructor: ->
+        super 'Task title should be unique!', 'DuplicateTaskTitleError', 400
+
+
+class module.exports.TaskNotFoundError extends module.exports.BaseError
+    constructor: ->
+        super 'Task not found!', 'TaskNotFoundError', 400
+
+
+class module.exports.WrongTaskAnswerError extends module.exports.BaseError
+    constructor: ->
+        super 'Wrong answer!', 'WrongTaskAnswerError', 400
+
+
+class module.exports.ContestNotStartedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest has not started or has already finished!', 'ContestNotStartedError', 400
+
+
+class module.exports.ContestPausedError extends module.exports.BaseError
+    constructor: ->
+        super 'Contest has been paused!', 'ContestPausedError', 400
+
+
+class module.exports.TaskAlreadyOpenedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been already opened!', 'TaskAlreadyOpenedError', 400
+
+
+class module.exports.TaskClosedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been closed!', 'TaskClosedError', 400
+
+
+class module.exports.TaskNotOpenedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task is not opened now!', 'TaskNotOpenedError', 400
+
+
+class module.exports.TaskAlreadyClosedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been already closed!', 'TaskAlreadyClosedError', 400
+
+
+class module.exports.TaskAlreadySolvedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task has been already solved by your team!', 'TaskAlreadySolvedError', 400
+
+
+class module.exports.TaskCategoryAttachedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category is attached to one or more tasks!', 'TaskCategoryAttachedError', 400
+
+
+class module.exports.TaskSubmitAttemptsLimitError extends module.exports.BaseError
+    constructor: ->
+        super 'Too many submit attempts!', 'TaskSubmitAttemptsLimitError', 400

@@ -14,7 +14,12 @@ router = express.Router()
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
 
+postParam = require '../params/post'
+
 is_ = require 'is_js'
+_ = require 'underscore'
+
+postSerializer = require '../serializers/post'
 
 
 router.get '/all', (request, response, next) ->
@@ -22,16 +27,7 @@ router.get '/all', (request, response, next) ->
         if err?
             next err
         else
-            result = []
-            for post in posts
-                result.push
-                    id: post._id
-                    title: post.title
-                    description: post.description
-                    createdAt: post.createdAt.getTime()
-                    updatedAt: post.updatedAt.getTime()
-
-            response.json result
+            response.json _.map posts, postSerializer
 
 
 router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) ->
@@ -50,13 +46,7 @@ router.post '/create', securityMiddleware.checkToken, sessionMiddleware.needsToB
             response.json success: yes
 
 
-router.param 'postId', (request, response, next, postId) ->
-    id = parseInt postId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.postId = id
-    next()
+router.param 'postId', postParam.id
 
 
 router.post '/:postId/remove', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->

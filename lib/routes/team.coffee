@@ -20,44 +20,32 @@ is_ = require 'is_js'
 
 sessionMiddleware = require '../middleware/session'
 securityMiddleware = require '../middleware/security'
+contestMiddleware = require '../middleware/contest'
+
+teamSerializer = require '../serializers/team'
+teamTaskProgressSerializer = require '../serializers/team-task-progress'
+
+teamTaskProgressController = require '../controllers/team-task-progress'
+teamParam = require '../params/team'
 
 
-router.get '/all', (request, response) ->
-    isAuthorizedSupervisor = request.session.authenticated and _.contains(['admin', 'manager'], request.session.role)
-    conditions = emailConfirmed: yes
-    if isAuthorizedSupervisor
-        conditions = {}
+router.get '/all', sessionMiddleware.detectScope, (request, response, next) ->
+    onFetch = (exposeEmail) ->
+        serializer = _.partial teamSerializer, _, exposeEmail: exposeEmail
+        (err, teams) ->
+            if err?
+                logger.error err
+                next new errors.InternalError()
+            else
+                response.json _.map teams, serializer
 
-    Team.find conditions, (err, teams) ->
-        if err?
-            logger.error err
-            throw new errors.InternalError()
-        else
-            result = []
-            for team in teams
-                obj =
-                    id: team._id
-                    name: team.name
-                    country: team.country
-                    locality: team.locality
-                    institution: team.institution
-
-                if isAuthorizedSupervisor
-                    obj.email = team.email
-                    obj.emailConfirmed = team.emailConfirmed
-
-                result.push obj
-
-            response.json result
+    if request.scope == 'supervisors'
+        TeamController.list onFetch yes
+    else
+        TeamController.listQualified onFetch no
 
 
-router.param 'teamId', (request, response, next, teamId) ->
-    id = parseInt teamId, 10
-    unless is_.number id
-        throw new errors.ValidationError()
-
-    request.teamId = id
-    next()
+router.param 'teamId', teamParam.id
 
 
 router.get '/:teamId/logo', (request, response) ->
@@ -85,6 +73,8 @@ router.get '/:teamId/profile', (request, response) ->
                 country: team.country
                 locality: team.locality
                 institution: team.institution
+                createdAt: team.createdAt.getTime()
+
             if request.session.authenticated and ((request.session.role is 'team' and request.session.identityID == team._id) or _.contains(['admin', 'manager'], request.session.role))
                 result.email = team.email
                 result.emailConfirmed = team.emailConfirmed
@@ -221,7 +211,7 @@ router.post '/upload-logo', securityMiddleware.checkToken, sessionMiddleware.nee
                             response.json success: yes
 
 
-router.post '/signup', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
+router.post '/signup', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) ->
     teamInfo = {}
     teamLogo = tmp.fileSync()
 

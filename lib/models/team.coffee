@@ -11,6 +11,7 @@ teamSchema = mongoose.Schema
     country: String
     locality: String
     institution: String
+    disqualified: Boolean
 
 teamSchema.plugin autoIncrement.plugin, model: 'Team', startAt: 1
 module.exports = mongoose.model 'Team', teamSchema

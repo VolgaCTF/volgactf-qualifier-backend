@@ -2,17 +2,13 @@ express = require 'express'
 bodyParser = require 'body-parser'
 logger = require './utils/logger'
 cookieParser = require 'cookie-parser'
-session = require 'express-session'
 
 teamRouter = require './routes/team'
-# taskRouter = require './routes/task'
-# categoryRouter = require './routes/category'
 postRouter = require './routes/post'
+contestRouter = require './routes/contest'
+taskRouter = require './routes/task'
 
 SupervisorController = require './controllers/supervisor'
-
-redis = require './utils/redis'
-RedisStore = require('connect-redis') session
 
 Validator = require 'validator.js'
 validator = new Validator.Validator()
@@ -21,46 +17,25 @@ _ = require 'underscore'
 TeamController = require './controllers/team'
 
 errors = require './utils/errors'
-BaseError = errors.BaseError
-ValidationError = errors.ValidationError
-AlreadyAuthenticatedError = errors.AlreadyAuthenticatedError
-InvalidSupervisorCredentialsError = errors.InvalidSupervisorCredentialsError
-NotAuthenticatedError = errors.NotAuthenticatedError
-UnknownIdentityError = errors.UnknownIdentityError
 
-subscriber = require './utils/subscriber'
 sessionMiddleware = require './middleware/session'
 tokenUtil = require './utils/token'
 securityMiddleware = require './middleware/security'
+corsMiddleware = require './middleware/cors'
+
+eventStream = require './controllers/event-stream'
 
 app = express()
-
 app.set 'x-powered-by', no
 
-app.use (request, response, next) ->
-    response.header 'Access-Control-Allow-Origin', 'http://' + process.env.DOMAIN
-    response.header 'Access-Control-Allow-Credentials', 'true'
-    response.header 'Access-Control-Allow-Headers', 'X-CSRF-Token'
-    next()
-
+app.use corsMiddleware
 app.use cookieParser()
-app.use session
-    store: new RedisStore client: redis.createClient()
-    secret: process.env.SESSION_SECRET
-    resave: no
-    saveUninitialized: no
-    name: 'themis-session-id'
-    cookie:
-        domain: 'api.' + process.env.DOMAIN
-        path: '/'
-        httpOnly: yes
-        secure: no
-        expires: no
+app.use sessionMiddleware.main
 
 app.use '/team', teamRouter
 app.use '/post', postRouter
-# app.use '/task', taskRouter
-# app.use '/category', categoryRouter
+app.use '/contest', contestRouter
+app.use '/task', taskRouter
 
 
 urlencodedParser = bodyParser.urlencoded extended: no
@@ -72,7 +47,7 @@ app.post '/login', securityMiddleware.checkToken, sessionMiddleware.needsToBeUna
 
     validationResult = validator.validate request.body, loginConstraints
     unless validationResult is true
-        throw new ValidationError()
+        throw new errors.ValidationError()
 
     SupervisorController.login request.body.username, request.body.password, (err, supervisor) ->
         if err?
@@ -84,7 +59,7 @@ app.post '/login', securityMiddleware.checkToken, sessionMiddleware.needsToBeUna
                 request.session.role = supervisor.rights
                 response.json success: yes
             else
-                next new InvalidSupervisorCredentialsError()
+                next new errors.InvalidSupervisorCredentialsError()
 
 
 app.post '/signout', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorized, (request, response, next) ->
@@ -96,12 +71,22 @@ app.post '/signout', securityMiddleware.checkToken, sessionMiddleware.needsToBeA
             response.json success: yes
 
 
-app.get '/identity', (request, response, next) ->
+app.get '/identity', sessionMiddleware.detectScope, (request, response, next) ->
     token = tokenUtil.encode tokenUtil.generate 32
     request.session.token = token
 
-    if request.session.authenticated?
-        if request.session.role is 'team'
+    switch request.scope
+        when 'supervisors'
+            SupervisorController.get request.session.identityID, (err, supervisor) ->
+                if err?
+                    next err
+                else
+                    response.json
+                        id: request.session.identityID
+                        role: supervisor.rights
+                        name: supervisor.username
+                        token: token
+        when 'teams'
             TeamController.get request.session.identityID, (err, team) ->
                 if err?
                     next err
@@ -112,28 +97,18 @@ app.get '/identity', (request, response, next) ->
                         name: team.name
                         emailConfirmed: team.emailConfirmed
                         token: token
-        else if _.contains ['admin', 'manager'], request.session.role
-            SupervisorController.get request.session.identityID, (err, supervisor) ->
-                if err?
-                    next err
-                else
-                    response.json
-                        id: request.session.identityID
-                        role: supervisor.rights
-                        name: supervisor.username
-                        token: token
+        when 'guests'
+            response.json
+                role: 'guest'
+                token: token
         else
-            throw new UnknownIdentityError()
-    else
-        response.json
-            role: 'guest'
-            token: token
+            throw new errors.UnknownIdentityError()
 
 
-realtime =
-    connections: []
+app.get '/events', sessionMiddleware.detectScope, (request, response, next) ->
+    unless request.scope?
+        throw new errors.UnknownIdentityError()
 
-app.get '/events', (request, response, next) ->
     request.socket.setTimeout Infinity
 
     response.writeHead 200, {
@@ -146,32 +121,27 @@ app.get '/events', (request, response, next) ->
     }
     response.write '\n'
 
-    # logger.info 'Client opened event stream'
-    realtime.connections.push response
+    pushEventFunc = (data) ->
+        response.write data
 
-    request.on 'close', ->
-        # logger.info 'Client closed event stream'
-        ndx = realtime.connections.indexOf response
-        if ndx > -1
-            realtime.connections.splice ndx, 1
+    mainChannel = "message:#{request.scope}"
+    if request.scope is 'teams'
+        extraChannel = "message:team#{request.session.identityID}"
+    else
+        extraChannel = null
 
+    eventStream.on mainChannel, pushEventFunc
+    if extraChannel?
+        eventStream.on extraChannel, pushEventFunc
 
-subscriber.subscribe 'realtime'
-subscriber.on 'message', (channel, message) ->
-    now = new Date()
-    obj = JSON.parse message
-    name = obj.name
-    obj = _.omit obj, 'name'
-    message = JSON.stringify obj
-    # logger.info "Event #{name} - #{message}"
-    # logger.info "Sending event to #{realtime.connections.length} clients"
-
-    for connection in realtime.connections
-        connection.write "id: #{now.getTime()}\nevent: #{name}\ndata: #{message}\n\n"
+    request.once 'close', ->
+        eventStream.removeListener mainChannel, pushEventFunc
+        if extraChannel?
+            eventStream.removeListener extraChannel, pushEventFunc
 
 
 app.use (err, request, response, next) ->
-    if err instanceof BaseError
+    if err instanceof errors.BaseError
         response.status err.getHttpStatus()
         response.json err.message
     else

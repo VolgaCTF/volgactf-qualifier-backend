@@ -1,11 +1,11 @@
 mongoose = require '../utils/mongoose'
 autoIncrement = require 'mongoose-auto-increment'
 
-postSchema = mongoose.Schema
+taskCategorySchema = mongoose.Schema
     title: { type: String, unique: yes }
     description: String
     createdAt: Date
     updatedAt: Date
 
-postSchema.plugin autoIncrement.plugin, model: 'Post', startAt: 1
-module.exports = mongoose.model 'Post', postSchema
+taskCategorySchema.plugin autoIncrement.plugin, model: 'TaskCategory', startAt: 1
+module.exports = mongoose.model 'TaskCategory', taskCategorySchema

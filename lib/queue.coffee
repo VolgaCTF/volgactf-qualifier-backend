@@ -5,6 +5,16 @@ path = require 'path'
 mandrill = require 'mandrill-api/mandrill'
 EmailController = require './controllers/email'
 token = require './utils/token'
+ContestController = require './controllers/contest'
+
+
+queue('updateScoresQueue').process (job, done) ->
+    ContestController.updateScores (err) ->
+        if err?
+            logger.error err
+            throw err
+        else
+            done()
 
 
 queue('createLogoQueue').process (job, done) ->

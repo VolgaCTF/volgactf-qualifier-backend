@@ -2,7 +2,7 @@ mongoose = require '../utils/mongoose'
 autoIncrement = require 'mongoose-auto-increment'
 
 supervisorSchema = mongoose.Schema
-    username: { type: String, index: unique: yes }
+    username: { type: String, unique: yes }
     passwordHash: String
     rights: String
 
