@@ -870,6 +870,10 @@
     "is_js": {
       "version": "0.7.3",
       "from": "is_js@"
+    },
+    "when": {
+      "version": "3.7.2",
+      "from": "when@"
     }
   }
 }
