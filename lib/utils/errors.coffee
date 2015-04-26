@@ -172,3 +172,8 @@ class module.exports.TaskAlreadyClosedError extends module.exports.BaseError
 class module.exports.TaskAlreadySolvedError extends module.exports.BaseError
     constructor: ->
         super 'Task has been already solved by your team!', 'TaskAlreadySolvedError', 400
+
+
+class module.exports.TaskCategoryAttachedError extends module.exports.BaseError
+    constructor: ->
+        super 'Task category is attached to one or more tasks!', 'TaskCategoryAttachedError', 400

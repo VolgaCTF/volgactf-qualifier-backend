@@ -4,6 +4,7 @@ taskCategorySerializer = require '../serializers/task-category'
 publisher = require '../utils/publisher'
 
 BaseEvent = require('../utils/events').BaseEvent
+TaskController = require './task'
 
 
 class CreateTaskCategoryEvent extends BaseEvent
@@ -103,12 +104,19 @@ class TaskCategoryController
                                     publisher.publish 'realtime', new UpdateTaskCategoryEvent taskCategory
 
     @remove: (id, callback) ->
-        TaskCategory.remove _id: id, (err) ->
+        TaskController.getByCategory id, (err, tasks) ->
             if err?
-                callback new errors.TaskCategoryNotFoundError()
+                callback err
             else
-                callback null
-                publisher.publish 'realtime', new RemoveTaskCategoryEvent id
+                if tasks.length > 0
+                    callback new errors.TaskCategoryAttachedError()
+                else
+                    TaskCategory.remove _id: id, (err) ->
+                        if err?
+                            callback new errors.TaskCategoryNotFoundError()
+                        else
+                            callback null
+                            publisher.publish 'realtime', new RemoveTaskCategoryEvent id
 
 
 module.exports = TaskCategoryController

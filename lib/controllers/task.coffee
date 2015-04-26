@@ -150,5 +150,14 @@ class TaskController
                 else
                     callback new errors.TaskNotFoundError(), null
 
+    @getByCategory: (categoryId, callback) ->
+        Task.find {}, (err, tasks) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, _.filter tasks, (task) ->
+                    _.contains task.categories, categoryId
+
 
 module.exports = TaskController
