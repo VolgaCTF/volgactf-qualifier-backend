@@ -7,6 +7,7 @@ teamRouter = require './routes/team'
 postRouter = require './routes/post'
 contestRouter = require './routes/contest'
 taskRouter = require './routes/task'
+thirdPartyRouter = require './routes/third-party'
 
 SupervisorController = require './controllers/supervisor'
 
@@ -36,6 +37,7 @@ app.use '/team', teamRouter
 app.use '/post', postRouter
 app.use '/contest', contestRouter
 app.use '/task', taskRouter
+app.use '/third-party', thirdPartyRouter
 
 
 urlencodedParser = bodyParser.urlencoded extended: no
