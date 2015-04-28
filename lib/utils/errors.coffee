@@ -187,3 +187,8 @@ class module.exports.TaskSubmitAttemptsLimitError extends module.exports.BaseErr
 class module.exports.EmailNotConfirmedError extends module.exports.BaseError
     constructor: ->
         super 'You should confirm your email before you can submit an answer to the task', 'EmailNotConfirmedError', 400
+
+
+class module.exports.InvalidResetPasswordURLError extends module.exports.BaseError
+    constructor: ->
+        super 'Invalid reset password URL!', 'InvalidResetPasswordURLError', 400

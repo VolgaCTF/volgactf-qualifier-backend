@@ -874,6 +874,10 @@
     "when": {
       "version": "3.7.2",
       "from": "when@"
+    },
+    "async": {
+      "version": "0.9.0",
+      "from": "async@"
     }
   }
 }
