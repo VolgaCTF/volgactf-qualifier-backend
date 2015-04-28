@@ -6,6 +6,7 @@ securityMiddleware = require '../middleware/security'
 sessionMiddleware = require '../middleware/session'
 contestMiddleware = require '../middleware/contest'
 taskMiddleware = require '../middleware/task'
+teamMiddleware = require '../middleware/team'
 
 constraints = require '../utils/constraints'
 logger = require '../utils/logger'
@@ -75,7 +76,10 @@ router.get '/:taskId/full', sessionMiddleware.needsToBeAuthorizedSupervisor, (re
             response.json serializer task
 
 
-router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
+router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, teamMiddleware.getTeam, urlencodedParser, (request, response, next) ->
+    unless request.team.emailConfirmed
+        throw new errors.EmailNotConfirmedError()
+
     limiter = new LimitController "themis__team#{request.session.identityID}__task#{request.taskId}__submit", timeout: constants.TASK_SUBMIT_LIMIT_TIME, maxAttempts: constants.TASK_SUBMIT_LIMIT_ATTEMPTS
     limiter.check (err, limitExceeded) ->
         if err?

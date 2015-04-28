@@ -182,3 +182,8 @@ class module.exports.TaskCategoryAttachedError extends module.exports.BaseError
 class module.exports.TaskSubmitAttemptsLimitError extends module.exports.BaseError
     constructor: ->
         super 'Too many submit attempts!', 'TaskSubmitAttemptsLimitError', 400
+
+
+class module.exports.EmailNotConfirmedError extends module.exports.BaseError
+    constructor: ->
+        super 'You should confirm your email before you can submit an answer to the task', 'EmailNotConfirmedError', 400
