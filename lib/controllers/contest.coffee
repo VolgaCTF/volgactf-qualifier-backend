@@ -21,6 +21,7 @@ contestSerializer = require '../serializers/contest'
 teamScoreSerializer = require '../serializers/team-score'
 
 when_ = require 'when'
+async = require 'async'
 
 
 class UpdateContestEvent extends BaseEvent
@@ -178,7 +179,7 @@ class ContestController
                                     if err?
                                         callback err
                                     else
-                                        for team in teams
+                                        recalculateTeamScore = (team, next) ->
                                             teamScore = _.findWhere teamScores, teamId: team._id
                                             taskProgressEntries = _.where teamTaskProgress, teamId: team._id
                                             totalScore = 0
@@ -209,11 +210,20 @@ class ContestController
                                             if needUpdate or needCreate
                                                 teamScore.save (err, teamScore) ->
                                                     if err?
-                                                        logger.error err
+                                                        next err, null
                                                     else
+                                                        next null, teamScore
                                                         publisher.publish 'realtime', new UpdateTeamScoreEvent teamScore
+                                            else
+                                                next null, null
 
-                                        callback null
+
+                                        async.mapLimit teams, 5, recalculateTeamScore, (err, results) ->
+                                            if err?
+                                                logger.error err
+                                                callback new errors.InternalError()
+                                            else
+                                                callback null
 
 
 module.exports = ContestController
