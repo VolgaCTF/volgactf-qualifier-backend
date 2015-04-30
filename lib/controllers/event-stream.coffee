@@ -36,4 +36,5 @@ class EventStream extends EventEmitter
                 @emit "message:team#{teamId}", @format eventId, name, 5000, dataForTeam
 
 
-module.exports = new EventStream 1024
+maxStreamConnections = if process.env.MAX_STREAM_CONNECTIONS? then parseInt(process.env.MAX_STREAM_CONNECTIONS, 10) else 1024
+module.exports = new EventStream maxStreamConnections
