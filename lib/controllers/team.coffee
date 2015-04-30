@@ -46,6 +46,29 @@ class ChangeTeamEmailEvent extends BaseEvent
 
 
 class TeamController
+    @restore: (email, callback) ->
+        Team.findOne email: email.toLowerCase(), (err, team) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError()
+            else
+                if team?
+                    team.resetPasswordToken = token.generate()
+                    team.save (err, team) ->
+                        if err?
+                            logger.error err
+                            callback new errors.InternalError()
+                        else
+                            queue('sendEmailQueue').add
+                                message: 'restore'
+                                name: team.name
+                                email: team.email
+                                token: team.resetPasswordToken
+
+                            callback null
+                else
+                    callback new errors.TeamNotFoundError()
+
     @create: (options, callback) ->
         Team.find().or([ {name: options.team}, {email: options.email.toLowerCase()} ]).count (err, count) ->
             if err?
@@ -70,6 +93,8 @@ class TeamController
                                 country: options.country
                                 locality: options.locality
                                 institution: options.institution
+                                disqualified: no
+                                resetPasswordToken: null
                             team.save (err, team) ->
                                 if err?
                                     logger.error err
@@ -81,6 +106,7 @@ class TeamController
                                             filename: options.logoFilename
 
                                     queue('sendEmailQueue').add
+                                        message: 'welcome'
                                         name: team.name
                                         email: team.email
                                         token: team.emailConfirmationToken
@@ -122,6 +148,7 @@ class TeamController
                             callback new errors.InternalError()
                         else
                             queue('sendEmailQueue').add
+                                message: 'welcome'
                                 name: team.name
                                 email: team.email
                                 token: team.emailConfirmationToken
@@ -152,6 +179,7 @@ class TeamController
                                         callback new errors.InternalError()
                                     else
                                         queue('sendEmailQueue').add
+                                            message: 'welcome'
                                             name: team.name
                                             email: team.email
                                             token: team.emailConfirmationToken
@@ -225,6 +253,34 @@ class TeamController
                 callback new errors.InternalError(), null
             else
                 callback null, teams
+
+    @resetPassword: (encodedEmail, encodedToken, newPassword, callback) ->
+        try
+            email = token.decodeString encodedEmail
+            code = token.decode encodedToken
+        catch e
+            logger.error e
+            callback new errors.InvalidResetPasswordURLError()
+            return
+
+        params = email: email, resetPasswordToken: code
+        Team.findOne params, (err, team) ->
+            if team?
+                security.getPasswordHash newPassword, (err, hash) ->
+                    if err?
+                        logger.error err
+                        callback new errors.InternalError()
+                    else
+                        team.passwordHash = hash
+                        team.resetPasswordToken = null
+                        team.save (err, team) ->
+                            if err?
+                                logger.error err
+                                callback new errors.InternalError()
+                            else
+                                callback null
+            else
+                callback new errors.InvalidResetPasswordURLError()
 
     @verifyEmail: (encodedEmail, encodedToken, callback) ->
         try

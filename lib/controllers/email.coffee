@@ -19,4 +19,19 @@ class EmailController
             html: htmlMessage
         }
 
+    @generateRestoreEmail: (params) ->
+        plainTemplateName = path.join __dirname, '..', '..', 'templates', 'restore.plain.mustache'
+        plainTemplate = fs.readFileSync plainTemplateName, 'utf8'
+        plainMessage = mustache.render plainTemplate, params
+
+        htmlTemplateName = path.join __dirname, '..', '..', 'templates', 'restore.html.mustache'
+        htmlTemplate = fs.readFileSync htmlTemplateName, 'utf8'
+        htmlMessage = mustache.render htmlTemplate, params
+
+        {
+            subject: 'Reset your password at VolgaCTF 2015 Quals website!'
+            plain: plainMessage
+            html: htmlMessage
+        }
+
 module.exports = EmailController

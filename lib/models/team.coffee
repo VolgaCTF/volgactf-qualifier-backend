@@ -12,6 +12,7 @@ teamSchema = mongoose.Schema
     locality: String
     institution: String
     disqualified: Boolean
+    resetPasswordToken: Buffer
 
 teamSchema.plugin autoIncrement.plugin, model: 'Team', startAt: 1
 module.exports = mongoose.model 'Team', teamSchema

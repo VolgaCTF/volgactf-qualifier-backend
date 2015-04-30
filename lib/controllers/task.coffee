@@ -80,7 +80,7 @@ class TaskController
     @update: (task, options, callback) ->
         task.description = options.description
         task.categories = options.categories
-        task.hints = _.union task.hints, options.hints
+        task.hints = options.hints
         task.answers = _.union task.answers, options.answers
         task.updatedAt = new Date()
         task.save (err, task) ->

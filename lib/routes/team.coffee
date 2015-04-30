@@ -101,6 +101,23 @@ router.post '/verify-email', securityMiddleware.checkToken, urlencodedParser, (r
             response.json success: yes
 
 
+router.post '/reset-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
+    resetConstraints =
+        team: constraints.base64url
+        code: constraints.base64url
+        password: constraints.password
+
+    validationResult = validator.validate request.body, resetConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.resetPassword request.body.team, request.body.code, request.body.password, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
 router.post '/change-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) ->
     changeConstraints =
         currentPassword: constraints.password
@@ -151,6 +168,21 @@ router.post '/change-email', securityMiddleware.checkToken, sessionMiddleware.ne
         throw new errors.ValidationError()
 
     TeamController.changeEmail request.session.identityID, request.body.email, (err) ->
+        if err?
+            next err
+        else
+            response.json success: yes
+
+
+router.post '/restore', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) ->
+    restoreConstraints =
+        email: constraints.email
+
+    validationResult = validator.validate request.body, restoreConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TeamController.restore request.body.email, (err) ->
         if err?
             next err
         else

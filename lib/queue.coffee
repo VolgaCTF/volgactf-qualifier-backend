@@ -30,17 +30,30 @@ queue('createLogoQueue').process (job, done) ->
 
 
 queue('sendEmailQueue').process (job, done) ->
-    welcomeMessage = EmailController.generateWelcomeEmail
-        name: job.data.name
-        domain: process.env.DOMAIN
-        team: token.encode job.data.email
-        code: token.encode job.data.token
+    if job.data.message is 'welcome'
+        email = EmailController.generateWelcomeEmail
+            name: job.data.name
+            domain: process.env.DOMAIN
+            team: token.encode job.data.email
+            code: token.encode job.data.token
+    else if job.data.message is 'restore'
+        email = EmailController.generateRestoreEmail
+            name: job.data.name
+            domain: process.env.DOMAIN
+            team: token.encode job.data.email
+            code: token.encode job.data.token
+    else
+        email = null
+
+    unless email?
+        done()
+        return
 
     params =
         message:
-            html: welcomeMessage.html
-            text: welcomeMessage.plain
-            subject: welcomeMessage.subject
+            html: email.html
+            text: email.plain
+            subject: email.subject
             from_email: process.env.EMAIL_SENDER
             from_name: 'VolgaCTF'
             to: [

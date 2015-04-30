@@ -3,6 +3,8 @@ logger = require './utils/logger'
 
 SupervisorController = require './controllers/supervisor'
 TeamController = require './controllers/team'
+_ = require 'underscore'
+async = require 'async'
 
 
 parser.command('create_supervisor')
@@ -76,6 +78,31 @@ parser.command('list_teams')
                     logger.info "Team `#{team.name}` <#{team.email}>"
                 process.exit 0
 
+
+parser.command('update_teams')
+    .help 'Update team fields'
+    .callback (opts) ->
+        TeamController.list (err, teams) ->
+            if err?
+                logger.error err
+                process.exit 1
+            else
+                saveTeam = (team, next) ->
+                    team.disqualified = no
+                    team.resetPasswordToken = null
+                    team.save (err, team) ->
+                        if err?
+                            next err, null
+                        else
+                            next null, team
+
+                async.mapLimit teams, 5, saveTeam, (err, results) ->
+                    if err?
+                        logger.error err
+                        process.exit 1
+                    else
+                        logger.info 'Completed'
+                        process.exit 0
 
 module.exports.run = ->
     parser.parse()
