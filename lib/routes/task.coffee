@@ -31,6 +31,7 @@ taskParam = require '../params/task'
 
 LimitController = require '../controllers/limit'
 when_ = require 'when'
+LogController = require '../controllers/log'
 
 
 router.param 'taskId', taskParam.id
@@ -103,8 +104,10 @@ router.post '/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contes
                                         next err
                                     else
                                         response.json success: yes
+                                        LogController.pushLog constants.LOG_TEAM_TASK_SUBMIT_SUCCESS, teamId: request.session.identityID, taskId: request.taskId
                             else
                                 next new errors.WrongTaskAnswerError()
+                                LogController.pushLog constants.LOG_TEAM_TASK_SUBMIT_ERROR, teamId: request.session.identityID, taskId: request.taskId, answer: request.body.answer
                 else
                     next new errors.ValidationError()
 
