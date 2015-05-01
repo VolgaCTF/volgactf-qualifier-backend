@@ -130,6 +130,27 @@ router.post '/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.
                 next new errors.WrongTaskAnswerError()
 
 
+router.post '/:taskId/check', securityMiddleware.checkToken, sessionMiddleware.detectScope, contestMiddleware.contestIsFinished, taskMiddleware.getTask, urlencodedParser, (request, response, next) ->
+    unless _.contains ['guests', 'teams'], request.scope
+        throw new errors.InternalError()
+
+    checkConstraints =
+        answer: constraints.taskAnswer
+
+    validationResult = validator.validate request.body, checkConstraints
+    unless validationResult is true
+        throw new errors.ValidationError()
+
+    TaskController.checkAnswer request.task, request.body.answer, (err, checkResult) ->
+        if err?
+            next err
+        else
+            if checkResult
+                response.json success: yes
+            else
+                next new errors.WrongTaskAnswerError()
+
+
 router.post '/:taskId/open', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, (request, response, next) ->
     TaskController.open request.task, (err) ->
         if err?
