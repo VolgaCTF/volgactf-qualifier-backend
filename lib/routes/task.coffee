@@ -65,7 +65,10 @@ router.get '/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
         if err?
             next err
         else
-            response.json taskSerializer task
+            if request.scope is 'teams' and not task.isOpened()
+                next new errors.NotAuthenticatedError()
+            else
+                response.json taskSerializer task
 
 
 router.get '/:taskId/full', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
