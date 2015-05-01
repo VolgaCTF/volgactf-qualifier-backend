@@ -258,6 +258,8 @@ class TeamController
         try
             email = token.decodeString encodedEmail
             code = token.decode encodedToken
+            unless code?
+                throw 'Reset password code is null'
         catch e
             logger.error e
             callback new errors.InvalidResetPasswordURLError()
