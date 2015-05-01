@@ -190,7 +190,7 @@ class ContestController
                                             for taskProgress in taskProgressEntries
                                                 task = _.findWhere tasks, _id: taskProgress.taskId
                                                 if task? and not _.contains countedTaskIds, taskProgress.taskId
-                                                    countedTaskIds.push task.id
+                                                    countedTaskIds.push taskProgress.taskId
                                                     totalScore += task.value
                                                     if lastUpdatedAt?
                                                         if lastUpdatedAt.getTime() < taskProgress.createdAt.getTime()
