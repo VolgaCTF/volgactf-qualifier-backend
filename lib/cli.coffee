@@ -3,6 +3,8 @@ logger = require './utils/logger'
 
 SupervisorController = require './controllers/supervisor'
 TeamController = require './controllers/team'
+TeamTaskProgressController = require './controllers/team-task-progress'
+TeamTaskProgress = require './models/team-task-progress'
 _ = require 'underscore'
 async = require 'async'
 
@@ -103,6 +105,49 @@ parser.command('update_teams')
                     else
                         logger.info 'Completed'
                         process.exit 0
+
+
+parser.command('cleanup_scores')
+    .help 'Cleanup scores'
+    .callback (opts) ->
+        TeamController.list (err, teams) ->
+            if err?
+                logger.error err
+                process.exit 1
+            else
+                TeamTaskProgressController.list (err, teamTaskProgress) ->
+                    if err?
+                        logger.error err
+                        process.exit 1
+                    else
+                        findDuplicateTeamScore = (team, next) ->
+                            taskProgressEntries = _.where teamTaskProgress, teamId: team._id
+                            countedTaskIds = []
+                            idsToDelete = []
+
+                            for taskProgress in taskProgressEntries
+                                if not _.contains countedTaskIds, taskProgress.taskId
+                                    countedTaskIds.push taskProgress.taskId
+                                else
+                                    idsToDelete.push taskProgress._id
+
+                            next null idsToDelete
+
+                        async.mapLimit teams, 5, findDuplicateTeamScore, (err, results) ->
+                            if err?
+                                logger.error err
+                                process.exit 1
+                            else
+                                duplicateEntryIds = _.union results
+                                toRemoveCount = duplicateEntryIds.length
+                                TeamTaskProgress.remove _id: duplicateEntryIds, (err) ->
+                                    if err?
+                                        logger.error err
+                                        process.exit 1
+                                    else
+                                        logger.info "Removed #{toRemoveCount} entries"
+                                        process.exit 0
+
 
 module.exports.run = ->
     parser.parse()
