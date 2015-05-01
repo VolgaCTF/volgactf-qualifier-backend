@@ -131,7 +131,7 @@ parser.command('cleanup_scores')
                                 else
                                     idsToDelete.push taskProgress._id
 
-                            next null idsToDelete
+                            next null, idsToDelete
 
                         async.mapLimit teams, 5, findDuplicateTeamScore, (err, results) ->
                             if err?
