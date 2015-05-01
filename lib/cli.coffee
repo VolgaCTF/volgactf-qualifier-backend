@@ -139,23 +139,24 @@ parser.command('cleanup_scores')
                                 process.exit 1
                             else
                                 duplicateEntryIds = _.union results
-                                toRemoveCount = duplicateEntryIds.length
+                                logger.info duplicateEntryIds
+                                # toRemoveCount = duplicateEntryIds.length
 
-                                removeDuplicateEntry = (entryId, next) ->
-                                    TeamTaskProgress.remove _id: entryId, (err) ->
-                                        if err?
-                                            logger.error err
-                                            next err, null
-                                        else
-                                            next null, null
+                                # removeDuplicateEntry = (entryId, next) ->
+                                #     TeamTaskProgress.remove _id: entryId, (err) ->
+                                #         if err?
+                                #             logger.error err
+                                #             next err, null
+                                #         else
+                                #             next null, null
 
-                                async.mapLimit toRemoveCount, 5, removeDuplicateEntry, (err, results) ->
-                                    if err?
-                                        logger.error err
-                                        process.exit 1
-                                    else
-                                        logger.info "Removed #{toRemoveCount} entries"
-                                        process.exit 0
+                                # async.mapLimit duplicateEntryIds, 5, removeDuplicateEntry, (err, results) ->
+                                #     if err?
+                                #         logger.error err
+                                #         process.exit 1
+                                #     else
+                                #         logger.info "Removed #{toRemoveCount} entries"
+                                #         process.exit 0
 
 
 module.exports.run = ->
