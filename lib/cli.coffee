@@ -140,7 +140,16 @@ parser.command('cleanup_scores')
                             else
                                 duplicateEntryIds = _.union results
                                 toRemoveCount = duplicateEntryIds.length
-                                TeamTaskProgress.remove _id: duplicateEntryIds, (err) ->
+
+                                removeDuplicateEntry = (entryId, next) ->
+                                    TeamTaskProgress.remove _id: entryId, (err) ->
+                                        if err?
+                                            logger.error err
+                                            next err, null
+                                        else
+                                            next null, null
+
+                                async.mapLimit toRemoveCount, 5, removeDuplicateEntry, (err, results) ->
                                     if err?
                                         logger.error err
                                         process.exit 1
