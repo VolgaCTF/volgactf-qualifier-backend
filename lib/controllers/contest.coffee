@@ -185,9 +185,12 @@ class ContestController
                                             totalScore = 0
                                             lastUpdatedAt = null
 
+                                            countedTaskIds = []
+
                                             for taskProgress in taskProgressEntries
                                                 task = _.findWhere tasks, _id: taskProgress.taskId
-                                                if task?
+                                                if task? and not _.contains countedTaskIds, taskProgress.taskId
+                                                    countedTaskIds.push task.id
                                                     totalScore += task.value
                                                     if lastUpdatedAt?
                                                         if lastUpdatedAt.getTime() < taskProgress.createdAt.getTime()
@@ -196,7 +199,7 @@ class ContestController
                                                         lastUpdatedAt = taskProgress.createdAt
 
                                             needCreate = not teamScore? and totalScore > 0
-                                            needUpdate = teamScore? and totalScore > teamScore.score
+                                            needUpdate = teamScore?
 
                                             if needUpdate
                                                 teamScore.score = totalScore
