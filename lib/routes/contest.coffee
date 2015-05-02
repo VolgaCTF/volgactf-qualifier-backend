@@ -56,15 +56,15 @@ router.get '/progress', sessionMiddleware.needsToBeAuthorizedSupervisor, (reques
             response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
 
 
-router.get '/team/:teamId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
-    unless request.teamId == request.session.identityID
-        throw new errors.NotAuthenticatedError()
-
-    teamTaskProgressController.listForTeam request.session.identityID, (err, teamTaskProgressEntries) ->
+router.get '/team/:teamId/progress', sessionMiddleware.detectScope, (request, response, next) ->
+    teamTaskProgressController.listForTeam request.teamId, (err, teamTaskProgressEntries) ->
         if err?
             next err
         else
-            response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
+            if request.scope is 'supervisors' or (request.scope is 'teams' and request.teamId == request.session.identityID)
+                response.json _.map teamTaskProgressEntries, teamTaskProgressSerializer
+            else
+                response.json teamTaskProgressEntries.length
 
 
 router.get '/task/:taskId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) ->
