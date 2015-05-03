@@ -199,7 +199,7 @@ class ContestController
                                                         lastUpdatedAt = taskProgress.createdAt
 
                                             needCreate = not teamScore? and totalScore > 0
-                                            needUpdate = teamScore?
+                                            needUpdate = teamScore? and totalScore != teamScore.score
 
                                             if needUpdate
                                                 teamScore.score = totalScore
