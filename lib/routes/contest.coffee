@@ -27,6 +27,9 @@ taskParam = require '../params/task'
 teamTaskProgressController = require '../controllers/team-task-progress'
 teamTaskProgressSerializer = require '../serializers/team-task-progress'
 
+LogController = require '../controllers/log'
+logSerializer = require '../serializers/log'
+
 
 router.get '/', (request, response, next) ->
     ContestController.get (err, contest) ->
@@ -73,6 +76,15 @@ router.get '/task/:taskId/progress', sessionMiddleware.needsToBeAuthorizedTeam, 
             next err
         else
             response.json teamTaskProgressEntries.length
+
+
+router.get '/logs', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) ->
+    LogController.list (err, logs) ->
+        if err?
+            next err
+        else
+            response.json _.map logs, logSerializer
+
 
 router.post '/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) ->
     valState = parseInt request.body.state, 10

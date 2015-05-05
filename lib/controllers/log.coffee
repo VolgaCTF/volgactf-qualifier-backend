@@ -32,5 +32,13 @@ class LogController
                 if callback?
                     callback null
 
+    @list: (callback) ->
+        Log.find (err, logs) ->
+            if err?
+                logger.error err
+                callback new errors.InternalError(), null
+            else
+                callback null, logs
+
 
 module.exports = LogController
