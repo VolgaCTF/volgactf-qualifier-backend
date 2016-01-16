@@ -21,6 +21,7 @@
     "bcrypt": "^0.8.5",
     "body-parser": "~1.11.0",
     "bull": "~0.2.4",
+    "busboy": "^0.2.12",
     "coffee-script": "~1.8.0",
     "connect-busboy": "0.0.2",
     "connect-redis": "~2.2.0",
