@@ -111,7 +111,7 @@ app.get '/events', sessionMiddleware.detectScope, (request, response, next) ->
     unless request.scope?
         throw new errors.UnknownIdentityError()
 
-    request.socket.setTimeout Infinity
+    # request.socket.setTimeout Infinity
 
     response.writeHead 200, {
         'Content-Type': 'text/event-stream',
