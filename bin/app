@@ -6,7 +6,7 @@ var logger = require('../lib/utils/logger');
 var eventStream = require('../lib/controllers/event-stream');
 
 var getServerPort = function() {
-    return parseInt(process.env.SERVER_PORT, 10) | 3000;
+    return parseInt(process.env.SERVER_PORT, 10) || 3000;
 };
 
 var server = app.listen(getServerPort(), function() {
