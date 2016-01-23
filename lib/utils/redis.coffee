@@ -5,7 +5,5 @@ port = if process.env.REDIS_PORT? then parseInt(process.env.REDIS_PORT, 10) else
 database = if process.env.REDIS_DB? then parseInt(process.env.REDIS_DB, 10) else 0
 
 module.exports =
-    createClient: (options = {}) ->
-        client = redis.createClient port, host, options
-        client.select database
-        client
+    createClient: ->
+        redis.createClient port, host, db: database
