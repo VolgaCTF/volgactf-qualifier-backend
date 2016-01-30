@@ -1,7 +1,7 @@
 import TaskCategory from '../models/task-category'
-import errors from '../utils/errors'
+import { InternalError, TaskCategoryNotFoundError, DuplicateTaskCategoryTitleError, TaskCategoryAttachedError } from '../utils/errors'
 import taskCategorySerializer from '../serializers/task-category'
-import publisher from '../utils/publisher'
+import publish from '../utils/publisher'
 
 import BaseEvent from '../utils/events'
 import TaskController from './task'
@@ -45,7 +45,7 @@ class TaskCategoryController {
     TaskCategory.find((err, taskCategories) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, taskCategories)
       }
@@ -56,12 +56,12 @@ class TaskCategoryController {
     TaskCategory.findOne({ _id: id }, (err, taskCategory) => {
       if (err) {
         logger.error(err)
-        callback(new errors.TaskCategoryNotFoundError(), null)
+        callback(new TaskCategoryNotFoundError(), null)
       } else {
         if (taskCategory) {
           callback(null, taskCategory)
         } else {
-          callback(new errors.TaskCategoryNotFoundError(), null)
+          callback(new TaskCategoryNotFoundError(), null)
         }
       }
     })
@@ -71,10 +71,10 @@ class TaskCategoryController {
     TaskCategory.find({ title: title }).count((err, count) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         if (count > 0) {
-          callback(new errors.DuplicateTaskCategoryTitleError(), null)
+          callback(new DuplicateTaskCategoryTitleError(), null)
         } else {
           let now = new Date()
           let taskCategory = new TaskCategory({
@@ -87,10 +87,10 @@ class TaskCategoryController {
           taskCategory.save((err, taskCategory) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError(), null)
+              callback(new InternalError(), null)
             } else {
               callback(null, taskCategory)
-              publisher.publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+              publish('realtime', new CreateTaskCategoryEvent(taskCategory))
             }
           })
         }
@@ -106,10 +106,10 @@ class TaskCategoryController {
         TaskCategory.find({ title: title }).count((err, count) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError(), null)
+            callback(new InternalError(), null)
           } else {
             if (count > 0 && title !== taskCategory.title) {
-              callback(new errors.DuplicateTaskCategoryTitleError(), null)
+              callback(new DuplicateTaskCategoryTitleError(), null)
             } else {
               taskCategory.title = title
               taskCategory.description = description
@@ -117,10 +117,10 @@ class TaskCategoryController {
               taskCategory.save((err, taskCategory) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError(), null)
+                  callback(new InternalError(), null)
                 } else {
                   callback(null, taskCategory)
-                  publisher.publish('realtime', new UpdateTaskCategoryEvent(taskCategory))
+                  publish('realtime', new UpdateTaskCategoryEvent(taskCategory))
                 }
               })
             }
@@ -136,14 +136,14 @@ class TaskCategoryController {
         callback(err)
       } else {
         if (tasks.length > 0) {
-          callback(new errors.TaskCategoryAttachedError())
+          callback(new TaskCategoryAttachedError())
         } else {
           TaskCategory.remove({ _id: id }, (err) => {
             if (err) {
-              callback(new errors.TaskCategoryNotFoundError())
+              callback(new TaskCategoryNotFoundError())
             } else {
               callback(null)
-              publisher.publish('realtime', new RemoveTaskCategoryEvent(id))
+              publish('realtime', new RemoveTaskCategoryEvent(id))
             }
           })
         }

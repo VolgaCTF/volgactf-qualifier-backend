@@ -14,13 +14,13 @@ import Validator from 'validator.js'
 let validator = new Validator.Validator()
 let router = express.Router()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
-import errors from '../utils/errors'
+import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError } from '../utils/errors'
 import _ from 'underscore'
 import is_ from 'is_js'
 
-import sessionMiddleware from '../middleware/session'
-import securityMiddleware from '../middleware/security'
-import contestMiddleware from '../middleware/contest'
+import { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } from '../middleware/session'
+import { checkToken } from '../middleware/security'
+import { contestNotFinished } from '../middleware/contest'
 
 import teamSerializer from '../serializers/team'
 import teamTaskProgressSerializer from '../serializers/team-task-progress'
@@ -29,13 +29,13 @@ import teamTaskProgressController from '../controllers/team-task-progress'
 import teamParam from '../params/team'
 
 
-router.get('/all', sessionMiddleware.detectScope, (request, response, next) => {
+router.get('/all', detectScope, (request, response, next) => {
   let onFetch = function(exposeEmail) {
     let serializer = _.partial(teamSerializer, _, { exposeEmail: exposeEmail })
     return (err, teams) => {
       if (err) {
         logger.error(err)
-        next(new errors.InternalError())
+        next(new InternalError())
       } else {
         response.json(_.map(teams, serializer))
       }
@@ -56,10 +56,10 @@ router.param('teamId', teamParam.id)
 router.get('/:teamId/logo', (request, response) => {
   Team.findOne({ _id: request.teamId }, (err, team) => {
     if (team) {
-      filename = path.join(process.env.LOGOS_DIR, `team-${request.params.teamId}.png`)
+      let filename = path.join(process.env.LOGOS_DIR, `team-${request.params.teamId}.png`)
       fs.lstat(filename, (err, stats) => {
         if (err) {
-          nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
+          let nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
           response.sendFile(nologoFilename)
         } else {
           response.sendFile(filename)
@@ -102,7 +102,7 @@ router.get('/:teamId/profile', (request, response) => {
 })
 
 
-router.post('/verify-email', securityMiddleware.checkToken, urlencodedParser, (request, response, next) => {
+router.post('/verify-email', checkToken, urlencodedParser, (request, response, next) => {
   let verifyConstraints = {
     team: constraints.base64url,
     code: constraints.base64url
@@ -110,7 +110,7 @@ router.post('/verify-email', securityMiddleware.checkToken, urlencodedParser, (r
 
   let validationResult = validator.validate(request.body, verifyConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.verifyEmail(request.body.team, request.body.code, (err) => {
@@ -123,7 +123,7 @@ router.post('/verify-email', securityMiddleware.checkToken, urlencodedParser, (r
 })
 
 
-router.post('/reset-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
+router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let resetConstraints = {
     team: constraints.base64url,
     code: constraints.base64url,
@@ -132,7 +132,7 @@ router.post('/reset-password', securityMiddleware.checkToken, sessionMiddleware.
 
   let validationResult = validator.validate(request.body, resetConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.resetPassword(request.body.team, request.body.code, request.body.password, (err) => {
@@ -145,7 +145,7 @@ router.post('/reset-password', securityMiddleware.checkToken, sessionMiddleware.
 })
 
 
-router.post('/change-password', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
+router.post('/change-password', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let changeConstraints = {
     currentPassword: constraints.password,
     newPassword: constraints.password
@@ -153,7 +153,7 @@ router.post('/change-password', securityMiddleware.checkToken, sessionMiddleware
 
   let validationResult = validator.validate(request.body, changeConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.changePassword(request.session.identityID, request.body.currentPassword, request.body.newPassword, (err) => {
@@ -166,7 +166,7 @@ router.post('/change-password', securityMiddleware.checkToken, sessionMiddleware
 })
 
 
-router.post('/edit-profile', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
+router.post('/edit-profile', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let editConstraints = {
     country: constraints.country,
     locality: constraints.locality,
@@ -175,7 +175,7 @@ router.post('/edit-profile', securityMiddleware.checkToken, sessionMiddleware.ne
 
   let validationResult = validator.validate(request.body, editConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.editProfile(request.session.identityID, request.body.country, request.body.locality, request.body.institution, (err) => {
@@ -188,7 +188,7 @@ router.post('/edit-profile', securityMiddleware.checkToken, sessionMiddleware.ne
 })
 
 
-router.post('/resend-confirmation-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) => {
+router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, (request, response, next) => {
   TeamController.resendConfirmationEmail(request.session.identityID, (err) => {
     if (err) {
       next(err)
@@ -199,14 +199,14 @@ router.post('/resend-confirmation-email', securityMiddleware.checkToken, session
 })
 
 
-router.post('/change-email', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
+router.post('/change-email', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let changeConstraints = {
     email: constraints.email
   }
 
   let validationResult = validator.validate(request.body, changeConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.changeEmail(request.session.identityID, request.body.email, (err) => {
@@ -219,14 +219,14 @@ router.post('/change-email', securityMiddleware.checkToken, sessionMiddleware.ne
 })
 
 
-router.post('/restore', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
+router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let restoreConstraints = {
     email: constraints.email
   }
 
   let validationResult = validator.validate(request.body, restoreConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.restore(request.body.email, (err) => {
@@ -239,7 +239,7 @@ router.post('/restore', securityMiddleware.checkToken, sessionMiddleware.needsTo
 })
 
 
-router.post('/signin', securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
+router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let signinConstraints = {
     team: constraints.team,
     password: constraints.password
@@ -247,7 +247,7 @@ router.post('/signin', securityMiddleware.checkToken, sessionMiddleware.needsToB
 
   let validationResult = validator.validate(request.body, signinConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TeamController.signin(request.body.team, request.body.password, (err, team) => {
@@ -274,7 +274,7 @@ let multidataParser = busboy({
 })
 
 
-router.post('/upload-logo', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedTeam, multidataParser, (request, response, next) => {
+router.post('/upload-logo', checkToken, needsToBeAuthorizedTeam, multidataParser, (request, response, next) => {
   let teamLogo = tmp.fileSync()
 
   request.busboy.on('file', (fieldName, file, filename, encoding, mimetype) => {
@@ -289,12 +289,12 @@ router.post('/upload-logo', securityMiddleware.checkToken, sessionMiddleware.nee
     gm(teamLogo.name).size((err, size) => {
       if (err) {
         logger.error(err)
-        next(new errors.InvalidImageError())
+        next(new InvalidImageError())
       } else {
         if (size.width < 48) {
-          next(new errors.ImageDimensionsError())
+          next(new ImageDimensionsError())
         } else if (size.width != size.height) {
-          next(new errors.ImageAspectRatioError())
+          next(new ImageAspectRatioError())
         } else {
           TeamController.changeLogo(request.session.identityID, teamLogo.name, (err) => {
             if (err) {
@@ -310,7 +310,7 @@ router.post('/upload-logo', securityMiddleware.checkToken, sessionMiddleware.nee
 })
 
 
-router.post('/signup', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeUnauthorized, multidataParser, (request, response, next) => {
+router.post('/signup', contestNotFinished, checkToken, needsToBeUnauthorized, multidataParser, (request, response, next) => {
   let teamInfo = {}
   let teamLogo = tmp.fileSync()
 
@@ -342,12 +342,12 @@ router.post('/signup', contestMiddleware.contestNotFinished, securityMiddleware.
       gm(teamLogo.name).size((err, size) => {
         if (err) {
           logger.error(err)
-          next(new errors.InvalidImageError())
+          next(new InvalidImageError())
         } else {
           if (size.width < 48) {
-            next(new errors.ImageDimensionsError())
+            next(new ImageDimensionsError())
           } else if (size.width != size.height) {
-            next(new errors.ImageAspectRatioError())
+            next(new ImageAspectRatioError())
           } else {
             TeamController.create(teamInfo, (err, team) => {
               if (err) {
@@ -360,7 +360,7 @@ router.post('/signup', contestMiddleware.contestNotFinished, securityMiddleware.
         }
       })
     } else {
-      next(new errors.ValidationError())
+      next(new ValidationError())
     }
   })
 })

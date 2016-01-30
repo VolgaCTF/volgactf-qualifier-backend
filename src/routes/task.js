@@ -2,11 +2,11 @@ import express from 'express'
 
 import categoryRouter from './task-category'
 
-import securityMiddleware from '../middleware/security'
-import sessionMiddleware from '../middleware/session'
-import contestMiddleware from '../middleware/contest'
-import taskMiddleware from '../middleware/task'
-import teamMiddleware from '../middleware/team'
+import { checkToken } from '../middleware/security'
+import { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin } from '../middleware/session'
+import { getState, contestIsStarted, contestIsFinished, contestNotFinished } from '../middleware/contest'
+import { getTask } from '../middleware/task'
+import { getTeam } from '../middleware/team'
 
 import constraints from '../utils/constraints'
 import logger from '../utils/logger'
@@ -19,7 +19,7 @@ let urlencodedParser = bodyParser.urlencoded({ extended: false })
 let router = express.Router()
 router.use('/category', categoryRouter)
 
-import errors from '../utils/errors'
+import { InternalError, NotAuthenticatedError, EmailNotConfirmedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError } from '../utils/errors'
 import is_ from 'is_js'
 import _ from 'underscore'
 
@@ -37,13 +37,13 @@ import LogController from '../controllers/log'
 router.param('taskId', taskParam.id)
 
 
-router.get('/all', sessionMiddleware.detectScope, (request, response, next) => {
+router.get('/all', detectScope, (request, response, next) => {
   let onFetch = (exposeEmail) => {
     let serializer = _.partial(taskSerializer, _, { preview: true })
     return (err, tasks) => {
       if (err) {
         logger.error(err)
-        next(new errors.InternalError())
+        next(new InternalError())
       } else {
         response.json(_.map(tasks, serializer))
       }
@@ -58,13 +58,13 @@ router.get('/all', sessionMiddleware.detectScope, (request, response, next) => {
 })
 
 
-router.get('/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState, (request, response, next) => {
+router.get('/:taskId', detectScope, getState, (request, response, next) => {
   let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
   let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
   let supervisorsEligible = (request.scope === 'supervisors')
 
   if (!(guestsEligible || teamsEligible || supervisorsEligible)) {
-    throw new errors.NotAuthenticatedError()
+    throw new NotAuthenticatedError()
   }
 
   TaskController.get(request.taskId, (err, task) => {
@@ -72,7 +72,7 @@ router.get('/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
       next(err)
     } else {
       if (request.scope === 'teams' && !task.isOpened()) {
-        next(new errors.NotAuthenticatedError())
+        next(new NotAuthenticatedError())
       } else {
         response.json(taskSerializer(task))
       }
@@ -81,7 +81,7 @@ router.get('/:taskId', sessionMiddleware.detectScope, contestMiddleware.getState
 })
 
 
-router.get('/:taskId/full', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) => {
+router.get('/:taskId/full', needsToBeAuthorizedSupervisor, (request, response, next) => {
   let serializer = _.partial(taskSerializer, _, { full: true })
   TaskController.get(request.taskId, (err, task) => {
     if (err) {
@@ -93,9 +93,9 @@ router.get('/:taskId/full', sessionMiddleware.needsToBeAuthorizedSupervisor, (re
 })
 
 
-router.post('/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contestMiddleware.contestIsStarted, securityMiddleware.checkToken, taskMiddleware.getTask, teamMiddleware.getTeam, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
   if (!request.team.emailConfirmed) {
-    throw new errors.EmailNotConfirmedError()
+    throw new EmailNotConfirmedError()
   }
 
   let limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
@@ -108,7 +108,7 @@ router.post('/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contes
       next(err)
     } else {
       if (limitExceeded) {
-        next(new errors.TaskSubmitAttemptsLimitError())
+        next(new TaskSubmitAttemptsLimitError())
       } else {
         let submitConstraints = {
           answer: constraints.taskAnswer
@@ -133,7 +133,7 @@ router.post('/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contes
                   }
                 })
               } else {
-                next(new errors.WrongTaskAnswerError())
+                next(new WrongTaskAnswerError())
                 LogController.pushLog(constants.LOG_TEAM_TASK_SUBMIT_ERROR, {
                   teamId: request.session.identityID,
                   taskId: request.taskId,
@@ -143,7 +143,7 @@ router.post('/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contes
             }
           })
         } else {
-          next(new errors.ValidationError())
+          next(new ValidationError())
         }
       }
     }
@@ -151,14 +151,14 @@ router.post('/:taskId/submit', sessionMiddleware.needsToBeAuthorizedTeam, contes
 })
 
 
-router.post('/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, taskMiddleware.getTask, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTask, urlencodedParser, (request, response, next) => {
   let reviseConstraints = {
     answer: constraints.taskAnswer
   }
 
   let validationResult = validator.validate(request.body, reviseConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
@@ -168,16 +168,16 @@ router.post('/:taskId/revise', securityMiddleware.checkToken, sessionMiddleware.
       if (checkResult) {
         response.json({ success: true })
       } else {
-        next(new errors.WrongTaskAnswerError())
+        next(new WrongTaskAnswerError())
       }
     }
   })
 })
 
 
-router.post('/:taskId/check', securityMiddleware.checkToken, sessionMiddleware.detectScope, contestMiddleware.contestIsFinished, taskMiddleware.getTask, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/check', checkToken, detectScope, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
   if (!_.contains(['guests', 'teams'], request.scope)) {
-    throw new errors.InternalError()
+    throw new InternalError()
   }
 
   let checkConstraints = {
@@ -186,7 +186,7 @@ router.post('/:taskId/check', securityMiddleware.checkToken, sessionMiddleware.d
 
   let validationResult = validator.validate(request.body, checkConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
@@ -196,14 +196,14 @@ router.post('/:taskId/check', securityMiddleware.checkToken, sessionMiddleware.d
       if (checkResult) {
         response.json({ success: true })
       } else {
-        next(new errors.WrongTaskAnswerError())
+        next(new WrongTaskAnswerError())
       }
     }
   })
 })
 
 
-router.post('/:taskId/open', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, (request, response, next) => {
+router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
   TaskController.open(request.task, (err) => {
     if (err) {
       next(err)
@@ -214,7 +214,7 @@ router.post('/:taskId/open', contestMiddleware.contestIsStarted, securityMiddlew
 })
 
 
-router.post('/:taskId/close', contestMiddleware.contestIsStarted, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, (request, response, next) => {
+router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
   TaskController.close(request.task, (err) => {
     if (err) {
       next(err)
@@ -258,7 +258,7 @@ function sanitizeCreateTaskParams(params, callback) {
     if (is_.number(value)) {
       deferred.resolve(value)
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -276,7 +276,7 @@ function sanitizeCreateTaskParams(params, callback) {
 
     if (is_.array(categories)) {
       let valCategories = []
-      for (valCategoryStr in categories) {
+      for (let valCategoryStr of categories) {
         let valCategory = parseInt(valCategoryStr, 10)
         if (is_.number(valCategory)) {
           valCategories.push(valCategory)
@@ -284,7 +284,7 @@ function sanitizeCreateTaskParams(params, callback) {
       }
       deferred.resolve(_.uniq(valCategories))
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -304,7 +304,7 @@ function sanitizeCreateTaskParams(params, callback) {
     if (is_.array(answers)) {
       deferred.resolve(_.uniq(answers))
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -316,7 +316,7 @@ function sanitizeCreateTaskParams(params, callback) {
     if (is_.boolean(caseSensitive)) {
       deferred.resolve(caseSensitive)
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -341,7 +341,7 @@ function sanitizeCreateTaskParams(params, callback) {
 }
 
 
-router.post('/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   sanitizeCreateTaskParams(request.body, (err, taskParams) => {
     if (err) {
       next(err)
@@ -366,7 +366,7 @@ router.post('/create', contestMiddleware.contestNotFinished, securityMiddleware.
           }
         })
       } else {
-        next(new errors.ValidationError())
+        next(new ValidationError())
       }
     }
   })
@@ -406,7 +406,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
 
     if (is_.array(categories)) {
       let valCategories = []
-      for (valCategoryStr in categories) {
+      for (let valCategoryStr of categories) {
         let valCategory = parseInt(valCategoryStr, 10)
         if (is_.number(valCategory)) {
           valCategories.push(valCategory)
@@ -414,7 +414,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
       }
       deferred.resolve(_.uniq(valCategories))
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -433,7 +433,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
     if (is_.array(answers)) {
       deferred.resolve(_.uniq (answers))
     } else {
-      deferred.reject(new errors.ValidationError())
+      deferred.reject(new ValidationError())
     }
 
     return deferred.promise
@@ -455,7 +455,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
 }
 
 
-router.post('/:taskId/update', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, taskMiddleware.getTask, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedParser, (request, response, next) => {
   sanitizeUpdateTaskParams(request.body, request.task, (err, taskParams) => {
     if (err) {
       next(err)
@@ -478,7 +478,7 @@ router.post('/:taskId/update', contestMiddleware.contestNotFinished, securityMid
         })
       } else {
         logger.error(validationResult)
-        next(new errors.ValidationError())
+        next(new ValidationError())
       }
     }
   })

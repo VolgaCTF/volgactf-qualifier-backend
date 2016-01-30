@@ -1,7 +1,0 @@
-#!/usr/bin/env node
-
-require('coffee-script/register');
-
-var scoreUpdater = require('../lib/score-updater');
-
-scoreUpdater.run();

@@ -1,9 +1,9 @@
 import TeamController from '../controllers/team'
 import TeamTaskProgress from '../models/team-task-progress'
 import logger from '../utils/logger'
-import errors from '../utils/errors'
+import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
 import BaseEvent from '../utils/events'
-import publisher from '../utils/publisher'
+import publish from '../utils/publisher'
 import teamTaskProgressSerializer from '../serializers/team-task-progress'
 
 
@@ -26,10 +26,10 @@ class TeamTaskProgressController {
         TeamTaskProgress.find({ teamId: team._id, taskId: task._id }).count((err, count) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError(), null)
+            callback(new InternalError(), null)
           } else {
             if (count > 0) {
-              callback(new errors.TaskAlreadySolvedError(), null)
+              callback(new TaskAlreadySolvedError(), null)
             } else {
               let teamTaskProgress = new TeamTaskProgress({
                 teamId: team._id,
@@ -40,10 +40,10 @@ class TeamTaskProgressController {
               teamTaskProgress.save((err, teamTaskProgress) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError(), null)
+                  callback(new InternalError(), null)
                 } else {
                   callback(null, teamTaskProgress)
-                  publisher.publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
+                  publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
                 }
               })
             }
@@ -57,7 +57,7 @@ class TeamTaskProgressController {
     TeamTaskProgress.find({}, (err, teamTaskProgress) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, teamTaskProgress)
       }
@@ -68,7 +68,7 @@ class TeamTaskProgressController {
     TeamTaskProgress.find({ teamId: teamId }, (err, teamTaskProgress) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, teamTaskProgress)
       }
@@ -79,7 +79,7 @@ class TeamTaskProgressController {
     TeamTaskProgress.find({ taskId: taskId }, (err, teamTaskProgress) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, teamTaskProgress)
       }

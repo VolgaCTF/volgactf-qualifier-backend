@@ -6,9 +6,9 @@ let router = express.Router()
 import TaskCategoryController from '../controllers/task-category'
 import taskCategorySerializer from '../serializers/task-category'
 
-import securityMiddleware from '../middleware/security'
-import sessionMiddleware from '../middleware/session'
-import contestMiddleware from '../middleware/contest'
+import { checkToken } from '../middleware/security'
+import { needsToBeAuthorizedAdmin } from '../middleware/session'
+import { contestNotFinished } from '../middleware/contest'
 
 import Validator from 'validator.js'
 let validator = new Validator.Validator()
@@ -31,7 +31,7 @@ router.get('/all', (request, response, next) => {
 })
 
 
-router.post('/create', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let createConstraints = {
     title: constraints.taskCategoryTitle,
     description: constraints.taskCategoryDescription
@@ -55,7 +55,7 @@ router.post('/create', contestMiddleware.contestNotFinished, securityMiddleware.
 router.param('taskCategoryId', taskCategoryParam.id)
 
 
-router.post('/:taskCategoryId/remove', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, (request, response, next) => {
+router.post('/:taskCategoryId/remove', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
   TaskCategoryController.remove(request.taskCategoryId, (err) => {
     if (err) {
       next(err)
@@ -66,7 +66,7 @@ router.post('/:taskCategoryId/remove', contestMiddleware.contestNotFinished, sec
 })
 
 
-router.post('/:taskCategoryId/update', contestMiddleware.contestNotFinished, securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let updateConstraints = {
     title: constraints.taskCategoryTitle,
     description: constraints.taskCategoryDescription

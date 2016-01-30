@@ -4,6 +4,6 @@ let queueTask = function() {
   queue('updateScoresQueue').add()
 }
 
-export function run() {
+export default function run() {
   setInterval(queueTask, 60000)
 }

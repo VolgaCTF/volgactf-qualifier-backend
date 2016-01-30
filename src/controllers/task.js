@@ -1,9 +1,9 @@
 import Task from '../models/task'
 
 import logger from '../utils/logger'
-import errors from '../utils/errors'
+import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
 import constants from '../utils/constants'
-import publisher from '../utils/publisher'
+import publish from '../utils/publisher'
 
 import _ from 'underscore'
 import BaseEvent from '../utils/events'
@@ -60,10 +60,10 @@ class TaskController {
     Task.find({ title: options.title }).count((err, count) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         if (count > 0) {
-          callback(new errors.DuplicateTaskTitleError(), null)
+          callback(new DuplicateTaskTitleError(), null)
         } else {
           let now = new Date()
           let task = new Task({
@@ -82,10 +82,10 @@ class TaskController {
           task.save((err, task) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError(), null)
+              callback(new InternalError(), null)
             } else {
               callback(null, task)
-              publisher.publish('realtime', new CreateTaskEvent(task))
+              publish('realtime', new CreateTaskEvent(task))
             }
           })
         }
@@ -102,10 +102,10 @@ class TaskController {
     task.save((err, task) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, task)
-        publisher.publish('realtime', new UpdateTaskEvent(task))
+        publish('realtime', new UpdateTaskEvent(task))
       }
     })
   }
@@ -114,7 +114,7 @@ class TaskController {
     Task.find((err, tasks) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, tasks)
       }
@@ -131,7 +131,7 @@ class TaskController {
       .find((err, tasks) => {
         if (err) {
           logger.error(err)
-          callback(new errors.InternalError(), null)
+          callback(new InternalError(), null)
         } else {
           callback(null, tasks)
         }
@@ -144,7 +144,7 @@ class TaskController {
     }
 
     let answerCorrect = false
-    for (answer in task.answers) {
+    for (let answer of task.answers) {
       if (task.caseSensitive) {
         answerCorrect = (proposedAnswer === answer)
       } else {
@@ -165,19 +165,19 @@ class TaskController {
       task.save((err, task) => {
         if (err) {
           logger.error(err)
-          callback(new errors.InternalError())
+          callback(new InternalError())
         } else {
           callback(null)
-          publisher.publish('realtime', new OpenTaskEvent(task))
+          publish('realtime', new OpenTaskEvent(task))
         }
       })
     } else {
       if (task.isOpened()) {
-        callback(new errors.TaskAlreadyOpenedError())
+        callback(new TaskAlreadyOpenedError())
       } else if (task.isClosed()) {
-        callback(new errors.TaskClosedError())
+        callback(new TaskClosedError())
       } else {
-        callback(new errors.InternalError())
+        callback(new InternalError())
       }
     }
   }
@@ -189,19 +189,19 @@ class TaskController {
       task.save((err, task) => {
         if (err) {
           logger.error(err)
-          callback(new errors.InternalError())
+          callback(new InternalError())
         } else {
           callback(null)
-          publisher.publish('realtime', new CloseTaskEvent(task))
+          publish('realtime', new CloseTaskEvent(task))
         }
       })
     } else {
       if (task.isInitial()) {
-        callback(new errors.TaskNotOpenedError())
+        callback(new TaskNotOpenedError())
       } else if (task.isClosed()) {
-        callback(new errors.TaskAlreadyClosedError())
+        callback(new TaskAlreadyClosedError())
       } else {
-        callback(new errors.InternalError())
+        callback(new InternalError())
       }
     }
   }
@@ -210,12 +210,12 @@ class TaskController {
     Task.findOne({ _id: id }, (err, task) => {
       if (err) {
         logger.error(err)
-        callback(new errors.TaskNotFoundError(), null)
+        callback(new TaskNotFoundError(), null)
       } else {
         if (task) {
           callback(null, task)
         } else {
-          callback(new errors.TaskNotFoundError(), null)
+          callback(new TaskNotFoundError(), null)
         }
       }
     })
@@ -225,7 +225,7 @@ class TaskController {
     Task.find({}, (err, tasks) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, _.filter(tasks, (task) => {
           return _.contains(task.categories, categoryId)

@@ -4,7 +4,7 @@ let router = express.Router()
 import bodyParser from 'body-parser'
 import Validator from 'validator.js'
 let validator = new Validator.Validator()
-import errors from '../utils/errors'
+import { ValidationError } from '../utils/errors'
 import constraints from '../utils/constraints'
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -12,8 +12,8 @@ let urlencodedParser = bodyParser.urlencoded({ extended: false })
 import ContestController from '../controllers/contest'
 import constants from '../utils/constants'
 
-import sessionMiddleware from '../middleware/session'
-import securityMiddleware from '../middleware/security'
+import { needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin, detectScope } from '../middleware/session'
+import { checkToken } from '../middleware/security'
 
 import logger from '../utils/logger'
 import is_ from 'is_js'
@@ -57,7 +57,7 @@ router.param('teamId', teamParam.id)
 router.param('taskId', taskParam.id)
 
 
-router.get('/progress', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) => {
+router.get('/progress', needsToBeAuthorizedSupervisor, (request, response, next) => {
   teamTaskProgressController.list((err, teamTaskProgressEntries) => {
     if (err) {
       next(err)
@@ -68,7 +68,7 @@ router.get('/progress', sessionMiddleware.needsToBeAuthorizedSupervisor, (reques
 })
 
 
-router.get('/team/:teamId/progress', sessionMiddleware.detectScope, (request, response, next) => {
+router.get('/team/:teamId/progress', detectScope, (request, response, next) => {
   teamTaskProgressController.listForTeam(request.teamId, (err, teamTaskProgressEntries) => {
     if (err) {
       next(err)
@@ -83,7 +83,7 @@ router.get('/team/:teamId/progress', sessionMiddleware.detectScope, (request, re
 })
 
 
-router.get('/task/:taskId/progress', sessionMiddleware.needsToBeAuthorizedTeam, (request, response, next) => {
+router.get('/task/:taskId/progress', needsToBeAuthorizedTeam, (request, response, next) => {
   teamTaskProgressController.listForTask(request.taskId, (err, teamTaskProgressEntries) => {
     if (err) {
       next(err)
@@ -94,7 +94,7 @@ router.get('/task/:taskId/progress', sessionMiddleware.needsToBeAuthorizedTeam, 
 })
 
 
-router.get('/logs', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) => {
+router.get('/logs', needsToBeAuthorizedSupervisor, (request, response, next) => {
   LogController.list((err, logs) => {
     if (err) {
       next(err)
@@ -105,26 +105,26 @@ router.get('/logs', sessionMiddleware.needsToBeAuthorizedSupervisor, (request, r
 })
 
 
-router.post('/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let valState = parseInt(request.body.state, 10)
   if (is_.number(valState)) {
     request.body.state = valState
   } else {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   let valStartsAt = parseInt(request.body.startsAt, 10)
   if (is_.number(valStartsAt)) {
     request.body.startsAt = new Date(valStartsAt)
   } else {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   let valFinishesAt = parseInt(request.body.finishesAt, 10)
   if (is_.number(valFinishesAt)) {
     request.body.finishesAt = new Date(valFinishesAt)
   } else {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   let updateConstraints = {
@@ -136,7 +136,7 @@ router.post('/update', securityMiddleware.checkToken, sessionMiddleware.needsToB
   let validationResult = validator.validate(request.body, updateConstraints)
   if (!validationResult) {
     logger.error(validationResult)
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   ContestController.update(request.body.state, request.body.startsAt, request.body.finishesAt, (err, contest) => {

@@ -1,8 +1,0 @@
-#!/usr/bin/env node
-
-require('coffee-script/register');
-
-var queue = require('../lib/queue');
-var eventStream = require('../lib/controllers/event-stream');
-
-eventStream.run();

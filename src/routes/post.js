@@ -5,14 +5,14 @@ import Validator from 'validator.js'
 let validator = new Validator.Validator()
 
 import PostController from '../controllers/post'
-import errors from '../utils/errors'
+import { ValidationError } from '../utils/errors'
 import constraints from '../utils/constraints'
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 let router = express.Router()
 
-import sessionMiddleware from '../middleware/session'
-import securityMiddleware from '../middleware/security'
+import { needsToBeAuthorizedSupervisor } from '../middleware/session'
+import { checkToken } from '../middleware/security'
 
 import postParam from '../params/post'
 
@@ -32,7 +32,7 @@ router.get('/all', (request, response, next) => {
 })
 
 
-router.post('/create', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
+router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
   let createConstraints = {
     title: constraints.postTitle,
     description: constraints.postDescription
@@ -40,7 +40,7 @@ router.post('/create', securityMiddleware.checkToken, sessionMiddleware.needsToB
 
   let validationResult = validator.validate(request.body, createConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   PostController.create(request.body.title, request.body.description, (err, post) => {
@@ -56,7 +56,7 @@ router.post('/create', securityMiddleware.checkToken, sessionMiddleware.needsToB
 router.param('postId', postParam.id)
 
 
-router.post('/:postId/remove', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, (request, response, next) => {
+router.post('/:postId/remove', checkToken, needsToBeAuthorizedSupervisor, (request, response, next) => {
   PostController.remove(request.postId, (err) => {
     if (err) {
       next(err)
@@ -67,7 +67,7 @@ router.post('/:postId/remove', securityMiddleware.checkToken, sessionMiddleware.
 })
 
 
-router.post('/:postId/update', securityMiddleware.checkToken, sessionMiddleware.needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
+router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
   let updateConstraints = {
     title: constraints.postTitle,
     description: constraints.postDescription
@@ -75,7 +75,7 @@ router.post('/:postId/update', securityMiddleware.checkToken, sessionMiddleware.
 
   let validationResult = validator.validate(request.body, updateConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   PostController.update(request.postId, request.body.title, request.body.description, (err, post) => {

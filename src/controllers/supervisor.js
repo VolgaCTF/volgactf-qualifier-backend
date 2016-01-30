@@ -1,5 +1,5 @@
 import Supervisor from '../models/supervisor'
-import security from '../utils/security'
+import { getPasswordHash, checkPassword } from '../utils/security'
 import { InvalidSupervisorCredentialsError } from '../utils/errors'
 
 
@@ -9,7 +9,7 @@ class SupervisorController {
       if (supervisor) {
         callback('Supervisor exists!', null)
       } else {
-        security.getPasswordHash(options.password, (err, hash) => {
+        getPasswordHash(options.password, (err, hash) => {
           if (err) {
             callback(err, null)
           } else {
@@ -45,7 +45,7 @@ class SupervisorController {
   static login(username, password, callback) {
     Supervisor.findOne({ username: username }, (err, supervisor) => {
       if (supervisor) {
-        security.checkPassword(password, supervisor.passwordHash, (err, res) => {
+        checkPassword(password, supervisor.passwordHash, (err, res) => {
           if (err) {
             callback(err, null)
           } else {

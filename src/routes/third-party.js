@@ -2,7 +2,7 @@ import express from 'express'
 let router = express.Router()
 
 import logger from '../utils/logger'
-import errors from '../utils/errors'
+import { InternalError } from '../utils/errors'
 import TeamController from '../controllers/team'
 import TeamScore from '../models/team-score'
 import _ from 'underscore'
@@ -37,12 +37,12 @@ router.get('/ctftime', (request, response, next) => {
   TeamController.listQualified((err, teams) => {
     if (err) {
       logger.error(err)
-      next(new errors.InternalError(), null)
+      next(new InternalError(), null)
     } else {
       TeamScore.find({}, (err, teamScores) => {
         if (err) {
           logger.error(err)
-          next(new errors.InternalError(), null)
+          next(new InternalError(), null)
         } else {
           let entries = _.map(teams, (team) => {
             let teamScore = _.findWhere(teamScores, { teamId: team._id })

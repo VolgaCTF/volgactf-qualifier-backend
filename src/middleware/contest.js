@@ -1,6 +1,6 @@
 import ContestController from '../controllers/contest'
 import constants from '../utils/constants'
-import errors from '../utils/errors'
+import { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } from '../utils/errors'
 
 
 export function getState(request, response, next) {
@@ -21,7 +21,7 @@ export function contestNotFinished(request, response, next) {
       next(err)
     } else {
       if (contest && contest.isFinished()) {
-        next(new errors.ContestFinishedError())
+        next(new ContestFinishedError())
       } else {
         next()
       }
@@ -40,14 +40,14 @@ export function contestIsStarted(request, response, next) {
       } else {
         if (contest) {
           if (contest.isPaused()) {
-            next(new errors.ContestPausedError())
+            next(new ContestPausedError())
           } else if (contest.isFinished()) {
-            next(new errors.ContestFinishedError())
+            next(new ContestFinishedError())
           } else {
-            next(new errors.ContestNotStartedError())
+            next(new ContestNotStartedError())
           }
         } else {
-          next(new errors.ContestNotStartedError())
+          next(new ContestNotStartedError())
         }
       }
     }
@@ -63,7 +63,7 @@ export function contestIsFinished(request, response, next) {
       if (contest && contest.isFinished()) {
         next()
       } else {
-        next(new errors.InternalError())
+        next(new InternalError())
       }
     }
   })

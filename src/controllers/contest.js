@@ -10,11 +10,11 @@ import TeamController from '../controllers/team'
 import TeamTaskProgressController from '../controllers/team-task-progress'
 import TaskController from '../controllers/task'
 
-import errors from '../utils/errors'
+import { ContestNotInitializedError, InternalError } from '../utils/errors'
 import constants from '../utils/constants'
 import logger from '../utils/logger'
 
-import publisher from '../utils/publisher'
+import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
 
 import contestSerializer from '../serializers/contest'
@@ -51,7 +51,7 @@ class ContestController {
     Contest.findOne({}, (err, contest) => {
       if (err) {
         logger.error(err)
-        callback(new errors.ContestNotInitializedError(), null)
+        callback(new ContestNotInitializedError(), null)
       } else {
         // Warning: this can be null. This is a normal situation.
         callback(null, contest)
@@ -107,7 +107,7 @@ class ContestController {
               TaskCategory.remove({}, (err) => {
                 if (err) {
                   logger.error(err)
-                  deferred.reject(new errors.InternalError())
+                  deferred.reject(new InternalError())
                 } else {
                   deferred.resolve()
                 }
@@ -177,7 +177,7 @@ class ContestController {
               contest.startsAt = startsAt
               contest.finishesAt = finishesAt
             } else {
-              let contest = new Contest({
+              contest = new Contest({
                 state: state,
                 startsAt: startsAt,
                 finishesAt: finishesAt
@@ -187,15 +187,16 @@ class ContestController {
             contest.save((err, contest) => {
               if (err) {
                 logger.error(err)
-                callback(new errors.InternalError(), null)
+                callback(new InternalError(), null)
               } else {
                 callback(null, contest)
-                publisher.publish('realtime', new UpdateContestEvent(contest))
+                publish('realtime', new UpdateContestEvent(contest))
               }
             })
           })
           .catch((err) => {
-            callback(new error.InternalError(), null)
+            logger.error(err)
+            callback(new InternalError(), null)
           })
       }
     })
@@ -226,7 +227,7 @@ class ContestController {
 
                       let countedTaskIds = []
 
-                      for (taskProgress in taskProgressEntries) {
+                      for (let taskProgress of taskProgressEntries) {
                         let task = _.findWhere(tasks, { _id: taskProgress.taskId })
                         if (task && !_.contains(countedTaskIds, taskProgress.taskId)) {
                           countedTaskIds.push(taskProgress.taskId)
@@ -248,7 +249,7 @@ class ContestController {
                         teamScore.score = totalScore
                         teamScore.updatedAt = lastUpdatedAt
                       } else if (needCreate) {
-                        let teamScore = new TeamScore({
+                        teamScore = new TeamScore({
                           teamId: team._id,
                           score: totalScore,
                           updatedAt: lastUpdatedAt
@@ -261,7 +262,7 @@ class ContestController {
                             next(err, null)
                           } else {
                             next(null, teamScore)
-                            publisher.publish('realtime', new UpdateTeamScoreEvent(teamScore))
+                            publish('realtime', new UpdateTeamScoreEvent(teamScore))
                           }
                         })
                       } else {
@@ -272,7 +273,7 @@ class ContestController {
                     async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {
                       if (err) {
                         logger.error(err)
-                        callback(new errors.InternalError())
+                        callback(new InternalError())
                       } else {
                         callback(null)
                       }

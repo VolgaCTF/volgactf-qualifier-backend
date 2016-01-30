@@ -17,11 +17,11 @@ import constraints from './utils/constraints'
 import _ from 'underscore'
 import TeamController from './controllers/team'
 
-import errors from './utils/errors'
+import { BaseError, ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from './utils/errors'
 
-import sessionMiddleware from './middleware/session'
+import sessionMiddleware, { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from './middleware/session'
 import tokenUtil from './utils/token'
-import securityMiddleware from './middleware/security'
+import { checkToken } from './middleware/security'
 import corsMiddleware from './middleware/cors'
 
 import eventStream from './controllers/event-stream'
@@ -31,7 +31,7 @@ app.set('x-powered-by', false)
 
 app.use(corsMiddleware)
 app.use(cookieParser())
-app.use(sessionMiddleware.main)
+app.use(sessionMiddleware)
 
 app.use('/team', teamRouter)
 app.use('/post', postRouter)
@@ -44,8 +44,8 @@ let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 app.post(
   '/login',
-  securityMiddleware.checkToken,
-  sessionMiddleware.needsToBeUnauthorized,
+  checkToken,
+  needsToBeUnauthorized,
   urlencodedParser,
   (request, response, next) => {
     let loginConstraints = {
@@ -55,7 +55,7 @@ app.post(
 
     let validationResult = validator.validate(request.body, loginConstraints)
     if (!validationResult) {
-      throw new errors.ValidationError()
+      throw new ValidationError()
     }
 
     SupervisorController.login(request.body.username, request.body.password, (err, supervisor) => {
@@ -66,9 +66,9 @@ app.post(
           request.session.authenticated = true
           request.session.identityID = supervisor.id
           request.session.role = supervisor.rights
-          response.json({ success: yes })
+          response.json({ success: true })
         } else {
-          next(new errors.InvalidSupervisorCredentialsError())
+          next(new InvalidSupervisorCredentialsError())
         }
       }
     })
@@ -78,22 +78,22 @@ app.post(
 
 app.post(
   '/signout',
-  securityMiddleware.checkToken,
-  sessionMiddleware.needsToBeAuthorized,
+  checkToken,
+  needsToBeAuthorized,
   (request, response, next) => {
     request.session.authenticated = false
     request.session.destroy((err) => {
       if (err) {
         next(err)
       } else {
-        response.json({ success: yes })
+        response.json({ success: true })
       }
     })
   }
 )
 
 
-app.get('/identity', sessionMiddleware.detectScope, (request, response, next) => {
+app.get('/identity', detectScope, (request, response, next) => {
   let token = tokenUtil.encode(tokenUtil.generate(32))
   request.session.token = token
 
@@ -111,6 +111,7 @@ app.get('/identity', sessionMiddleware.detectScope, (request, response, next) =>
           })
         }
       })
+      break
     case 'teams':
       TeamController.get(request.session.identityID, (err, team) => {
         if (err) {
@@ -125,20 +126,23 @@ app.get('/identity', sessionMiddleware.detectScope, (request, response, next) =>
           })
         }
       })
+      break
     case 'guests':
       response.json({
         role: 'guest',
         token: token
       })
+      break
     default:
-      throw new errors.UnknownIdentityError()
+      next(new UnknownIdentityError())
+      break
   }
 })
 
 
-app.get('/events', sessionMiddleware.detectScope, (request, response, next) => {
+app.get('/events', detectScope, (request, response, next) => {
   if (!request.scope) {
-    throw new errors.UnknownIdentityError()
+    throw new UnknownIdentityError()
   }
 
   response.writeHead(200, {
@@ -176,7 +180,7 @@ app.get('/events', sessionMiddleware.detectScope, (request, response, next) => {
 
 
 app.use((err, request, response, next) => {
-  if (err instanceof errors.BaseError) {
+  if (err instanceof BaseError) {
     response.status(err.getHttpStatus())
     response.json(err.message)
   } else {

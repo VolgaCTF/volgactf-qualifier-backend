@@ -1,13 +1,13 @@
 import Team from '../models/team'
-import security from '../utils/security'
+import { getPasswordHash, checkPassword } from '../utils/security'
 import fs from 'fs'
 import path from 'path'
 import gm from 'gm'
 import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
-import errors from '../utils/errors'
-import publisher from '../utils/publisher'
+import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError } from '../utils/errors'
+import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
 
 import teamSerializer from '../serializers/team'
@@ -58,14 +58,14 @@ class TeamController {
     Team.findOne({ email: email.toLowerCase() }, (err, team) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError())
+        callback(new InternalError())
       } else {
         if (team) {
           team.resetPasswordToken = token.generate()
           team.save((err, team) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError())
+              callback(new InternalError())
             } else {
               queue('sendEmailQueue').add({
                 message: 'restore',
@@ -78,7 +78,7 @@ class TeamController {
             }
           })
         } else {
-          callback(new errors.TeamNotFoundError())
+          callback(new TeamNotFoundError())
         }
       }
     })
@@ -91,12 +91,12 @@ class TeamController {
         callback(err)
       } else {
         if (count > 0) {
-          callback(new errors.TeamCredentialsTakenError())
+          callback(new TeamCredentialsTakenError())
         } else {
-          security.getPasswordHash(options.password, (err, hash) => {
+          getPasswordHash(options.password, (err, hash) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError())
+              callback(new InternalError())
             } else {
               let team = new Team({
                 name: options.team,
@@ -115,7 +115,7 @@ class TeamController {
               team.save((err, team) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError())
+                  callback(new InternalError())
                 } else {
                   if (options.logoFilename) {
                     queue('createLogoQueue').add({
@@ -132,7 +132,7 @@ class TeamController {
                   })
 
                   callback(null)
-                  publisher.publish('realtime', new CreateTeamEvent(team))
+                  publish('realtime', new CreateTeamEvent(team))
                 }
               })
             }
@@ -146,23 +146,23 @@ class TeamController {
     Team.findOne({ name: name }, (err, team) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InvalidTeamCredentialsError(), null)
+        callback(new InvalidTeamCredentialsError(), null)
       } else {
         if (team) {
-          security.checkPassword(password, team.passwordHash, (err, res) => {
+          checkPassword(password, team.passwordHash, (err, res) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError(), null)
+              callback(new InternalError(), null)
             } else {
               if (res) {
                 callback(null, team)
               } else {
-                callback(new errors.InvalidTeamCredentialsError(), null)
+                callback(new InvalidTeamCredentialsError(), null)
               }
             }
           })
         } else {
-          callback(new errors.InvalidTeamCredentialsError(), null)
+          callback(new InvalidTeamCredentialsError(), null)
         }
       }
     })
@@ -174,13 +174,13 @@ class TeamController {
         callback(err)
       } else {
         if (team.emailConfirmed) {
-          callback(new errors.EmailConfirmedError())
+          callback(new EmailConfirmedError())
         } else {
           team.emailConfirmationToken = token.generate()
           team.save((err, team) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError())
+              callback(new InternalError())
             } else {
               queue('sendEmailQueue').add({
                 message: 'welcome',
@@ -203,22 +203,22 @@ class TeamController {
         callback(err)
       } else {
         if (team.emailConfirmed) {
-          callback(new errors.EmailConfirmedError())
+          callback(new EmailConfirmedError())
         } else {
           Team.find({ email: email.toLowerCase() }).count((err, count) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError())
+              callback(new InternalError())
             } else {
               if (count > 0) {
-                callback(new errors.EmailTakenError())
+                callback(new EmailTakenError())
               } else {
                 team.email = email
                 team.emailConfirmationToken = token.generate()
                 team.save((err, team) => {
                   if (err) {
                     logger.error(err)
-                    callback(new errors.InternalError())
+                    callback(new InternalError())
                   } else {
                     queue('sendEmailQueue').add({
                       message: 'welcome',
@@ -228,7 +228,7 @@ class TeamController {
                     })
 
                     callback(null)
-                    publisher.publish('realtime', new ChangeTeamEmailEvent(team))
+                    publish('realtime', new ChangeTeamEmailEvent(team))
                   }
                 })
               }
@@ -250,10 +250,10 @@ class TeamController {
         team.save((err, team) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError())
+            callback(new InternalError())
           } else {
             callback(null)
-            publisher.publish('realtime', new UpdateTeamProfileEvent(team))
+            publish('realtime', new UpdateTeamProfileEvent(team))
           }
         })
       }
@@ -279,22 +279,22 @@ class TeamController {
       if (err) {
         callback(err)
       } else {
-        security.checkPassword(currentPassword, team.passwordHash, (err, res) => {
+        checkPassword(currentPassword, team.passwordHash, (err, res) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError())
+            callback(new InternalError())
           } else {
             if (res) {
-              security.getPasswordHash(newPassword, (err, hash) => {
+              getPasswordHash(newPassword, (err, hash) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError())
+                  callback(new InternalError())
                 } else {
                   team.passwordHash = hash
                   team.save((err, team) => {
                     if (err) {
                       logger.error(err)
-                      callback(new errors.InternalError())
+                      callback(new InternalError())
                     } else {
                       callback(null)
                     }
@@ -302,7 +302,7 @@ class TeamController {
                 }
               })
             } else {
-              callback(new errors.InvalidTeamPasswordError())
+              callback(new InvalidTeamPasswordError())
             }
           }
         })
@@ -324,7 +324,7 @@ class TeamController {
     Team.find({ emailConfirmed: true }, (err, teams) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, teams)
       }
@@ -342,7 +342,7 @@ class TeamController {
       }
     } catch (e) {
       logger.error(e)
-      callback(new errors.InvalidResetPasswordURLError())
+      callback(new InvalidResetPasswordURLError())
       return
     }
 
@@ -352,17 +352,17 @@ class TeamController {
     }
     Team.findOne(params, (err, team) => {
       if (team) {
-        security.getPasswordHash(newPassword, (err, hash) => {
+        getPasswordHash(newPassword, (err, hash) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError())
+            callback(new InternalError())
           } else {
             team.passwordHash = hash
             team.resetPasswordToken = null
             team.save((err, team) => {
               if (err) {
                 logger.error(err)
-                callback(new errors.InternalError())
+                callback(new InternalError())
               } else {
                 callback(null)
               }
@@ -370,7 +370,7 @@ class TeamController {
           }
         })
       } else {
-        callback(new errors.InvalidResetPasswordURLError())
+        callback(new InvalidResetPasswordURLError())
       }
     })
   }
@@ -383,7 +383,7 @@ class TeamController {
       code = token.decode(encodedToken)
     } catch (e) {
       logger.error(e)
-      callback(new errors.InvalidVerificationURLError())
+      callback(new InvalidVerificationURLError())
       return
     }
 
@@ -399,14 +399,14 @@ class TeamController {
         team.save((err, team) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError())
+            callback(new InternalError())
           } else {
             callback(null)
-            publisher.publish('realtime', new QualifyTeamEvent(team))
+            publish('realtime', new QualifyTeamEvent(team))
           }
         })
       } else {
-        callback(new errors.InvalidVerificationURLError())
+        callback(new InvalidVerificationURLError())
       }
     })
   }
@@ -414,12 +414,12 @@ class TeamController {
   static get(id, callback) {
     Team.findOne({ _id: id }, (err, team) => {
       if (err) {
-        callback(new errors.TeamNotFoundError(), null)
+        callback(new TeamNotFoundError(), null)
       } else {
         if (team) {
           callback(null, team)
         } else {
-          callback(new errors.TeamNotFoundError(), null)
+          callback(new TeamNotFoundError(), null)
         }
       }
     })

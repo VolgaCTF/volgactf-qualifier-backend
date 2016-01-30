@@ -1,7 +1,7 @@
 import Log from '../models/log'
 import logger from '../utils/logger'
-import errors from '../utils/errors'
-import publisher from '../utils/publisher'
+import { InternalError } from '../utils/errors'
+import publish from '../utils/publisher'
 import _ from 'underscore'
 import BaseEvent from '../utils/events'
 
@@ -29,10 +29,10 @@ class LogController {
       if (err) {
         logger.error(err)
         if (callback) {
-          callback(new errors.InternalError())
+          callback(new InternalError())
         }
       } else {
-        publisher.publish('realtime', new CreateLogEvent(log))
+        publish('realtime', new CreateLogEvent(log))
         if (callback) {
           callback(null)
         }
@@ -44,7 +44,7 @@ class LogController {
     Log.find((err, logs) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, logs)
       }

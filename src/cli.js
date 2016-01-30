@@ -74,7 +74,7 @@ parser.command('list_supervisors')
         logger.error(err)
         process.exit(1)
       } else {
-        for (supervisor in supervisors) {
+        for (let supervisor of supervisors) {
           logger.info(`Supervisor #${supervisor.id} ${supervisor.username} (${supervisor.rights})`)
         }
         process.exit(0)
@@ -90,7 +90,7 @@ parser.command('list_teams')
         logger.error(err)
         process.exit(1)
       } else {
-        for (team in teams) {
+        for (let team of teams) {
           logger.info(`Team ${team.name} <${team.email}>`)
         }
         process.exit(0)
@@ -150,7 +150,7 @@ parser.command('cleanup_scores')
               let countedTaskIds = []
               let idsToDelete = []
 
-              for (taskProgress in taskProgressEntries) {
+              for (let taskProgress of taskProgressEntries) {
                 if (!_.contains(countedTaskIds, taskProgress.taskId)) {
                   countedTaskIds.push(taskProgress.taskId)
                 } else {
@@ -198,6 +198,6 @@ parser.command('cleanup_scores')
   })
 
 
-export function run() {
+export default function run() {
   parser.parse()
 }

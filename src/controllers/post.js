@@ -1,7 +1,7 @@
 import Post from '../models/post'
 import logger from '../utils/logger'
-import errors from '../utils/errors'
-import publisher from '../utils/publisher'
+import { InternalError, DuplicatePostTitleError, PostNotFoundError } from '../utils/errors'
+import publish from '../utils/publisher'
 import _ from 'underscore'
 import BaseEvent from '../utils/events'
 
@@ -46,10 +46,10 @@ class PostController {
     Post.find({ title: title }).count((err, count) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         if (count > 0) {
-          callback(new errors.DuplicatePostTitleError(), null)
+          callback(new DuplicatePostTitleError(), null)
         } else {
           let now = new Date()
           let post = new Post({
@@ -62,10 +62,10 @@ class PostController {
           post.save((err, post) => {
             if (err) {
               logger.error(err)
-              callback(new errors.InternalError(), null)
+              callback(new InternalError(), null)
             } else {
               callback(null, post)
-              publisher.publish('realtime', new CreatePostEvent(post))
+              publish('realtime', new CreatePostEvent(post))
             }
           })
         }
@@ -81,10 +81,10 @@ class PostController {
         Post.find({ title: title }).count((err, count) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError(), null)
+            callback(new InternalError(), null)
           } else {
             if (count > 0 && title !== post.title) {
-              callback(new errors.DuplicatePostTitleError(), null)
+              callback(new DuplicatePostTitleError(), null)
             } else {
               post.title = title
               post.description = description
@@ -92,10 +92,10 @@ class PostController {
               post.save((err, post) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError(), null)
+                  callback(new InternalError(), null)
                 } else {
                   callback(null, post)
-                  publisher.publish('realtime', new UpdatePostEvent(post))
+                  publish('realtime', new UpdatePostEvent(post))
                 }
               })
             }
@@ -108,10 +108,10 @@ class PostController {
   static remove(id, callback) {
     Post.remove({ _id: id }, (err) => {
       if (err) {
-        callback(new errors.PostNotFoundError())
+        callback(new PostNotFoundError())
       } else {
         callback(null)
-        publisher.publish('realtime', new RemovePostEvent(id))
+        publish('realtime', new RemovePostEvent(id))
       }
     })
   }
@@ -120,7 +120,7 @@ class PostController {
     Post.find((err, posts) => {
       if (err) {
         logger.error(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         callback(null, posts)
       }
@@ -131,12 +131,12 @@ class PostController {
     Post.findOne({ _id: id }, (err, post) => {
       if (err) {
         logger.error(err)
-        callback(new errors.PostNotFoundError(), null)
+        callback(new PostNotFoundError(), null)
       } else {
         if (post) {
           callback(null, post)
         } else {
-          callback(new errors.PostNotFoundError(), null)
+          callback(new PostNotFoundError(), null)
         }
       }
     })
