@@ -3,7 +3,7 @@ import logger from '../utils/logger'
 import eventStream from '../controllers/event-stream'
 
 function getServerPort() {
-  return parseInt(process.env.SERVER_PORT, 10) || 3000;
+  return parseInt(process.env.PORT, 10) || 3000;
 }
 
 var server = app.listen(getServerPort(), () => {
