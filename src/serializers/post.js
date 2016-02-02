@@ -1,7 +1,7 @@
 
 export default function(post) {
   return {
-    id: post._id,
+    id: post.id,
     title: post.title,
     description: post.description,
     createdAt: post.createdAt.getTime(),
