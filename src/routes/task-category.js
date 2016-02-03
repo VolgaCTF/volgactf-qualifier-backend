@@ -18,6 +18,7 @@ import bodyParser from 'body-parser'
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 import taskCategoryParam from '../params/task-category'
+import { ValidationError } from '../utils/errors'
 
 
 router.get('/all', (request, response, next) => {
@@ -39,7 +40,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
 
   let validationResult = validator.validate(request.body, createConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TaskCategoryController.create(request.body.title, request.body.description, (err, taskCategory) => {
@@ -74,7 +75,7 @@ router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBe
 
   let validationResult = validator.validate(request.body, updateConstraints)
   if (!validationResult) {
-    throw new errors.ValidationError()
+    throw new ValidationError()
   }
 
   TaskCategoryController.update(request.taskCategoryId, request.body.title, request.body.description, (err, post) => {

@@ -1,6 +1,6 @@
 import redis from '../utils/redis'
 let redisClient = redis.createClient()
-import errors from '../utils/errors'
+import { InternalError } from '../utils/errors'
 import logger from '../utils/logger'
 import _ from 'underscore'
 
@@ -22,19 +22,19 @@ class LimitController {
     redisClient.incr(this.key, (err, attempts) => {
       if (err) {
         logger.err(err)
-        callback(new errors.InternalError(), null)
+        callback(new InternalError(), null)
       } else {
         redisClient.ttl(this.key, (err, ttl) => {
           if (err) {
             logger.error(err)
-            callback(new errors.InternalError(), null)
+            callback(new InternalError(), null)
           } else {
             let returnValue = (attempts > this.maxAttempts)
             if (ttl < 0) {
               redisClient.expire(this.key, this.timeout, (err) => {
                 if (err) {
                   logger.error(err)
-                  callback(new errors.InternalError(), null)
+                  callback(new InternalError(), null)
                 } else {
                   callback(null, returnValue)
                 }
