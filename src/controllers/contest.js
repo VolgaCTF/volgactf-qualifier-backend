@@ -104,14 +104,17 @@ class ContestController {
           if (contest && contest.state !== state) {
             let removeTaskCategories = function() {
               let deferred = when_.defer()
-              TaskCategory.remove({}, (err) => {
-                if (err) {
+              TaskCategory
+                .query()
+                .delete()
+                .then((numDeleted) => {
+                  deferred.resolve()
+                })
+                .catch((err) => {
                   logger.error(err)
                   deferred.reject(new InternalError())
-                } else {
-                  deferred.resolve()
-                }
-              })
+                })
+
               return deferred.promise
             }
 

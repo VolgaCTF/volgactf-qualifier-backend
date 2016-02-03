@@ -5,6 +5,7 @@ import publish from '../utils/publisher'
 
 import BaseEvent from '../utils/events'
 import TaskController from './task'
+import logger from '../utils/logger'
 
 
 class CreateTaskCategoryEvent extends BaseEvent {
@@ -42,60 +43,68 @@ class RemoveTaskCategoryEvent extends BaseEvent {
 
 class TaskCategoryController {
   static list(callback) {
-    TaskCategory.find((err, taskCategories) => {
-      if (err) {
-        logger.error(err)
-        callback(new InternalError(), null)
-      } else {
+    TaskCategory
+      .query()
+      .then((taskCategories) => {
         callback(null, taskCategories)
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError, null)
+      })
   }
 
   static get(id, callback) {
-    TaskCategory.findOne({ _id: id }, (err, taskCategory) => {
-      if (err) {
-        logger.error(err)
-        callback(new TaskCategoryNotFoundError(), null)
-      } else {
+    TaskCategory
+      .query()
+      .where('id', id)
+      .first()
+      .then((taskCategory) => {
         if (taskCategory) {
           callback(null, taskCategory)
         } else {
           callback(new TaskCategoryNotFoundError(), null)
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new TaskCategoryNotFoundError(), null)
+      })
   }
 
   static create(title, description, callback) {
-    TaskCategory.find({ title: title }).count((err, count) => {
-      if (err) {
-        logger.error(err)
-        callback(new InternalError(), null)
-      } else {
-        if (count > 0) {
+    TaskCategory
+      .query()
+      .where('title', title)
+      .first()
+      .then((taskCategory) => {
+        if (taskCategory) {
           callback(new DuplicateTaskCategoryTitleError(), null)
         } else {
           let now = new Date()
-          let taskCategory = new TaskCategory({
-            title: title,
-            description: description,
-            createdAt: now,
-            updatedAt: now
-          })
 
-          taskCategory.save((err, taskCategory) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError(), null)
-            } else {
+          TaskCategory
+            .query()
+            .insert({
+              title: title,
+              description: description,
+              createdAt: now,
+              updatedAt: now
+            })
+            .then((taskCategory) => {
               callback(null, taskCategory)
               publish('realtime', new CreateTaskCategoryEvent(taskCategory))
-            }
-          })
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError(), null)
+            })
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static update(id, title, description, callback) {
@@ -103,29 +112,35 @@ class TaskCategoryController {
       if (err) {
         callback(err, null)
       } else {
-        TaskCategory.find({ title: title }).count((err, count) => {
-          if (err) {
-            logger.error(err)
-            callback(new InternalError(), null)
-          } else {
-            if (count > 0 && title !== taskCategory.title) {
+        TaskCategory
+          .query()
+          .where('title', title)
+          .first()
+          .then((duplicateTaskCategory) => {
+            if (duplicateTaskCategory && duplicateTaskCategory.id !== taskCategory.id) {
               callback(new DuplicateTaskCategoryTitleError(), null)
             } else {
-              taskCategory.title = title
-              taskCategory.description = description
-              taskCategory.updatedAt = new Date()
-              taskCategory.save((err, taskCategory) => {
-                if (err) {
+              TaskCategory
+                .query()
+                .patchAndFetchById(id, {
+                  title: title,
+                  description: description,
+                  updatedAt: new Date()
+                })
+                .then((updatedTaskCategory) => {
+                  callback(null, updatedTaskCategory)
+                  publish('realtime', new UpdateTaskCategoryEvent(updatedTaskCategory))
+                })
+                .catch((err) => {
                   logger.error(err)
                   callback(new InternalError(), null)
-                } else {
-                  callback(null, taskCategory)
-                  publish('realtime', new UpdateTaskCategoryEvent(taskCategory))
-                }
-              })
+                })
             }
-          }
-        })
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(new InternalError(), null)
+          })
       }
     })
   }
@@ -138,14 +153,22 @@ class TaskCategoryController {
         if (tasks.length > 0) {
           callback(new TaskCategoryAttachedError())
         } else {
-          TaskCategory.remove({ _id: id }, (err) => {
-            if (err) {
+          TaskCategory
+            .query()
+            .delete()
+            .where('id', id)
+            .then((numDeleted) => {
+              if (numDeleted === 0) {
+                callback(new TaskCategoryNotFoundError())
+              } else {
+                publish('realtime', new RemoveTaskCategoryEvent(id))
+                callback(null)
+              }
+            })
+            .catch((err) => {
+              logger.error(err)
               callback(new TaskCategoryNotFoundError())
-            } else {
-              callback(null)
-              publish('realtime', new RemoveTaskCategoryEvent(id))
-            }
-          })
+            })
         }
       }
     })
