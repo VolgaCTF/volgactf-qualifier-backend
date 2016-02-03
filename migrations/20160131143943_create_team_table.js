@@ -12,7 +12,7 @@ exports.up = function(knex, Promise) {
     table.string('locality', 150).notNullable()
     table.string('institution', 150).notNullable()
     table.boolean('disqualified', 150).notNullable()
-    table.binary('resetPasswordToken').notNullable()
+    table.binary('resetPasswordToken')
   })
 }
 

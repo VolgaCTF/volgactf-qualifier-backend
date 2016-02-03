@@ -45,7 +45,7 @@ router.get('/ctftime', (request, response, next) => {
           next(new InternalError(), null)
         } else {
           let entries = _.map(teams, (team) => {
-            let teamScore = _.findWhere(teamScores, { teamId: team._id })
+            let teamScore = _.findWhere(teamScores, { teamId: team.id })
             let entry = nil
             if (teamScore) {
               entry = {

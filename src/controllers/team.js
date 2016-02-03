@@ -55,42 +55,44 @@ class ChangeTeamEmailEvent extends BaseEvent {
 
 class TeamController {
   static restore(email, callback) {
-    Team.findOne({ email: email.toLowerCase() }, (err, team) => {
-      if (err) {
+    Team
+      .query()
+      .where('email', email.toLowerCase())
+      .first()
+      .then((team) => {
+        Team
+          .query()
+          .patchAndFetchById(team.id, {
+            resetPasswordToken: token.generate()
+          })
+          .then((updatedTeam) => {
+            query('sendEmailQueue').add({
+              message: 'restore',
+              name: updatedTeam.name,
+              email: updatedTeam.email,
+              token: updatedTeam.resetPasswordToken
+            })
+            callback(null)
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(new InternalError())
+          })
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError())
-      } else {
-        if (team) {
-          team.resetPasswordToken = token.generate()
-          team.save((err, team) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
-              queue('sendEmailQueue').add({
-                message: 'restore',
-                name: team.name,
-                email: team.email,
-                token: team.resetPasswordToken
-              })
-
-              callback(null)
-            }
-          })
-        } else {
-          callback(new TeamNotFoundError())
-        }
-      }
-    })
+      })
   }
 
   static create(options, callback) {
-    Team.find().or([ { name: options.team }, { email: options.email.toLowerCase() } ]).count((err, count) => {
-      if (err) {
-        logger.error(err)
-        callback(err)
-      } else {
-        if (count > 0) {
+    Team
+      .query()
+      .where('name', options.team)
+      .orWhere('email', options.email.toLowerCase())
+      .first()
+      .then((team) => {
+        if (team) {
           callback(new TeamCredentialsTakenError())
         } else {
           getPasswordHash(options.password, (err, hash) => {
@@ -98,28 +100,25 @@ class TeamController {
               logger.error(err)
               callback(new InternalError())
             } else {
-              let team = new Team({
-                name: options.team,
-                email: options.email,
-                createdAt: new Date(),
-                emailConfirmed: false,
-                emailConfirmationToken: token.generate(),
-                passwordHash: hash,
-                country: options.country,
-                locality: options.locality,
-                institution: options.institution,
-                disqualified: false,
-                resetPasswordToken: null
-              })
-
-              team.save((err, team) => {
-                if (err) {
-                  logger.error(err)
-                  callback(new InternalError())
-                } else {
+              Team
+                .query()
+                .insert({
+                  name: options.team,
+                  email: options.email,
+                  createdAt: new Date(),
+                  emailConfirmed: false,
+                  emailConfirmationToken: token.generate(),
+                  passwordHash: hash,
+                  country: options.country,
+                  locality: options.locality,
+                  institution: options.institution,
+                  disqualified: false,
+                  resetPasswordToken: null
+                })
+                .then((team) => {
                   if (options.logoFilename) {
                     queue('createLogoQueue').add({
-                      id: team._id,
+                      id: team.id,
                       filename: options.logoFilename
                     })
                   }
@@ -133,26 +132,32 @@ class TeamController {
 
                   callback(null)
                   publish('realtime', new CreateTeamEvent(team))
-                }
-              })
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  callback(new InternalError())
+                })
             }
           })
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError())
+      })
   }
 
   static signin(name, password, callback) {
-    Team.findOne({ name: name }, (err, team) => {
-      if (err) {
-        logger.error(err)
-        callback(new InvalidTeamCredentialsError(), null)
-      } else {
+    Team
+      .query()
+      .where('name', name)
+      .first()
+      .then((team) => {
         if (team) {
           checkPassword(password, team.passwordHash, (err, res) => {
             if (err) {
               logger.error(err)
-              callback(new InternalError(), null)
+              callback(new InvalidTeamCredentialsError(), null)
             } else {
               if (res) {
                 callback(null, team)
@@ -164,8 +169,11 @@ class TeamController {
         } else {
           callback(new InvalidTeamCredentialsError(), null)
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static resendConfirmationEmail(id, callback) {
@@ -176,22 +184,25 @@ class TeamController {
         if (team.emailConfirmed) {
           callback(new EmailConfirmedError())
         } else {
-          team.emailConfirmationToken = token.generate()
-          team.save((err, team) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
+          Team
+            .query()
+            .patchAndFetchById(team.id, {
+              emailConfirmationToken: token.generate()
+            })
+            .then((updatedTeam) => {
               queue('sendEmailQueue').add({
                 message: 'welcome',
-                name: team.name,
-                email: team.email,
-                token: team.emailConfirmationToken
+                name: updatedTeam.name,
+                email: updatedTeam.email,
+                token: updatedTeam.emailConfirmationToken
               })
 
               callback(null)
-            }
-          })
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError())
+            })
         }
       }
     })
@@ -205,35 +216,41 @@ class TeamController {
         if (team.emailConfirmed) {
           callback(new EmailConfirmedError())
         } else {
-          Team.find({ email: email.toLowerCase() }).count((err, count) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
-              if (count > 0) {
+          Team
+            .query()
+            .where('email', email.toLowerCase())
+            .first()
+            .then((duplicateTeam) => {
+              if (duplicateTeam) {
                 callback(new EmailTakenError())
               } else {
-                team.email = email
-                team.emailConfirmationToken = token.generate()
-                team.save((err, team) => {
-                  if (err) {
-                    logger.error(err)
-                    callback(new InternalError())
-                  } else {
+                Team
+                  .query()
+                  .patchAndFetchById(team.id, {
+                    email: email,
+                    emailConfirmationToken: token.generate()
+                  })
+                  .then((updatedTeam) => {
                     queue('sendEmailQueue').add({
                       message: 'welcome',
-                      name: team.name,
-                      email: team.email,
-                      token: team.emailConfirmationToken
+                      name: updatedTeam.name,
+                      email: updatedTeam.email,
+                      token: updatedTeam.emailConfirmationToken
                     })
 
                     callback(null)
-                    publish('realtime', new ChangeTeamEmailEvent(team))
-                  }
-                })
+                    publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
+                  })
+                  .catch((err) => {
+                    logger.error(err)
+                    callback(err)
+                  })
               }
-            }
-          })
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError())
+            })
         }
       }
     })
@@ -244,18 +261,21 @@ class TeamController {
       if (err) {
         callback(err)
       } else {
-        team.country = country
-        team.locality = locality
-        team.institution = institution
-        team.save((err, team) => {
-          if (err) {
+        Team
+          .query()
+          .patchAndFetchById(team.id, {
+            country: country,
+            locality: locality,
+            institution: institution
+          })
+          .then((updatedTeam) => {
+            callback(null)
+            publish('realtime', new UpdateTeamProfileEvent(updatedTeam))
+          })
+          .catch((err) => {
             logger.error(err)
             callback(new InternalError())
-          } else {
-            callback(null)
-            publish('realtime', new UpdateTeamProfileEvent(team))
-          }
-        })
+          })
       }
     })
   }
@@ -266,7 +286,7 @@ class TeamController {
         callback(err)
       } else {
         queue('createLogoQueue').add({
-          id: team._id,
+          id: team.id,
           filename: logoFilename
         })
         callback(null)
@@ -290,15 +310,18 @@ class TeamController {
                   logger.error(err)
                   callback(new InternalError())
                 } else {
-                  team.passwordHash = hash
-                  team.save((err, team) => {
-                    if (err) {
+                  Team
+                    .query()
+                    .patchAndFetchById(team.id, {
+                      passwordHash: hash
+                    })
+                    .then((updatedTeam) => {
+                      callback(null)
+                    })
+                    .catch((err) => {
                       logger.error(err)
                       callback(new InternalError())
-                    } else {
-                      callback(null)
-                    }
-                  })
+                    })
                 }
               })
             } else {
@@ -311,24 +334,28 @@ class TeamController {
   }
 
   static list(callback) {
-    Team.find((err, teams) => {
-      if (err) {
-        callback(err, null)
-      } else {
+    Team
+      .query()
+      .then((teams) => {
         callback(null, teams)
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static listQualified(callback) {
-    Team.find({ emailConfirmed: true }, (err, teams) => {
-      if (err) {
+    Team
+      .query()
+      .where('emailConfirmed', true)
+      .then((teams) => {
+        callback(null, teams)
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, teams)
-      }
-    })
+      })
   }
 
   static resetPassword(encodedEmail, encodedToken, newPassword, callback) {
@@ -346,33 +373,41 @@ class TeamController {
       return
     }
 
-    let params = {
-      email: email,
-      resetPasswordToken: code
-    }
-    Team.findOne(params, (err, team) => {
-      if (team) {
-        getPasswordHash(newPassword, (err, hash) => {
-          if (err) {
-            logger.error(err)
-            callback(new InternalError())
-          } else {
-            team.passwordHash = hash
-            team.resetPasswordToken = null
-            team.save((err, team) => {
-              if (err) {
-                logger.error(err)
-                callback(new InternalError())
-              } else {
-                callback(null)
-              }
-            })
-          }
-        })
-      } else {
-        callback(new InvalidResetPasswordURLError())
-      }
-    })
+    Team
+      .query()
+      .where('email', email)
+      .andWhere('resetPasswordToken', code)
+      .first()
+      .then((team) => {
+        if (team) {
+          getPasswordHash(newPassword, (err, hash) => {
+            if (err) {
+              logger.error(err)
+              callback(new InternalError())
+            } else {
+              Team
+                .query()
+                .patchAndFetchById(team.id, {
+                  passwordHash: hash,
+                  resetPasswordToken: null
+                })
+                .then((updatedTeam) => {
+                  callback(null)
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  callback(new InternalError())
+                })
+            }
+          })
+        } else {
+          callback(new InvalidResetPasswordURLError())
+        }
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError())
+      })
   }
 
   static verifyEmail(encodedEmail, encodedToken, callback) {
@@ -387,42 +422,54 @@ class TeamController {
       return
     }
 
-    let params = {
-      email: email,
-      emailConfirmationToken: code
-    }
-
-    Team.findOne(params, (err, team) => {
-      if (team) {
-        team.emailConfirmed = true
-        team.emailConfirmationToken = null
-        team.save((err, team) => {
-          if (err) {
-            logger.error(err)
-            callback(new InternalError())
-          } else {
-            callback(null)
-            publish('realtime', new QualifyTeamEvent(team))
-          }
-        })
-      } else {
-        callback(new InvalidVerificationURLError())
-      }
-    })
+    Team
+      .query()
+      .where('email', email)
+      .andWhere('emailConfirmed', false)
+      .andWhere('emailConfirmationToken', code)
+      .first()
+      .then((team) => {
+        if (team) {
+          Team
+            .query()
+            .patchAndFetchById(team.id, {
+              emailConfirmed: true,
+              emailConfirmationToken: null
+            })
+            .then((updatedTeam) => {
+              callback(null)
+              publish('realtime', new QualifyTeamEvent(updatedTeam))
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError())
+            })
+        } else {
+          callback(new InvalidVerificationURLError())
+        }
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError())
+      })
   }
 
   static get(id, callback) {
-    Team.findOne({ _id: id }, (err, team) => {
-      if (err) {
-        callback(new TeamNotFoundError(), null)
-      } else {
+    Team
+      .query()
+      .where('id', id)
+      .first()
+      .then((team) => {
         if (team) {
           callback(null, team)
         } else {
           callback(new TeamNotFoundError(), null)
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 }
 

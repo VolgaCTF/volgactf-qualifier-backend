@@ -7,7 +7,7 @@ export default function(team, options={}) {
   options = _.extend(defaultOptions, options)
 
   let obj = {
-    id: team._id,
+    id: team.id,
     name: team.name,
     country: team.country,
     locality: team.locality,

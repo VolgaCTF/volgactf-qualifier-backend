@@ -54,9 +54,9 @@ router.param('teamId', teamParam.id)
 
 
 router.get('/:teamId/logo', (request, response) => {
-  Team.findOne({ _id: request.teamId }, (err, team) => {
+  TeamController.get(request.teamId, (err, team) => {
     if (team) {
-      let filename = path.join(process.env.LOGOS_DIR, `team-${request.params.teamId}.png`)
+      let filename = path.join(process.env.LOGOS_DIR, `team-${team.id}.png`)
       fs.lstat(filename, (err, stats) => {
         if (err) {
           let nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
@@ -76,10 +76,10 @@ router.get('/:teamId/logo', (request, response) => {
 
 
 router.get('/:teamId/profile', (request, response) => {
-  Team.findOne({ _id: request.teamId }, (err, team) => {
+  TeamController.get(request.teamId, (err, team) => {
     if (team) {
       let result = {
-        id: team._id,
+        id: team.id,
         name: team.name,
         country: team.country,
         locality: team.locality,
@@ -87,7 +87,7 @@ router.get('/:teamId/profile', (request, response) => {
         createdAt: team.createdAt.getTime()
       }
 
-      if (request.session.authenticated && ((request.session.role == 'team' && request.session.identityID === team._id) || _.contains(['admin', 'manager'], request.session.role))) {
+      if (request.session.authenticated && ((request.session.role == 'team' && request.session.identityID === team.id) || _.contains(['admin', 'manager'], request.session.role))) {
         result.email = team.email
         result.emailConfirmed = team.emailConfirmed
       }
@@ -255,7 +255,7 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
       next(err)
     } else {
       request.session.authenticated = true
-      request.session.identityID = team._id
+      request.session.identityID = team.id
       request.session.role = 'team'
       response.json({ success: true })
     }
