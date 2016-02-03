@@ -1,7 +1,7 @@
 
 export default function(log) {
   return {
-    id: log._id,
+    id: log.id,
     event: log.event,
     createdAt: log.createdAt.getTime(),
     data: log.data

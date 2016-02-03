@@ -1,12 +1,8 @@
-import mongoose from '../utils/mongoose'
-import autoIncrement from 'mongoose-auto-increment'
+import Model from '../utils/model'
 
-let logSchema = mongoose.Schema({
-  event: Number,
-  createdAt: Date,
-  data: mongoose.Schema.Types.Mixed
-})
 
-logSchema.plugin(autoIncrement.plugin, { model: 'Log', startAt: 1 })
-
-export default mongoose.model('Log', logSchema)
+export default class Log extends Model {
+  static get tableName() {
+    return 'logs'
+  }
+}
