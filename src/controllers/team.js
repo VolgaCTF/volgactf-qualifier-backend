@@ -66,7 +66,7 @@ class TeamController {
             resetPasswordToken: token.generate()
           })
           .then((updatedTeam) => {
-            query('sendEmailQueue').add({
+            queue('sendEmailQueue').add({
               message: 'restore',
               name: updatedTeam.name,
               email: updatedTeam.email,
