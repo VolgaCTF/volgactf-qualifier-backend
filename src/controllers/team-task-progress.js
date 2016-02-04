@@ -23,7 +23,7 @@ class TeamTaskProgressController {
       if (err) {
         callback(err, null)
       } else {
-        TeamTaskProgress.find({ teamId: team._id, taskId: task._id }).count((err, count) => {
+        TeamTaskProgress.find({ teamId: team.id, taskId: task.id }).count((err, count) => {
           if (err) {
             logger.error(err)
             callback(new InternalError(), null)
@@ -32,8 +32,8 @@ class TeamTaskProgressController {
               callback(new TaskAlreadySolvedError(), null)
             } else {
               let teamTaskProgress = new TeamTaskProgress({
-                teamId: team._id,
-                taskId: task._id,
+                teamId: team.id,
+                taskId: task.id,
                 createdAt: new Date()
               })
 

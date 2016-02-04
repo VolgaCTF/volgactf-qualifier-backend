@@ -57,84 +57,89 @@ class CloseTaskEvent extends BaseEvent {
 
 class TaskController {
   static create(options, callback) {
-    Task.find({ title: options.title }).count((err, count) => {
-      if (err) {
-        logger.error(err)
-        callback(new InternalError(), null)
-      } else {
-        if (count > 0) {
+    Task
+      .query()
+      .where('title', options.title)
+      .first()
+      .then((task) => {
+        if (task) {
           callback(new DuplicateTaskTitleError(), null)
         } else {
           let now = new Date()
-          let task = new Task({
-            title: options.title,
-            description: options.description,
-            createdAt: now,
-            updatedAt: now,
-            hints: options.hints,
-            value: options.value,
-            categories: options.categories,
-            answers: options.answers,
-            caseSensitive: options.caseSensitive,
-            state: constants.TASK_INITIAL
-          })
 
-          task.save((err, task) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError(), null)
-            } else {
+          Task
+            .query()
+            .insert({
+              title: options.title,
+              description: options.description,
+              createdAt: now,
+              updatedAt: now,
+              hints: JSON.stringify(options.hints),
+              value: options.value,
+              categories: JSON.stringify(options.categories),
+              answers: JSON.stringify(options.answers),
+              caseSensitive: options.caseSensitive,
+              state: constants.TASK_INITIAL
+            })
+            .then((task) => {
               callback(null, task)
               publish('realtime', new CreateTaskEvent(task))
-            }
-          })
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError(), null)
+            })
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static update(task, options, callback) {
-    task.description = options.description
-    task.categories = options.categories
-    task.hints = options.hints
-    task.answers = _.union(task.answers, options.answers)
-    task.updatedAt = new Date()
-    task.save((err, task) => {
-      if (err) {
+    Task
+      .query()
+      .patchAndFetchById(task.id, {
+        description: options.description,
+        categories: JSON.stringify(options.categories),
+        hints: JSON.stringify(options.hints),
+        answers: JSON.stringify(_.union(task.answers, options.answers)),
+        updatedAt: new Date()
+      })
+      .then((updatedTask) => {
+        callback(null, updatedTask)
+        publish('realtime', new UpdateTaskEvent(updatedTask))
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, task)
-        publish('realtime', new UpdateTaskEvent(task))
-      }
-    })
+      })
   }
 
   static list(callback) {
-    Task.find((err, tasks) => {
-      if (err) {
+    Task
+      .query()
+      .then((tasks) => {
+        callback(null, tasks)
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, tasks)
-      }
-    })
+      })
   }
 
   static listEligible(callback) {
     Task
-      .find()
-      .or([
-        { state: constants.TASK_OPENED },
-        {state: constants.TASK_CLOSED }
-      ])
-      .find((err, tasks) => {
-        if (err) {
-          logger.error(err)
-          callback(new InternalError(), null)
-        } else {
-          callback(null, tasks)
-        }
+      .query()
+      .where('state', constants.TASK_OPENED)
+      .orWhere('state', constants.TASK_CLOSED)
+      .then((tasks) => {
+        callback(null, tasks)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
       })
   }
 
@@ -160,17 +165,20 @@ class TaskController {
 
   static open(task, callback) {
     if (task.isInitial()) {
-      task.state = constants.TASK_OPENED
-      task.updatedAt = new Date()
-      task.save((err, task) => {
-        if (err) {
+      Task
+        .query()
+        .patchAndFetchById(task.id, {
+          state: constants.TASK_OPENED,
+          updatedAt: new Date()
+        })
+        .then((updatedTask) => {
+          callback(null)
+          publish('realtime', new OpenTaskEvent(updatedTask))
+        })
+        .catch((err) => {
           logger.error(err)
           callback(new InternalError())
-        } else {
-          callback(null)
-          publish('realtime', new OpenTaskEvent(task))
-        }
-      })
+        })
     } else {
       if (task.isOpened()) {
         callback(new TaskAlreadyOpenedError())
@@ -184,17 +192,20 @@ class TaskController {
 
   static close(task, callback) {
     if (task.isOpened()) {
-      task.state = constants.TASK_CLOSED
-      task.updatedAt = new Date()
-      task.save((err, task) => {
-        if (err) {
+      Task
+        .query()
+        .patchAndFetchById(task.id, {
+          state: constants.TASK_CLOSED,
+          updatedAt: new Date()
+        })
+        .then((updatedTask) => {
+          callback(null)
+          publish('realtime', new CloseTaskEvent(updatedTask))
+        })
+        .catch((err) => {
           logger.error(err)
           callback(new InternalError())
-        } else {
-          callback(null)
-          publish('realtime', new CloseTaskEvent(task))
-        }
-      })
+        })
     } else {
       if (task.isInitial()) {
         callback(new TaskNotOpenedError())
@@ -207,31 +218,35 @@ class TaskController {
   }
 
   static get(id, callback) {
-    Task.findOne({ _id: id }, (err, task) => {
-      if (err) {
-        logger.error(err)
-        callback(new TaskNotFoundError(), null)
-      } else {
+    Task
+      .query()
+      .where('id', id)
+      .first()
+      .then((task) => {
         if (task) {
           callback(null, task)
         } else {
-          callback(new TaskNotFoundError(), null)
+          callback(new TaskNotFoundError())
         }
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static getByCategory(categoryId, callback) {
-    Task.find({}, (err, tasks) => {
-      if (err) {
-        logger.error(err)
-        callback(new InternalError(), null)
-      } else {
+    Task
+      .query()
+      .then((tasks) => {
         callback(null, _.filter(tasks, (task) => {
           return _.contains(task.categories, categoryId)
         }))
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 }
 

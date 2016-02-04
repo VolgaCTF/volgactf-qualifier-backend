@@ -123,14 +123,17 @@ class ContestController {
 
             let removeTasks = function() {
               let deferred = when_.defer()
-              Task.remove({}, (err) => {
-                if (err) {
+
+              Task
+                .query()
+                .delete()
+                .then((numDeleted) => {
+                  deferred.resolve()
+                })
+                .catch((err) => {
                   logger.error(err)
                   deferred.reject(err)
-                } else {
-                  deferred.resolve()
-                }
-              })
+                })
 
               return deferred.promise
             }

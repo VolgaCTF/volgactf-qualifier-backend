@@ -8,7 +8,7 @@ export default function(task, options = {}) {
   options = _.extend(defaultOptions, options)
 
   let result = {
-    id: task._id,
+    id: task.id,
     title: task.title,
     value: task.value,
     createdAt: task.createdAt.getTime(),
