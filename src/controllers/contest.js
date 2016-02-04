@@ -48,15 +48,16 @@ class UpdateTeamScoreEvent extends BaseEvent {
 
 class ContestController {
   static get(callback) {
-    Contest.findOne({}, (err, contest) => {
-      if (err) {
-        logger.error(err)
-        callback(new ContestNotInitializedError(), null)
-      } else {
-        // Warning: this can be null. This is a normal situation.
+    Contest
+      .query()
+      .first()
+      .then((contest) => {
         callback(null, contest)
-      }
-    })
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
   }
 
   static getScores(callback) {
@@ -180,26 +181,38 @@ class ContestController {
           .all(promises)
           .then(() => {
             if (contest) {
-              contest.state = state
-              contest.startsAt = startsAt
-              contest.finishesAt = finishesAt
+              Contest
+                .query()
+                .patchAndFetchById(contest.id, {
+                  state: state,
+                  startsAt: startsAt,
+                  finishesAt: finishesAt
+                })
+                .then((updatedContest) => {
+                  callback(null, updatedContest)
+                  publish('realtime', new UpdateContestEvent(updatedContest))
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  callback(new InternalError(), null)
+                })
             } else {
-              contest = new Contest({
-                state: state,
-                startsAt: startsAt,
-                finishesAt: finishesAt
-              })
+              Contest
+                .query()
+                .insert({
+                  state: state,
+                  startsAt: startsAt,
+                  finishesAt: finishesAt
+                })
+                .then((contest) => {
+                  callback(null, contest)
+                  publish('realtime', new UpdateContestEvent(contest))
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  callback(new InternalError(), null)
+                })
             }
-
-            contest.save((err, contest) => {
-              if (err) {
-                logger.error(err)
-                callback(new InternalError(), null)
-              } else {
-                callback(null, contest)
-                publish('realtime', new UpdateContestEvent(contest))
-              }
-            })
           })
           .catch((err) => {
             logger.error(err)

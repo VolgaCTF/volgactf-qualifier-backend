@@ -1,35 +1,24 @@
-import mongoose from '../utils/mongoose'
-import autoIncrement from 'mongoose-auto-increment'
-import constants from '../utils/constants'
+import Model from '../utils/model'
 
 
-let contestSchema = mongoose.Schema({
-  state: Number,  // 1 - initial, 2 - started, 3 - paused, 4 - finished
-  startsAt: Date,
-  finishesAt: Date
-})
+export default class Contest extends Model {
+  static get tableName() {
+    return 'contests'
+  }
 
+  isInitial() {
+    return this.state === constants.CONTEST_INITIAL
+  }
 
-contestSchema.methods.isInitial = function() {
-  return this.state === constants.CONTEST_INITIAL
+  isStarted() {
+    return this.state === constants.CONTEST_STARTED
+  }
+
+  isPaused() {
+    return this.state === constants.CONTEST_PAUSED
+  }
+
+  isFinished() {
+    return this.state === constants.CONTEST_FINISHED
+  }
 }
-
-
-contestSchema.methods.isStarted = function() {
-  return this.state === constants.CONTEST_STARTED
-}
-
-
-contestSchema.methods.isPaused = function() {
-  return this.state === constants.CONTEST_PAUSED
-}
-
-
-contestSchema.methods.isFinished = function() {
-  return this.state === constants.CONTEST_FINISHED
-}
-
-
-contestSchema.plugin(autoIncrement.plugin, { model: 'Contest', startAt: 1 })
-
-export default mongoose.model('Contest', contestSchema)
