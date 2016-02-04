@@ -64,26 +64,26 @@ class ContestController {
       if (err) {
         callback(err, null)
       } else {
-        TeamScore.find({}, (err, teamScores) => {
-          if (err) {
-            callback(err, null)
-          } else {
-            let result = _.map(teams, (team) => {
-              let teamScore = _.findWhere(teamScores, { teamId: team._id })
+        TeamScore
+          .query()
+          .then((teamScores) => {
+            callback(null, _.map(teams, (team) => {
+              let teamScore = _.findWhere(teamScores, { teamId: team.id })
               if (!teamScore) {
                 teamScore = {
-                  teamId: team._id,
+                  teamId: team.id,
                   score: 0,
                   updatedAt: null
                 }
               }
 
               return teamScore
-            })
-
-            callback(null, result)
-          }
-        })
+            }))
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(err, null)
+          })
       }
     })
   }
@@ -138,14 +138,18 @@ class ContestController {
 
             let removeTeamScores = function() {
               let deferred = when_.defer()
-              TeamScore.remove({}, (err) => {
-                if (err) {
+
+              TeamScore
+                .query()
+                .delete()
+                .then((numDeleted) => {
+                  deferred.resolve()
+                })
+                .catch((err) => {
                   logger.error(err)
                   deferred.reject(err)
-                } else {
-                  deferred.resolve()
-                }
-              })
+                })
+
               return deferred.promise
             }
 
@@ -210,10 +214,9 @@ class ContestController {
       if (err) {
         callback(err)
       } else {
-        TeamScore.find({}, (err, teamScores) => {
-          if (err) {
-            callback(err)
-          } else {
+        TeamScore
+          .query()
+          .then((teamScores) => {
             TaskController.list((err, tasks) => {
               if (err) {
                 callback(err)
@@ -249,25 +252,36 @@ class ContestController {
                       let needUpdate = (teamScore && totalScore !== teamScore.score)
 
                       if (needUpdate) {
-                        teamScore.score = totalScore
-                        teamScore.updatedAt = lastUpdatedAt
-                      } else if (needCreate) {
-                        teamScore = new TeamScore({
-                          teamId: team._id,
-                          score: totalScore,
-                          updatedAt: lastUpdatedAt
-                        })
-                      }
-
-                      if (needUpdate || needCreate) {
-                        teamScore.save((err, teamScore) => {
-                          if (err) {
+                        TeamScore
+                          .query()
+                          .patchAndFetchById(teamScore.id, {
+                            score: totalScore,
+                            updatedAt: lastUpdatedAt
+                          })
+                          .then((updatedTeamScore) => {
+                            next(null, updatedTeamScore)
+                            publish('realtime', new UpdateTeamScoreEvent(updatedTeamScore))
+                          })
+                          .catch((err) => {
+                            logger.error(err)
                             next(err, null)
-                          } else {
+                          })
+                      } else if (needCreate) {
+                        TeamScore
+                          .query()
+                          .insert({
+                            teamId: team.id,
+                            score: totalScore,
+                            updatedAt: lastUpdatedAt
+                          })
+                          .then((teamScore) => {
                             next(null, teamScore)
                             publish('realtime', new UpdateTeamScoreEvent(teamScore))
-                          }
-                        })
+                          })
+                          .catch((err) => {
+                            logger.error(err)
+                            next(err, null)
+                          })
                       } else {
                         next(null, null)
                       }
@@ -285,8 +299,11 @@ class ContestController {
                 })
               }
             })
-          }
-        })
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(err)
+          })
       }
     })
   }
