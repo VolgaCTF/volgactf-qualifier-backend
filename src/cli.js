@@ -146,7 +146,7 @@ parser.command('cleanup_scores')
             process.exit(1)
           } else {
             let findDuplicateTeamScore = function(team, next) {
-              let taskProgressEntries = _.where(teamTaskProgress, { teamId: team._id })
+              let taskProgressEntries = _.where(teamTaskProgress, { teamId: team.id })
               let countedTaskIds = []
               let idsToDelete = []
 
@@ -154,7 +154,7 @@ parser.command('cleanup_scores')
                 if (!_.contains(countedTaskIds, taskProgress.taskId)) {
                   countedTaskIds.push(taskProgress.taskId)
                 } else {
-                  idsToDelete.push(taskProgress._id)
+                  idsToDelete.push(taskProgress.id)
                 }
               }
 
@@ -170,14 +170,17 @@ parser.command('cleanup_scores')
                 let toRemoveCount = duplicateEntryIds.length
 
                 let removeDuplicateEntry = function(entryId, next) {
-                  TeamTaskProgress.remove({ _id: entryId }, (err) => {
-                    if (err) {
+                  TeamTaskProgress
+                    .query()
+                    .where('id', entryId)
+                    .delete()
+                    .then((numDeleted) => {
+                      next(null, null)
+                    })
+                    .catch((err) => {
                       logger.error(err)
                       next(err, null)
-                    } else {
-                      next(null, null)
-                    }
-                  })
+                    })
                 }
 
                 async.mapLimit(duplicateEntryIds, 5, removeDuplicateEntry, (err, results) => {

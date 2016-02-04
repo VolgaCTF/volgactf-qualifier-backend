@@ -23,67 +23,76 @@ class TeamTaskProgressController {
       if (err) {
         callback(err, null)
       } else {
-        TeamTaskProgress.find({ teamId: team.id, taskId: task.id }).count((err, count) => {
-          if (err) {
-            logger.error(err)
-            callback(new InternalError(), null)
-          } else {
-            if (count > 0) {
+        TeamTaskProgress
+          .query()
+          .where('teamId', team.id)
+          .andWhere('taskId', task.id)
+          .first()
+          .then((teamTaskProgress) => {
+            if (teamTaskProgress) {
               callback(new TaskAlreadySolvedError(), null)
             } else {
-              let teamTaskProgress = new TeamTaskProgress({
-                teamId: team.id,
-                taskId: task.id,
-                createdAt: new Date()
-              })
-
-              teamTaskProgress.save((err, teamTaskProgress) => {
-                if (err) {
-                  logger.error(err)
-                  callback(new InternalError(), null)
-                } else {
+              TeamTaskProgress
+                .query()
+                .insert({
+                  teamId: team.id,
+                  taskId: task.id,
+                  createdAt: new Date()
+                })
+                .then((teamTaskProgress) => {
                   callback(null, teamTaskProgress)
                   publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
-                }
-              })
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  callback(new InternalError(), null)
+                })
             }
-          }
-        })
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(new InternalError(), null)
+          })
       }
     })
   }
 
   static list(callback) {
-    TeamTaskProgress.find({}, (err, teamTaskProgress) => {
-      if (err) {
+    TeamTaskProgress
+      .query()
+      .then((teamTaskProgress) => {
+        callback(null, teamTaskProgress)
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, teamTaskProgress)
-      }
-    })
+      })
   }
 
   static listForTeam(teamId, callback) {
-    TeamTaskProgress.find({ teamId: teamId }, (err, teamTaskProgress) => {
-      if (err) {
+    TeamTaskProgress
+      .query()
+      .where('teamId', teamId)
+      .then((teamTaskProgress) => {
+        callback(null, teamTaskProgress)
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, teamTaskProgress)
-      }
-    })
+      })
   }
 
   static listForTask(taskId, callback) {
-    TeamTaskProgress.find({ taskId: taskId }, (err, teamTaskProgress) => {
-      if (err) {
+    TeamTaskProgress
+      .query()
+      .where('taskId', taskId)
+      .then((teamTaskProgress) => {
+        callback(null, teamTaskProgress)
+      })
+      .catch((err) => {
         logger.error(err)
         callback(new InternalError(), null)
-      } else {
-        callback(null, teamTaskProgress)
-      }
-    })
+      })
   }
 }
 

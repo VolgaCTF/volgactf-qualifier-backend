@@ -39,14 +39,12 @@ router.get('/ctftime', (request, response, next) => {
       logger.error(err)
       next(new InternalError(), null)
     } else {
-      TeamScore.find({}, (err, teamScores) => {
-        if (err) {
-          logger.error(err)
-          next(new InternalError(), null)
-        } else {
+      TeamScore
+        .query()
+        .then((teamScores) => {
           let entries = _.map(teams, (team) => {
             let teamScore = _.findWhere(teamScores, { teamId: team.id })
-            let entry = nil
+            let entry = null
             if (teamScore) {
               entry = {
                 team: team.name,
@@ -74,8 +72,11 @@ router.get('/ctftime', (request, response, next) => {
               }
             })
           })
-        }
-      })
+        })
+        .catch((err) => {
+          logger.error(err)
+          next(new InternalError(), null)
+        })
     }
   })
 })

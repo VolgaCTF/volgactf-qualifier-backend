@@ -161,14 +161,18 @@ class ContestController {
 
             let removeTeamTaskProgressEntries = function() {
               let deferred = when_.defer()
-              TeamTaskProgress.remove({}, (err) => {
-                if (err) {
+
+              TeamTaskProgress
+                .query()
+                .delete()
+                .then((numDeleted) => {
+                  deferred.resolve()
+                })
+                .catch((err) => {
                   logger.error(err)
                   deferred.reject(err)
-                } else {
-                  deferred.resolve()
-                }
-              })
+                })
+
               return deferred.promise
             }
 
@@ -242,15 +246,15 @@ class ContestController {
                     callback(err)
                   } else {
                     let recalculateTeamScore = function (team, next) {
-                      let teamScore = _.findWhere(teamScores, { teamId: team._id })
-                      let taskProgressEntries = _.where(teamTaskProgress, { teamId: team._id })
+                      let teamScore = _.findWhere(teamScores, { teamId: team.id })
+                      let taskProgressEntries = _.where(teamTaskProgress, { teamId: team.id })
                       let totalScore = 0
                       let lastUpdatedAt = null
 
                       let countedTaskIds = []
 
                       for (let taskProgress of taskProgressEntries) {
-                        let task = _.findWhere(tasks, { _id: taskProgress.taskId })
+                        let task = _.findWhere(tasks, { id: taskProgress.taskId })
                         if (task && !_.contains(countedTaskIds, taskProgress.taskId)) {
                           countedTaskIds.push(taskProgress.taskId)
                           totalScore += task.value
