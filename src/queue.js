@@ -2,10 +2,11 @@ import queue from './utils/queue'
 import logger from './utils/logger'
 import gm from 'gm'
 import path from 'path'
-import mandrill from 'mandrill-api/mandrill'
 import EmailController from './controllers/email'
 import token from './utils/token'
 import ContestController from './controllers/contest'
+import MandrillController from './controllers/mandrill'
+import MailgunController from './controllers/mailgun'
 
 
 queue('updateScoresQueue').process((job, done) => {
@@ -36,16 +37,16 @@ queue('createLogoQueue').process((job, done) => {
 
 
 queue('sendEmailQueue').process((job, done) => {
-  let email = null
+  let message = null
   if (job.data.message === 'welcome') {
-    email = EmailController.generateWelcomeEmail({
+    message = EmailController.generateWelcomeEmail({
       name: job.data.name,
       domain: process.env.DOMAIN,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
   } else if (job.data.message === 'restore') {
-    email = EmailController.generateRestoreEmail({
+    message = EmailController.generateRestoreEmail({
       name: job.data.name,
       domain: process.env.DOMAIN,
       team: token.encode(job.data.email),
@@ -53,42 +54,29 @@ queue('sendEmailQueue').process((job, done) => {
     })
   }
 
-  if (!email) {
+  if (!message) {
     done()
     return
   }
 
-  let params = {
-    message: {
-      html: email.html,
-      text: email.plain,
-      subject: email.subject,
-      from_email: process.env.EMAIL_SENDER,
-      from_name: 'VolgaCTF',
-      to: [{
-        email: job.data.email,
-        name: job.data.name,
-        type: 'to'
-      }],
-      trans_opens: true,
-      trans_clicks: true,
-      auto_text: false,
-      auto_html: false,
-      url_strip_qs: false
-    },
-    async: false
+  let senderController = null
+  if (process.env.MAIL_TRANSPORT === 'mandrill') {
+    senderController = MandrillController
+  } else if (process.env.MAIL_TRANSPORT === 'mailgun') {
+    senderController = MailgunController
   }
 
-  let onSend = function (result) {
-    logger.info(result)
+  if (!senderController) {
     done()
+    return
   }
 
-  let onError = function (e) {
-    logger.error(`A mandrill error occurred: ${e.name} - ${e.message}`)
-    done()
-  }
-
-  let client = new mandrill.Mandrill(process.env.MANDRILL_API_KEY)
-  client.messages.send(params, onSend, onError)
+  senderController
+    .sendEmail(message, job.data.email, job.data.name)
+    .then(() => {
+      done()
+    })
+    .catch((err) => {
+      done(err)
+    })
 })
