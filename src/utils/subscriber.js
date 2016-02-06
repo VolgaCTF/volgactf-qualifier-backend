@@ -1,13 +1,13 @@
 import redis from './redis'
 
-let client = redis.createClient()
 
-export default {
-  subscribe: function(channel) {
-    client.subscribe(channel)
-  },
+export default class EventSubscriber {
+  constructor(channel) {
+    this.client = redis.createClient()
+    this.client.subscribe(channel)
+  }
 
-  on: function(eventName, callback) {
-    client.on(eventName, callback)
+  on(eventName, callback) {
+    this.client.on(eventName, callback)
   }
 }

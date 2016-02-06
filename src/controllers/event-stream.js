@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import subscriber from '../utils/subscriber'
+import EventSubscriber from '../utils/subscriber'
 import _ from 'underscore'
 import logger from '../utils/logger'
 
@@ -15,7 +15,8 @@ class EventStream extends EventEmitter {
   }
 
   run() {
-    subscriber.subscribe('realtime')
+    let subscriber = new EventSubscriber('realtime')
+
     subscriber.on('message', (channel, data) => {
       let message = JSON.parse(data)
 
