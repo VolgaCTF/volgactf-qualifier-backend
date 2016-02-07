@@ -9,6 +9,7 @@ import logger from '../utils/logger'
 import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError } from '../utils/errors'
 import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
+import constants from '../utils/constants'
 
 import teamSerializer from '../serializers/team'
 
@@ -85,66 +86,66 @@ class TeamController {
       })
   }
 
+  static isTeamNameUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_name_unique')
+  }
+
+  static isTeamEmailUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_email_unique')
+  }
+
   static create(options, callback) {
-    Team
-      .query()
-      .where('name', options.team)
-      .orWhere('email', options.email.toLowerCase())
-      .first()
-      .then((team) => {
-        if (team) {
-          callback(new TeamCredentialsTakenError())
-        } else {
-          getPasswordHash(options.password, (err, hash) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
-              Team
-                .query()
-                .insert({
-                  name: options.team,
-                  email: options.email,
-                  createdAt: new Date(),
-                  emailConfirmed: false,
-                  emailConfirmationToken: token.generate(),
-                  passwordHash: hash,
-                  country: options.country,
-                  locality: options.locality,
-                  institution: options.institution,
-                  disqualified: false,
-                  resetPasswordToken: null
-                })
-                .then((team) => {
-                  if (options.logoFilename) {
-                    queue('createLogoQueue').add({
-                      id: team.id,
-                      filename: options.logoFilename
-                    })
-                  }
-
-                  queue('sendEmailQueue').add({
-                    message: 'welcome',
-                    name: team.name,
-                    email: team.email,
-                    token: team.emailConfirmationToken
-                  })
-
-                  callback(null)
-                  publish('realtime', new CreateTeamEvent(team))
-                })
-                .catch((err) => {
-                  logger.error(err)
-                  callback(new InternalError())
-                })
-            }
-          })
-        }
-      })
-      .catch((err) => {
+    getPasswordHash(options.password, (err, hash) => {
+      if (err) {
         logger.error(err)
         callback(new InternalError())
-      })
+      } else {
+        Team
+          .query()
+          .insert({
+            name: options.team,
+            email: options.email,
+            createdAt: new Date(),
+            emailConfirmed: false,
+            emailConfirmationToken: token.generate(),
+            passwordHash: hash,
+            country: options.country,
+            locality: options.locality,
+            institution: options.institution,
+            disqualified: false,
+            resetPasswordToken: null
+          })
+          .then((team) => {
+            if (options.logoFilename) {
+              queue('createLogoQueue').add({
+                id: team.id,
+                filename: options.logoFilename
+              })
+            }
+
+            queue('sendEmailQueue').add({
+              message: 'welcome',
+              name: team.name,
+              email: team.email,
+              token: team.emailConfirmationToken
+            })
+
+            callback(null)
+            publish('realtime', new CreateTeamEvent(team))
+
+          })
+          .catch((err) => {
+            if (this.isTeamNameUniqueConstraintViolation(err)) {
+              callback(new TeamCredentialsTakenError())
+            } else if (this.isTeamEmailUniqueConstraintViolation(err)) {
+              callback(new TeamCredentialsTakenError())
+            } else {
+              logger.error(err)
+              callback(new InternalError())
+            }
+          })
+      }
+    })
   }
 
   static signin(name, password, callback) {
@@ -218,38 +219,28 @@ class TeamController {
         } else {
           Team
             .query()
-            .where('email', email.toLowerCase())
-            .first()
-            .then((duplicateTeam) => {
-              if (duplicateTeam) {
-                callback(new EmailTakenError())
-              } else {
-                Team
-                  .query()
-                  .patchAndFetchById(team.id, {
-                    email: email,
-                    emailConfirmationToken: token.generate()
-                  })
-                  .then((updatedTeam) => {
-                    queue('sendEmailQueue').add({
-                      message: 'welcome',
-                      name: updatedTeam.name,
-                      email: updatedTeam.email,
-                      token: updatedTeam.emailConfirmationToken
-                    })
+            .patchAndFetchById(id, {
+              email: email,
+              emailConfirmationToken: token.generate()
+            })
+            .then((updatedTeam) => {
+              queue('sendEmailQueue').add({
+                message: 'welcome',
+                name: updatedTeam.name,
+                email: updatedTeam.email,
+                token: updatedTeam.emailConfirmationToken
+              })
 
-                    callback(null)
-                    publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
-                  })
-                  .catch((err) => {
-                    logger.error(err)
-                    callback(err)
-                  })
-              }
+              callback(null)
+              publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
             })
             .catch((err) => {
-              logger.error(err)
-              callback(new InternalError())
+              if (this.isTeamEmailUniqueConstraintViolation(err)) {
+                callback(new EmailTakenError())
+              } else {
+                logger.error(err)
+                callback(new InternalError())
+              }
             })
         }
       }
