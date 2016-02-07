@@ -4,8 +4,10 @@ import { InternalError, DuplicatePostTitleError, PostNotFoundError } from '../ut
 import publish from '../utils/publisher'
 import _ from 'underscore'
 import BaseEvent from '../utils/events'
+import constants from '../utils/constants'
 
 import postSerializer from '../serializers/post'
+import util from 'util'
 
 
 class CreatePostEvent extends BaseEvent {
@@ -42,83 +44,54 @@ class RemovePostEvent extends BaseEvent {
 
 
 class PostController {
+  static isPostTitleUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'posts_ndx_title_unique')
+  }
+
   static create(title, description, callback) {
+    let now = new Date()
+
     Post
       .query()
-      .where('title', title)
-      .first()
+      .insert({
+        title: title,
+        description: description,
+        createdAt: now,
+        updatedAt: now
+      })
       .then((post) => {
-        if (post) {
-          callback(new DuplicatePostTitleError(), null)
-        } else {
-          let now = new Date()
-          Post
-            .query()
-            .insert({
-              title: title,
-              description: description,
-              createdAt: now,
-              updatedAt: now
-            })
-            .then((post) => {
-              callback(null, post)
-              publish('realtime', new CreatePostEvent(post))
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new InternalError(), null)
-            })
-        }
+        callback(null, post)
+        publish('realtime', new CreatePostEvent(post))
       })
       .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
+        if (this.isPostTitleUniqueConstraintViolation(err)) {
+          callback(new DuplicatePostTitleError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
       })
   }
 
   static update(id, title, description, callback) {
     Post
       .query()
-      .where('id', id)
-      .first()
+      .patchAndFetchById(id, {
+        title: title,
+        description: description,
+        updatedAt: new Date()
+      })
       .then((post) => {
-        if (post) {
-          Post
-            .query()
-            .where('title', title)
-            .first()
-            .then((duplicatePost) => {
-              if (duplicatePost && duplicatePost.id !== id) {
-                callback(new DuplicatePostTitleError(), null)
-              } else {
-                Post
-                  .query()
-                  .patchAndFetchById(id, {
-                    title: title,
-                    description: description,
-                    updatedAt: new Date()
-                  })
-                  .then((updatedPost) => {
-                    callback(null, updatedPost)
-                    publish('realtime', new UpdatePostEvent(updatedPost))
-                  })
-                  .catch((err) => {
-                    logger.error(err)
-                    callback(new InternalError(), null)
-                  })
-              }
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new InternalError(), null)
-            })
-        } else {
-          callback(new InternalError(), null)
-        }
+        callback(null, post)
+        publish('realtime', new UpdatePostEvent(post))
       })
       .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
+        if (this.isPostTitleUniqueConstraintViolation(err)) {
+          callback(new DuplicatePostTitleError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
       })
   }
 
