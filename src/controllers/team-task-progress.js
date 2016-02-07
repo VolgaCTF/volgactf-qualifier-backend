@@ -5,6 +5,7 @@ import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
 import BaseEvent from '../utils/events'
 import publish from '../utils/publisher'
 import teamTaskProgressSerializer from '../serializers/team-task-progress'
+import constants from '../utils/constants'
 
 
 class CreateTeamTaskProgressEvent extends BaseEvent {
@@ -18,43 +19,30 @@ class CreateTeamTaskProgressEvent extends BaseEvent {
 
 
 class TeamTaskProgressController {
+  static isTeamTaskUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_progresses_ndx_team_task_unique')
+  }
+
   static create(teamId, task, callback) {
-    TeamController.get(teamId, (err, team) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        TeamTaskProgress
-          .query()
-          .where('teamId', team.id)
-          .andWhere('taskId', task.id)
-          .first()
-          .then((teamTaskProgress) => {
-            if (teamTaskProgress) {
-              callback(new TaskAlreadySolvedError(), null)
-            } else {
-              TeamTaskProgress
-                .query()
-                .insert({
-                  teamId: team.id,
-                  taskId: task.id,
-                  createdAt: new Date()
-                })
-                .then((teamTaskProgress) => {
-                  callback(null, teamTaskProgress)
-                  publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
-                })
-                .catch((err) => {
-                  logger.error(err)
-                  callback(new InternalError(), null)
-                })
-            }
-          })
-          .catch((err) => {
-            logger.error(err)
-            callback(new InternalError(), null)
-          })
-      }
-    })
+    TeamTaskProgress
+      .query()
+      .insert({
+        teamId: teamId,
+        taskId: task.id,
+        createdAt: new Date()
+      })
+      .then((teamTaskProgress) => {
+        callback(null, teamTaskProgress)
+        publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
+      })
+      .catch((err) => {
+        if (this.isTeamTaskUniqueConstraintViolation(err)) {
+          callback(new TaskAlreadySolvedError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
+      })
   }
 
   static list(callback) {
