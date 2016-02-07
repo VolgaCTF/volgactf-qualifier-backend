@@ -1,42 +1,41 @@
 import Supervisor from '../models/supervisor'
 import { getPasswordHash, checkPassword } from '../utils/security'
-import { InvalidSupervisorCredentialsError } from '../utils/errors'
+import { InvalidSupervisorCredentialsError, InternalError } from '../utils/errors'
+import constants from '../utils/constants'
+import logger from '../utils/logger'
 
 
 class SupervisorController {
+  static isSupervisorUsernameUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
+  }
+
   static create(options, callback) {
-    Supervisor
-      .query()
-      .where('username', options.username)
-      .first()
-      .then((supervisor) => {
-        if (supervisor) {
-          callback('Supervisor exists!', null)
-        } else {
-          getPasswordHash(options.password, (err, hash) => {
-            if (err) {
-              callback(err, null)
+    getPasswordHash(options.password, (err, hash) => {
+      if (err) {
+        logger.error(err)
+        callback(new InternalError(), null)
+      } else {
+        Supervisor
+          .query()
+          .insert({
+            username: options.username,
+            passwordHash: hash,
+            rights: options.rights
+          })
+          .then((supervisor) => {
+            callback(null, supervisor)
+          })
+          .catch((err) => {
+            if (this.isSupervisorUsernameUniqueConstraintViolation(err)) {
+              callback('Supervisor exists!', null)
             } else {
-              Supervisor
-                .query()
-                .insert({
-                  username: options.username,
-                  passwordHash: hash,
-                  rights: options.rights
-                })
-                .then((supervisor) => {
-                  callback(null, supervisor)
-                })
-                .catch((err) => {
-                  callback(err, null)
-                })
+              logger.error(err)
+              callback(new InternalError(), null)
             }
           })
-        }
-      })
-      .catch((err) => {
-        callback(err, null)
-      })
+      }
+    })
   }
 
   static remove(username, callback) {
