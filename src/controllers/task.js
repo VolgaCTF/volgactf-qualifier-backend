@@ -56,44 +56,38 @@ class CloseTaskEvent extends BaseEvent {
 
 
 class TaskController {
+  static isTaskTitleUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'tasks_ndx_title_unique')
+  }
+
   static create(options, callback) {
+    let now = new Date()
+
     Task
       .query()
-      .where('title', options.title)
-      .first()
+      .insert({
+        title: options.title,
+        description: options.description,
+        createdAt: now,
+        updatedAt: now,
+        hints: JSON.stringify(options.hints),
+        value: options.value,
+        categories: JSON.stringify(options.categories),
+        answers: JSON.stringify(options.answers),
+        caseSensitive: options.caseSensitive,
+        state: constants.TASK_INITIAL
+      })
       .then((task) => {
-        if (task) {
-          callback(new DuplicateTaskTitleError(), null)
-        } else {
-          let now = new Date()
-
-          Task
-            .query()
-            .insert({
-              title: options.title,
-              description: options.description,
-              createdAt: now,
-              updatedAt: now,
-              hints: JSON.stringify(options.hints),
-              value: options.value,
-              categories: JSON.stringify(options.categories),
-              answers: JSON.stringify(options.answers),
-              caseSensitive: options.caseSensitive,
-              state: constants.TASK_INITIAL
-            })
-            .then((task) => {
-              callback(null, task)
-              publish('realtime', new CreateTaskEvent(task))
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new InternalError(), null)
-            })
-        }
+        callback(null, task)
+        publish('realtime', new CreateTaskEvent(task))
       })
       .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
+        if (this.isTaskTitleUniqueConstraintViolation(err)) {
+          callback(new DuplicateTaskTitleError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
       })
   }
 
