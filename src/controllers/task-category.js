@@ -6,6 +6,7 @@ import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
 import TaskController from './task'
 import logger from '../utils/logger'
+import constants from '../utils/constants'
 
 
 class CreateTaskCategoryEvent extends BaseEvent {
@@ -72,77 +73,54 @@ class TaskCategoryController {
       })
   }
 
+  static isTaskCategoryTitleUniqueConstraintViolation(err) {
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_categories_ndx_title_unique')
+  }
+
   static create(title, description, callback) {
+    let now = new Date()
     TaskCategory
       .query()
-      .where('title', title)
-      .first()
+      .insert({
+        title: title,
+        description: description,
+        createdAt: now,
+        updatedAt: now
+      })
       .then((taskCategory) => {
-        if (taskCategory) {
-          callback(new DuplicateTaskCategoryTitleError(), null)
-        } else {
-          let now = new Date()
-
-          TaskCategory
-            .query()
-            .insert({
-              title: title,
-              description: description,
-              createdAt: now,
-              updatedAt: now
-            })
-            .then((taskCategory) => {
-              callback(null, taskCategory)
-              publish('realtime', new CreateTaskCategoryEvent(taskCategory))
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new InternalError(), null)
-            })
-        }
+        callback(null, taskCategory)
+        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
       })
       .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
+        if (this.isTaskCategoryTitleUniqueConstraintViolation(err)) {
+          callback(new DuplicateTaskCategoryTitleError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
       })
   }
 
   static update(id, title, description, callback) {
-    TaskCategoryController.get(id, (err, taskCategory) => {
-      if (err) {
-        callback(err, null)
-      } else {
-        TaskCategory
-          .query()
-          .where('title', title)
-          .first()
-          .then((duplicateTaskCategory) => {
-            if (duplicateTaskCategory && duplicateTaskCategory.id !== taskCategory.id) {
-              callback(new DuplicateTaskCategoryTitleError(), null)
-            } else {
-              TaskCategory
-                .query()
-                .patchAndFetchById(id, {
-                  title: title,
-                  description: description,
-                  updatedAt: new Date()
-                })
-                .then((updatedTaskCategory) => {
-                  callback(null, updatedTaskCategory)
-                  publish('realtime', new UpdateTaskCategoryEvent(updatedTaskCategory))
-                })
-                .catch((err) => {
-                  logger.error(err)
-                  callback(new InternalError(), null)
-                })
-            }
-          })
-          .catch((err) => {
-            logger.error(err)
-            callback(new InternalError(), null)
-          })
-      }
-    })
+    TaskCategory
+      .query()
+      .patchAndFetchById(id, {
+        title: title,
+        description: description,
+        updatedAt: new Date()
+      })
+      .then((taskCategory) => {
+        callback(null, taskCategory)
+        publish('realtime', new UpdateTaskCategoryEvent(taskCategory))
+      })
+      .catch((err) => {
+        if (this.isTaskCategoryTitleUniqueConstraintViolation(err)) {
+          callback(new DuplicateTaskCategoryTitleError(), null)
+        } else {
+          logger.error(err)
+          callback(new InternalError(), null)
+        }
+      })
   }
 
   static remove(id, callback) {
