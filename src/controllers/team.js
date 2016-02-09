@@ -61,24 +61,28 @@ class TeamController {
       .where('email', email.toLowerCase())
       .first()
       .then((team) => {
-        Team
-          .query()
-          .patchAndFetchById(team.id, {
-            resetPasswordToken: token.generate()
-          })
-          .then((updatedTeam) => {
-            queue('sendEmailQueue').add({
-              message: 'restore',
-              name: updatedTeam.name,
-              email: updatedTeam.email,
-              token: updatedTeam.resetPasswordToken
+        if (team) {
+          Team
+            .query()
+            .patchAndFetchById(team.id, {
+              resetPasswordToken: token.generate()
             })
-            callback(null)
-          })
-          .catch((err) => {
-            logger.error(err)
-            callback(new InternalError())
-          })
+            .then((updatedTeam) => {
+              queue('sendEmailQueue').add({
+                message: 'restore',
+                name: updatedTeam.name,
+                email: updatedTeam.email,
+                token: updatedTeam.resetPasswordToken
+              })
+              callback(null)
+            })
+            .catch((err) => {
+              logger.error(err)
+              callback(new InternalError())
+            })
+        } else {
+          callback(new TeamNotFoundError())
+        }
       })
       .catch((err) => {
         logger.error(err)
