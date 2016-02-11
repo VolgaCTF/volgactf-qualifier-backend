@@ -76,8 +76,8 @@ export default session({
   saveUninitialized: false,
   name: 'themis-session-id',
   cookie: {
-    domain: 'api.' + process.env.DOMAIN,
-    path: '/',
+    domain: process.env.DOMAIN,
+    path: '/api',
     httpOnly: true,
     secure: false,
     expires: false
