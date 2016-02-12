@@ -79,7 +79,7 @@ export default session({
     domain: process.env.DOMAIN,
     path: '/api',
     httpOnly: true,
-    secure: false,
+    secure: true,
     expires: false
   }
 })

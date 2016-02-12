@@ -23,6 +23,7 @@ import eventStream from './controllers/event-stream'
 
 let app = express()
 app.set('x-powered-by', false)
+app.set('trust proxy', 'loopback')
 
 app.use(cookieParser())
 app.use(sessionMiddleware)
