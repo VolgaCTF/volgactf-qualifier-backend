@@ -1,6 +1,6 @@
 import _ from 'underscore'
 
-export default function(task, options = {}) {
+export default function (task, options = {}) {
   let defaultOptions = {
     preview: false,
     full: false

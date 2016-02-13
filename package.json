@@ -6,7 +6,8 @@
   "scripts": {
     "build": "babel src -d lib",
     "cli": "node -r dotenv/config lib/bin/cli.js",
-    "knex": "knex"
+    "knex": "knex",
+    "lint": "standard --verbose src/**/*.js | snazzy"
   },
   "repository": {
     "type": "git",
@@ -50,8 +51,14 @@
   },
   "devDependencies": {
     "babel-cli": "^6.4.5",
+    "babel-eslint": "^4.1.8",
     "babel-preset-node5": "^10.5.0",
     "mocha": "~2.1.0",
+    "snazzy": "^2.0.1",
+    "standard": "^6.0.5",
     "supertest": "~0.15.0"
+  },
+  "standard": {
+    "parser": "babel-eslint"
   }
 }

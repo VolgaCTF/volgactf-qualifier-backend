@@ -1,6 +1,6 @@
 import _ from 'underscore'
 
-export default function(team, options={}) {
+export default function (team, options = {}) {
   let defaultOptions = {
     exposeEmail: false
   }

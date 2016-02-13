@@ -1,4 +1,3 @@
-import TeamController from '../controllers/team'
 import TeamTaskProgress from '../models/team-task-progress'
 import logger from '../utils/logger'
 import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
@@ -7,9 +6,8 @@ import publish from '../utils/publisher'
 import teamTaskProgressSerializer from '../serializers/team-task-progress'
 import constants from '../utils/constants'
 
-
 class CreateTeamTaskProgressEvent extends BaseEvent {
-  constructor(teamTaskProgress) {
+  constructor (teamTaskProgress) {
     super('createTeamTaskProgress')
     let teamTaskProgressData = teamTaskProgressSerializer(teamTaskProgress)
     this.data.supervisors = teamTaskProgressData
@@ -17,13 +15,12 @@ class CreateTeamTaskProgressEvent extends BaseEvent {
   }
 }
 
-
 class TeamTaskProgressController {
-  static isTeamTaskUniqueConstraintViolation(err) {
+  static isTeamTaskUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_progresses_ndx_team_task_unique')
   }
 
-  static create(teamId, task, callback) {
+  static create (teamId, task, callback) {
     TeamTaskProgress
       .query()
       .insert({
@@ -45,7 +42,7 @@ class TeamTaskProgressController {
       })
   }
 
-  static list(callback) {
+  static list (callback) {
     TeamTaskProgress
       .query()
       .then((teamTaskProgress) => {
@@ -57,7 +54,7 @@ class TeamTaskProgressController {
       })
   }
 
-  static listForTeam(teamId, callback) {
+  static listForTeam (teamId, callback) {
     TeamTaskProgress
       .query()
       .where('teamId', teamId)
@@ -70,7 +67,7 @@ class TeamTaskProgressController {
       })
   }
 
-  static listForTask(taskId, callback) {
+  static listForTask (taskId, callback) {
     TeamTaskProgress
       .query()
       .where('taskId', taskId)
@@ -83,6 +80,5 @@ class TeamTaskProgressController {
       })
   }
 }
-
 
 export default TeamTaskProgressController

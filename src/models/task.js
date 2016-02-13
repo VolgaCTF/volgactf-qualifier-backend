@@ -1,21 +1,20 @@
 import constants from '../utils/constants'
 import Model from '../utils/model'
 
-
 export default class Task extends Model {
-  static get tableName() {
+  static get tableName () {
     return 'tasks'
   }
 
-  isInitial() {
+  isInitial () {
     return this.state === constants.TASK_INITIAL
   }
 
-  isOpened() {
+  isOpened () {
     return this.state === constants.TASK_OPENED
   }
 
-  isClosed() {
+  isClosed () {
     return this.state === constants.TASK_CLOSED
   }
 }

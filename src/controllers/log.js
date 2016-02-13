@@ -2,23 +2,20 @@ import Log from '../models/log'
 import logger from '../utils/logger'
 import { InternalError } from '../utils/errors'
 import publish from '../utils/publisher'
-import _ from 'underscore'
 import BaseEvent from '../utils/events'
 
 import logSerializer from '../serializers/log'
 
-
 class CreateLogEvent extends BaseEvent {
-  constructor(log) {
+  constructor (log) {
     super('createLog')
     let logData = logSerializer(log)
     this.data.supervisors = logData
   }
 }
 
-
 class LogController {
-  static pushLog(eventName, data, callback = null) {
+  static pushLog (eventName, data, callback = null) {
     Log
       .query()
       .insert({
@@ -40,7 +37,7 @@ class LogController {
       })
   }
 
-  static list(callback) {
+  static list (callback) {
     Log
       .query()
       .then((logs) => {
@@ -52,6 +49,5 @@ class LogController {
       })
   }
 }
-
 
 export default LogController

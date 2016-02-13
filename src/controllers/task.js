@@ -10,18 +10,16 @@ import BaseEvent from '../utils/events'
 
 import taskSerializer from '../serializers/task'
 
-
 class CreateTaskEvent extends BaseEvent {
-  constructor(task) {
+  constructor (task) {
     super('createTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
   }
 }
 
-
 class UpdateTaskEvent extends BaseEvent {
-  constructor(task) {
+  constructor (task) {
     super('updateTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
@@ -32,9 +30,8 @@ class UpdateTaskEvent extends BaseEvent {
   }
 }
 
-
 class OpenTaskEvent extends BaseEvent {
-  constructor(task) {
+  constructor (task) {
     super('openTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
@@ -43,9 +40,8 @@ class OpenTaskEvent extends BaseEvent {
   }
 }
 
-
 class CloseTaskEvent extends BaseEvent {
-  constructor(task) {
+  constructor (task) {
     super('closeTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
@@ -54,13 +50,12 @@ class CloseTaskEvent extends BaseEvent {
   }
 }
 
-
 class TaskController {
-  static isTaskTitleUniqueConstraintViolation(err) {
+  static isTaskTitleUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'tasks_ndx_title_unique')
   }
 
-  static create(options, callback) {
+  static create (options, callback) {
     let now = new Date()
 
     Task
@@ -91,7 +86,7 @@ class TaskController {
       })
   }
 
-  static update(task, options, callback) {
+  static update (task, options, callback) {
     Task
       .query()
       .patchAndFetchById(task.id, {
@@ -111,7 +106,7 @@ class TaskController {
       })
   }
 
-  static list(callback) {
+  static list (callback) {
     Task
       .query()
       .then((tasks) => {
@@ -123,7 +118,7 @@ class TaskController {
       })
   }
 
-  static listEligible(callback) {
+  static listEligible (callback) {
     Task
       .query()
       .where('state', constants.TASK_OPENED)
@@ -137,7 +132,7 @@ class TaskController {
       })
   }
 
-  static checkAnswer(task, proposedAnswer, callback) {
+  static checkAnswer (task, proposedAnswer, callback) {
     if (!task.caseSensitive) {
       proposedAnswer = proposedAnswer.toLowerCase()
     }
@@ -147,7 +142,7 @@ class TaskController {
       if (task.caseSensitive) {
         answerCorrect = (proposedAnswer === answer)
       } else {
-        answerCorrect = (proposedAnswer == answer.toLowerCase())
+        answerCorrect = (proposedAnswer === answer.toLowerCase())
       }
       if (answerCorrect) {
         break
@@ -157,7 +152,7 @@ class TaskController {
     callback(null, answerCorrect)
   }
 
-  static open(task, callback) {
+  static open (task, callback) {
     if (task.isInitial()) {
       Task
         .query()
@@ -184,7 +179,7 @@ class TaskController {
     }
   }
 
-  static close(task, callback) {
+  static close (task, callback) {
     if (task.isOpened()) {
       Task
         .query()
@@ -211,7 +206,7 @@ class TaskController {
     }
   }
 
-  static get(id, callback) {
+  static get (id, callback) {
     Task
       .query()
       .where('id', id)
@@ -229,7 +224,7 @@ class TaskController {
       })
   }
 
-  static getByCategory(categoryId, callback) {
+  static getByCategory (categoryId, callback) {
     Task
       .query()
       .then((tasks) => {
@@ -243,6 +238,5 @@ class TaskController {
       })
   }
 }
-
 
 export default TaskController

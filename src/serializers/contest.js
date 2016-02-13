@@ -1,6 +1,6 @@
 import constants from '../utils/constants'
 
-export default function(contest) {
+export default function (contest) {
   if (contest) {
     return {
       state: contest.state,

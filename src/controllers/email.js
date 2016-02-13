@@ -2,9 +2,8 @@ import mustache from 'mustache'
 import fs from 'fs'
 import path from 'path'
 
-
 class EmailController {
-  static generateWelcomeEmail(params) {
+  static generateWelcomeEmail (params) {
     let plainTemplateName = path.join(__dirname, '..', '..', 'templates', 'welcome.plain.mustache')
     let plainTemplate = fs.readFileSync(plainTemplateName, 'utf8')
     let plainMessage = mustache.render(plainTemplate, params)
@@ -20,7 +19,7 @@ class EmailController {
     }
   }
 
-  static generateRestoreEmail(params) {
+  static generateRestoreEmail (params) {
     let plainTemplateName = path.join(__dirname, '..', '..', 'templates', 'restore.plain.mustache')
     let plainTemplate = fs.readFileSync(plainTemplateName, 'utf8')
     let plainMessage = mustache.render(plainTemplate, params)
@@ -36,6 +35,5 @@ class EmailController {
     }
   }
 }
-
 
 export default EmailController

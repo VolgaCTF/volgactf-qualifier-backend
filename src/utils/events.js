@@ -1,6 +1,6 @@
 
 export default class BaseEvent {
-  constructor(name) {
+  constructor (name) {
     this.name = name
     this.data = {
       supervisors: null,
@@ -10,7 +10,7 @@ export default class BaseEvent {
     }
   }
 
-  serialize() {
+  serialize () {
     return {
       name: this.name,
       data: {

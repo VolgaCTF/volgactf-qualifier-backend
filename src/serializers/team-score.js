@@ -1,8 +1,8 @@
 
-export default function(teamScore) {
+export default function (teamScore) {
   return {
     teamId: teamScore.teamId,
     score: teamScore.score,
-    updatedAt: (teamScore.updatedAt)? teamScore.updatedAt.getTime() : null
+    updatedAt: (teamScore.updatedAt) ? teamScore.updatedAt.getTime() : null
   }
 }

@@ -10,7 +10,6 @@ import constraints from '../utils/constraints'
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 import ContestController from '../controllers/contest'
-import constants from '../utils/constants'
 
 import { needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin, detectScope } from '../middleware/session'
 import { checkToken } from '../middleware/security'
@@ -30,7 +29,6 @@ import teamTaskProgressSerializer from '../serializers/team-task-progress'
 import LogController from '../controllers/log'
 import logSerializer from '../serializers/log'
 
-
 router.get('/', (request, response, next) => {
   ContestController.get((err, contest) => {
     if (err) {
@@ -40,7 +38,6 @@ router.get('/', (request, response, next) => {
     }
   })
 })
-
 
 router.get('/scores', (request, response, next) => {
   ContestController.getScores((err, teamScores) => {
@@ -52,10 +49,8 @@ router.get('/scores', (request, response, next) => {
   })
 })
 
-
 router.param('teamId', teamParam.id)
 router.param('taskId', taskParam.id)
-
 
 router.get('/progress', needsToBeAuthorizedSupervisor, (request, response, next) => {
   teamTaskProgressController.list((err, teamTaskProgressEntries) => {
@@ -67,13 +62,12 @@ router.get('/progress', needsToBeAuthorizedSupervisor, (request, response, next)
   })
 })
 
-
 router.get('/team/:teamId/progress', detectScope, (request, response, next) => {
   teamTaskProgressController.listForTeam(request.teamId, (err, teamTaskProgressEntries) => {
     if (err) {
       next(err)
     } else {
-      if (request.scope === 'supervisors' || (request.scope === 'teams' && request.teamId == request.session.identityID)) {
+      if (request.scope === 'supervisors' || (request.scope === 'teams' && request.teamId === request.session.identityID)) {
         response.json(_.map(teamTaskProgressEntries, teamTaskProgressSerializer))
       } else {
         response.json(teamTaskProgressEntries.length)
@@ -81,7 +75,6 @@ router.get('/team/:teamId/progress', detectScope, (request, response, next) => {
     }
   })
 })
-
 
 router.get('/task/:taskId/progress', needsToBeAuthorizedTeam, (request, response, next) => {
   teamTaskProgressController.listForTask(request.taskId, (err, teamTaskProgressEntries) => {
@@ -93,7 +86,6 @@ router.get('/task/:taskId/progress', needsToBeAuthorizedTeam, (request, response
   })
 })
 
-
 router.get('/logs', needsToBeAuthorizedSupervisor, (request, response, next) => {
   LogController.list((err, logs) => {
     if (err) {
@@ -103,7 +95,6 @@ router.get('/logs', needsToBeAuthorizedSupervisor, (request, response, next) => 
     }
   })
 })
-
 
 router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let valState = parseInt(request.body.state, 10)
@@ -147,6 +138,5 @@ router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (
     }
   })
 })
-
 
 export default router

@@ -7,8 +7,7 @@ import TeamController from '../controllers/team'
 import TeamScore from '../models/team-score'
 import _ from 'underscore'
 
-
-function rankFunc(a, b) {
+function rankFunc (a, b) {
   if (a.score > b.score) {
     return -1
   } else if (a.score < b.score) {
@@ -27,11 +26,10 @@ function rankFunc(a, b) {
     } else if (!a.updatedAt && b.updatedAt) {
       return 1
     } else {
-        return 0
+      return 0
     }
   }
 }
-
 
 router.get('/ctftime', (request, response, next) => {
   TeamController.listQualified((err, teams) => {
@@ -80,6 +78,5 @@ router.get('/ctftime', (request, response, next) => {
     }
   })
 })
-
 
 export default router

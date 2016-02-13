@@ -1,9 +1,8 @@
 import logger from '../utils/logger'
 import mandrill from 'mandrill-api/mandrill'
 
-
 export default class MandrillController {
-  static sendEmail(message, recipientEmail, recipientName) {
+  static sendEmail (message, recipientEmail, recipientName) {
     return new Promise((resolve, reject) => {
       let params = {
         message: {
@@ -34,7 +33,7 @@ export default class MandrillController {
           resolve()
         },
         (err) => {
-          logger.error(`Mandrill error: ${e.name} - ${e.name}`)
+          logger.error(`Mandrill error: ${err.name} - ${err.name}`)
           reject(err)
         })
     })

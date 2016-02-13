@@ -1,6 +1,5 @@
 import express from 'express'
 import _ from 'underscore'
-import is_ from 'is_js'
 let router = express.Router()
 
 import TaskCategoryController from '../controllers/task-category'
@@ -20,7 +19,6 @@ let urlencodedParser = bodyParser.urlencoded({ extended: false })
 import taskCategoryParam from '../params/task-category'
 import { ValidationError } from '../utils/errors'
 
-
 router.get('/all', (request, response, next) => {
   TaskCategoryController.list((err, taskCategories) => {
     if (err) {
@@ -30,7 +28,6 @@ router.get('/all', (request, response, next) => {
     }
   })
 })
-
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let createConstraints = {
@@ -52,9 +49,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
   })
 })
 
-
 router.param('taskCategoryId', taskCategoryParam.id)
-
 
 router.post('/:taskCategoryId/remove', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
   TaskCategoryController.remove(request.taskCategoryId, (err) => {
@@ -65,7 +60,6 @@ router.post('/:taskCategoryId/remove', contestNotFinished, checkToken, needsToBe
     }
   })
 })
-
 
 router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let updateConstraints = {
@@ -86,6 +80,5 @@ router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBe
     }
   })
 })
-
 
 export default router

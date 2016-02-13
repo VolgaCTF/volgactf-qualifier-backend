@@ -1,25 +1,24 @@
 import constants from '../utils/constants'
 import Model from '../utils/model'
 
-
 export default class Contest extends Model {
-  static get tableName() {
+  static get tableName () {
     return 'contests'
   }
 
-  isInitial() {
+  isInitial () {
     return this.state === constants.CONTEST_INITIAL
   }
 
-  isStarted() {
+  isStarted () {
     return this.state === constants.CONTEST_STARTED
   }
 
-  isPaused() {
+  isPaused () {
     return this.state === constants.CONTEST_PAUSED
   }
 
-  isFinished() {
+  isFinished () {
     return this.state === constants.CONTEST_FINISHED
   }
 }

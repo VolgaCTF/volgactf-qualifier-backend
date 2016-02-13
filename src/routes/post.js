@@ -16,10 +16,7 @@ import { checkToken } from '../middleware/security'
 
 import postParam from '../params/post'
 
-import is_ from 'is_js'
-
 import postSerializer from '../serializers/post'
-
 
 router.get('/all', (request, response, next) => {
   PostController.list((err, posts) => {
@@ -30,7 +27,6 @@ router.get('/all', (request, response, next) => {
     }
   })
 })
-
 
 router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
   let createConstraints = {
@@ -52,9 +48,7 @@ router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedPars
   })
 })
 
-
 router.param('postId', postParam.id)
-
 
 router.post('/:postId/remove', checkToken, needsToBeAuthorizedSupervisor, (request, response, next) => {
   PostController.remove(request.postId, (err) => {
@@ -65,7 +59,6 @@ router.post('/:postId/remove', checkToken, needsToBeAuthorizedSupervisor, (reque
     }
   })
 })
-
 
 router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
   let updateConstraints = {
@@ -86,6 +79,5 @@ router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlenc
     }
   })
 })
-
 
 export default router

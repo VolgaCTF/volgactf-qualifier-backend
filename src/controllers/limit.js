@@ -4,9 +4,8 @@ import { InternalError } from '../utils/errors'
 import logger from '../utils/logger'
 import _ from 'underscore'
 
-
 class LimitController {
-  constructor(key, options = {}) {
+  constructor (key, options = {}) {
     let defaultOptions = {
       timeout: 10,
       maxAttempts: 3
@@ -18,7 +17,7 @@ class LimitController {
     this.maxAttempts = options.maxAttempts
   }
 
-  check(callback) {
+  check (callback) {
     redisClient.incr(this.key, (err, attempts) => {
       if (err) {
         logger.err(err)
@@ -48,6 +47,5 @@ class LimitController {
     })
   }
 }
-
 
 export default LimitController

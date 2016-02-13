@@ -10,7 +10,7 @@ import TeamController from '../controllers/team'
 import TeamTaskProgressController from '../controllers/team-task-progress'
 import TaskController from '../controllers/task'
 
-import { ContestNotInitializedError, InternalError } from '../utils/errors'
+import { InternalError } from '../utils/errors'
 import constants from '../utils/constants'
 import logger from '../utils/logger'
 
@@ -23,9 +23,8 @@ import teamScoreSerializer from '../serializers/team-score'
 import when_ from 'when'
 import async from 'async'
 
-
 class UpdateContestEvent extends BaseEvent {
-  constructor(contest) {
+  constructor (contest) {
     super('updateContest')
     let contestData = contestSerializer(contest)
     this.data.supervisors = contestData
@@ -34,9 +33,8 @@ class UpdateContestEvent extends BaseEvent {
   }
 }
 
-
 class UpdateTeamScoreEvent extends BaseEvent {
-  constructor(teamScore) {
+  constructor (teamScore) {
     super('updateTeamScore')
     let teamScoreData = teamScoreSerializer(teamScore)
     this.data.supervisors = teamScoreData
@@ -45,9 +43,8 @@ class UpdateTeamScoreEvent extends BaseEvent {
   }
 }
 
-
 class ContestController {
-  static get(callback) {
+  static get (callback) {
     Contest
       .query()
       .first()
@@ -60,7 +57,7 @@ class ContestController {
       })
   }
 
-  static getScores(callback) {
+  static getScores (callback) {
     TeamController.listQualified((err, teams) => {
       if (err) {
         callback(err, null)
@@ -89,12 +86,12 @@ class ContestController {
     })
   }
 
-  static update(state, startsAt, finishesAt, callback) {
+  static update (state, startsAt, finishesAt, callback) {
     ContestController.get((err, contest) => {
       if (err) {
         callback(err, null)
       } else {
-        let alwaysResolves = function() {
+        let alwaysResolves = function () {
           let deferred = when_.defer()
           deferred.resolve()
           return deferred.promise
@@ -103,7 +100,7 @@ class ContestController {
         let promises = []
         if (state === constants.CONTEST_INITIAL) {
           if (contest && contest.state !== state) {
-            let removeTaskCategories = function() {
+            let removeTaskCategories = function () {
               let deferred = when_.defer()
               TaskCategory
                 .query()
@@ -121,7 +118,7 @@ class ContestController {
 
             promises.push(removeTaskCategories())
 
-            let removeTasks = function() {
+            let removeTasks = function () {
               let deferred = when_.defer()
 
               Task
@@ -140,7 +137,7 @@ class ContestController {
 
             promises.push(removeTasks())
 
-            let removeTeamScores = function() {
+            let removeTeamScores = function () {
               let deferred = when_.defer()
 
               TeamScore
@@ -159,7 +156,7 @@ class ContestController {
 
             promises.push(removeTeamScores())
 
-            let removeTeamTaskProgressEntries = function() {
+            let removeTeamTaskProgressEntries = function () {
               let deferred = when_.defer()
 
               TeamTaskProgress
@@ -229,7 +226,7 @@ class ContestController {
     })
   }
 
-  static updateScores(callback) {
+  static updateScores (callback) {
     TeamController.listQualified((err, teams) => {
       if (err) {
         callback(err)
@@ -276,7 +273,7 @@ class ContestController {
                         )
                         .then((response) => {
                           next(null, null)
-                          if (response.rowCount == 1 ) {
+                          if (response.rowCount === 1) {
                             publish('realtime', new UpdateTeamScoreEvent(response.rows[0]))
                           }
                         })
@@ -307,6 +304,5 @@ class ContestController {
     })
   }
 }
-
 
 export default ContestController

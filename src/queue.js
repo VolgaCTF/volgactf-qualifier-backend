@@ -8,7 +8,6 @@ import ContestController from './controllers/contest'
 import MandrillController from './controllers/mandrill'
 import MailgunController from './controllers/mailgun'
 
-
 queue('updateScoresQueue').process((job, done) => {
   ContestController.updateScores((err) => {
     if (err) {
@@ -19,7 +18,6 @@ queue('updateScoresQueue').process((job, done) => {
     }
   })
 })
-
 
 queue('createLogoQueue').process((job, done) => {
   let newFilename = path.join(process.env.LOGOS_DIR, `team-${job.data.id}.png`)
@@ -34,7 +32,6 @@ queue('createLogoQueue').process((job, done) => {
       }
     })
 })
-
 
 queue('sendEmailQueue').process((job, done) => {
   let message = null

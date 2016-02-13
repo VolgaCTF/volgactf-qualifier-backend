@@ -5,8 +5,7 @@ import connectRedis from 'connect-redis'
 let RedisStore = connectRedis(session)
 import redis from '../utils/redis'
 
-
-export function needsToBeUnauthorized(request, response, next) {
+export function needsToBeUnauthorized (request, response, next) {
   if (request.session.authenticated) {
     throw new AlreadyAuthenticatedError()
   } else {
@@ -14,8 +13,7 @@ export function needsToBeUnauthorized(request, response, next) {
   }
 }
 
-
-export function needsToBeAuthorized(request, response, next) {
+export function needsToBeAuthorized (request, response, next) {
   if (request.session.authenticated) {
     next()
   } else {
@@ -23,8 +21,7 @@ export function needsToBeAuthorized(request, response, next) {
   }
 }
 
-
-export function needsToBeAuthorizedTeam(request, response, next) {
+export function needsToBeAuthorizedTeam (request, response, next) {
   if (request.session.authenticated && request.session.role === 'team') {
     next()
   } else {
@@ -32,8 +29,7 @@ export function needsToBeAuthorizedTeam(request, response, next) {
   }
 }
 
-
-export function needsToBeAuthorizedSupervisor(request, response, next) {
+export function needsToBeAuthorizedSupervisor (request, response, next) {
   if (request.session.authenticated && _.contains(['admin', 'manager'], request.session.role)) {
     next()
   } else {
@@ -41,8 +37,7 @@ export function needsToBeAuthorizedSupervisor(request, response, next) {
   }
 }
 
-
-export function needsToBeAuthorizedAdmin(request, response, next) {
+export function needsToBeAuthorizedAdmin (request, response, next) {
   if (request.session.authenticated && request.session.role === 'admin') {
     next()
   } else {
@@ -50,8 +45,7 @@ export function needsToBeAuthorizedAdmin(request, response, next) {
   }
 }
 
-
-export function detectScope(request, response, next) {
+export function detectScope (request, response, next) {
   if (request.session.authenticated) {
     if (request.session.role === 'team') {
       request.scope = 'teams'
@@ -65,7 +59,6 @@ export function detectScope(request, response, next) {
   }
   next()
 }
-
 
 export default session({
   store: new RedisStore({

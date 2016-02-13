@@ -3,11 +3,6 @@ import logger from './utils/logger'
 
 import SupervisorController from './controllers/supervisor'
 import TeamController from './controllers/team'
-import TeamTaskProgressController from './controllers/team-task-progress'
-import TeamTaskProgress from './models/team-task-progress'
-import _ from 'underscore'
-import async from 'async'
-
 
 parser.command('create_supervisor')
   .help('Create supervisor user')
@@ -98,7 +93,6 @@ parser.command('list_teams')
     })
   })
 
-
-export default function run() {
+export default function run () {
   parser.parse()
 }

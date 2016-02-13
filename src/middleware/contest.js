@@ -1,9 +1,7 @@
 import ContestController from '../controllers/contest'
-import constants from '../utils/constants'
 import { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } from '../utils/errors'
 
-
-export function getState(request, response, next) {
+export function getState (request, response, next) {
   ContestController.get((err, contest) => {
     if (err) {
       next(err)
@@ -14,8 +12,7 @@ export function getState(request, response, next) {
   })
 }
 
-
-export function contestNotFinished(request, response, next) {
+export function contestNotFinished (request, response, next) {
   ContestController.get((err, contest) => {
     if (err) {
       next(err)
@@ -29,8 +26,7 @@ export function contestNotFinished(request, response, next) {
   })
 }
 
-
-export function contestIsStarted(request, response, next) {
+export function contestIsStarted (request, response, next) {
   ContestController.get((err, contest) => {
     if (err) {
       next(err)
@@ -54,8 +50,7 @@ export function contestIsStarted(request, response, next) {
   })
 }
 
-
-export function contestIsFinished(request, response, next) {
+export function contestIsFinished (request, response, next) {
   ContestController.get((err, contest) => {
     if (err) {
       next(err)

@@ -2,16 +2,13 @@ import Post from '../models/post'
 import logger from '../utils/logger'
 import { InternalError, DuplicatePostTitleError, PostNotFoundError } from '../utils/errors'
 import publish from '../utils/publisher'
-import _ from 'underscore'
 import BaseEvent from '../utils/events'
 import constants from '../utils/constants'
 
 import postSerializer from '../serializers/post'
-import util from 'util'
-
 
 class CreatePostEvent extends BaseEvent {
-  constructor(post) {
+  constructor (post) {
     super('createPost')
     let postData = postSerializer(post)
     this.data.supervisors = postData
@@ -20,9 +17,8 @@ class CreatePostEvent extends BaseEvent {
   }
 }
 
-
 class UpdatePostEvent extends BaseEvent {
-  constructor(post) {
+  constructor (post) {
     super('updatePost')
     let postData = postSerializer(post)
     this.data.supervisors = postData
@@ -31,9 +27,8 @@ class UpdatePostEvent extends BaseEvent {
   }
 }
 
-
 class RemovePostEvent extends BaseEvent {
-  constructor(postId) {
+  constructor (postId) {
     super('removePost')
     let postData = { id: postId }
     this.data.supervisors = postData
@@ -42,13 +37,12 @@ class RemovePostEvent extends BaseEvent {
   }
 }
 
-
 class PostController {
-  static isPostTitleUniqueConstraintViolation(err) {
+  static isPostTitleUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'posts_ndx_title_unique')
   }
 
-  static create(title, description, callback) {
+  static create (title, description, callback) {
     let now = new Date()
 
     Post
@@ -73,7 +67,7 @@ class PostController {
       })
   }
 
-  static update(id, title, description, callback) {
+  static update (id, title, description, callback) {
     Post
       .query()
       .patchAndFetchById(id, {
@@ -95,7 +89,7 @@ class PostController {
       })
   }
 
-  static remove(id, callback) {
+  static remove (id, callback) {
     Post
       .query()
       .delete()
@@ -109,11 +103,12 @@ class PostController {
         }
       })
       .catch((err) => {
+        logger.error(err)
         callback(new PostNotFoundError())
       })
   }
 
-  static list(callback) {
+  static list (callback) {
     Post
       .query()
       .then((posts) => {
@@ -125,7 +120,7 @@ class PostController {
       })
   }
 
-  static get(id, callback) {
+  static get (id, callback) {
     Post
       .query()
       .where('id', id)
@@ -143,6 +138,5 @@ class PostController {
       })
   }
 }
-
 
 export default PostController

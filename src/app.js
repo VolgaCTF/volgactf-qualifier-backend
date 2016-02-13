@@ -1,25 +1,12 @@
 import express from 'express'
-import bodyParser from 'body-parser'
 import logger from './utils/logger'
 import cookieParser from 'cookie-parser'
 
 import apiRouter from './routes/api'
 
-import SupervisorController from './controllers/supervisor'
+import { BaseError } from './utils/errors'
 
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-import constraints from './utils/constraints'
-import _ from 'underscore'
-import TeamController from './controllers/team'
-
-import { BaseError, ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from './utils/errors'
-
-import sessionMiddleware, { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from './middleware/session'
-import tokenUtil from './utils/token'
-import { checkToken } from './middleware/security'
-
-import eventStream from './controllers/event-stream'
+import sessionMiddleware from './middleware/session'
 
 let app = express()
 app.set('x-powered-by', false)
@@ -40,6 +27,5 @@ app.use((err, request, response, next) => {
     response.json('Internal Server Error')
   }
 })
-
 
 export default app

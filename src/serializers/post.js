@@ -1,5 +1,5 @@
 
-export default function(post) {
+export default function (post) {
   return {
     id: post.id,
     title: post.title,

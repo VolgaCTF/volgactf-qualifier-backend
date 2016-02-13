@@ -14,6 +14,6 @@ if (process.env.REDIS_DB) {
 
 let prefix = process.env.QUEUE_PREFIX || 'themis-quals'
 
-export default function(name) {
+export default function (name) {
   return Queue(`${prefix}:${name}`, port, host, { db: database })
 }

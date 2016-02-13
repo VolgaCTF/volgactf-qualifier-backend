@@ -8,9 +8,8 @@ import TaskController from './task'
 import logger from '../utils/logger'
 import constants from '../utils/constants'
 
-
 class CreateTaskCategoryEvent extends BaseEvent {
-  constructor(taskCategory) {
+  constructor (taskCategory) {
     super('createTaskCategory')
     let taskCategoryData = taskCategorySerializer(taskCategory)
     this.data.supervisors = taskCategoryData
@@ -19,9 +18,8 @@ class CreateTaskCategoryEvent extends BaseEvent {
   }
 }
 
-
 class UpdateTaskCategoryEvent extends BaseEvent {
-  constructor(taskCategory) {
+  constructor (taskCategory) {
     super('updateTaskCategory')
     let taskCategoryData = taskCategorySerializer(taskCategory)
     this.data.supervisors = taskCategoryData
@@ -30,9 +28,8 @@ class UpdateTaskCategoryEvent extends BaseEvent {
   }
 }
 
-
 class RemoveTaskCategoryEvent extends BaseEvent {
-  constructor(taskCategoryId) {
+  constructor (taskCategoryId) {
     super('removeTaskCategory')
     let taskCategoryData = { id: taskCategoryId }
     this.data.supervisors = taskCategoryData
@@ -41,9 +38,8 @@ class RemoveTaskCategoryEvent extends BaseEvent {
   }
 }
 
-
 class TaskCategoryController {
-  static list(callback) {
+  static list (callback) {
     TaskCategory
       .query()
       .then((taskCategories) => {
@@ -51,11 +47,11 @@ class TaskCategoryController {
       })
       .catch((err) => {
         logger.error(err)
-        callback(new InternalError, null)
+        callback(new InternalError(), null)
       })
   }
 
-  static get(id, callback) {
+  static get (id, callback) {
     TaskCategory
       .query()
       .where('id', id)
@@ -73,11 +69,11 @@ class TaskCategoryController {
       })
   }
 
-  static isTaskCategoryTitleUniqueConstraintViolation(err) {
+  static isTaskCategoryTitleUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_categories_ndx_title_unique')
   }
 
-  static create(title, description, callback) {
+  static create (title, description, callback) {
     let now = new Date()
     TaskCategory
       .query()
@@ -101,7 +97,7 @@ class TaskCategoryController {
       })
   }
 
-  static update(id, title, description, callback) {
+  static update (id, title, description, callback) {
     TaskCategory
       .query()
       .patchAndFetchById(id, {
@@ -123,7 +119,7 @@ class TaskCategoryController {
       })
   }
 
-  static remove(id, callback) {
+  static remove (id, callback) {
     TaskController.getByCategory(id, (err, tasks) => {
       if (err) {
         callback(err)
@@ -152,6 +148,5 @@ class TaskCategoryController {
     })
   }
 }
-
 
 export default TaskCategoryController

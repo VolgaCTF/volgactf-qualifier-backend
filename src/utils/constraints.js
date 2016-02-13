@@ -1,12 +1,11 @@
 import Validator from 'validator.js'
 let Assert = Validator.Assert
-let Constraint = Validator.Constraint
 import is_ from 'is_js'
 
 import constants from './constants'
 
-let pwdRegex = "^[A-Za-z0-9\\x5b\\x5d\\x28\\x29\\x7b\\x7d\\x7e\\x60\\x21\\x40\\x23\\x24\\x25\\x5e\\x26\\x2a\\x2d\\x5f\\x3d\\x2b\\x27\\x22\\x3a\\x3b\\x7c\\x2f\\x5c\\x2e\\x2c\\x3f\\x3c\\x3e]{6,40}$"
-let base64urlRegex = "^[A-Za-z0-9_\\-]{3,}$"
+let pwdRegex = '^[A-Za-z0-9\\x5b\\x5d\\x28\\x29\\x7b\\x7d\\x7e\\x60\\x21\\x40\\x23\\x24\\x25\\x5e\\x26\\x2a\\x2d\\x5f\\x3d\\x2b\\x27\\x22\\x3a\\x3b\\x7c\\x2f\\x5c\\x2e\\x2c\\x3f\\x3c\\x3e]{6,40}$'
+let base64urlRegex = '^[A-Za-z0-9_\\-]{3,}$'
 
 export default {
   email: [

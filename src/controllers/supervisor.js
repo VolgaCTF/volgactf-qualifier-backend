@@ -4,13 +4,12 @@ import { InvalidSupervisorCredentialsError, InternalError } from '../utils/error
 import constants from '../utils/constants'
 import logger from '../utils/logger'
 
-
 class SupervisorController {
-  static isSupervisorUsernameUniqueConstraintViolation(err) {
+  static isSupervisorUsernameUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
   }
 
-  static create(options, callback) {
+  static create (options, callback) {
     getPasswordHash(options.password, (err, hash) => {
       if (err) {
         logger.error(err)
@@ -38,7 +37,7 @@ class SupervisorController {
     })
   }
 
-  static remove(username, callback) {
+  static remove (username, callback) {
     Supervisor
       .query()
       .delete()
@@ -55,7 +54,7 @@ class SupervisorController {
       })
   }
 
-  static login(username, password, callback) {
+  static login (username, password, callback) {
     Supervisor
       .query()
       .where('username', username)
@@ -82,7 +81,7 @@ class SupervisorController {
       })
   }
 
-  static list(callback) {
+  static list (callback) {
     Supervisor
       .query()
       .then((supervisors) => {
@@ -93,7 +92,7 @@ class SupervisorController {
       })
   }
 
-  static get(id, callback) {
+  static get (id, callback) {
     Supervisor
       .query()
       .where('id', id)
@@ -110,6 +109,5 @@ class SupervisorController {
       })
   }
 }
-
 
 export default SupervisorController

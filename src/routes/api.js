@@ -1,7 +1,5 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import logger from '../utils/logger'
-import cookieParser from 'cookie-parser'
 
 import teamRouter from '../routes/team'
 import postRouter from '../routes/post'
@@ -14,12 +12,11 @@ import SupervisorController from '../controllers/supervisor'
 import Validator from 'validator.js'
 let validator = new Validator.Validator()
 import constraints from '../utils/constraints'
-import _ from 'underscore'
 import TeamController from '../controllers/team'
 
-import { BaseError, ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from '../utils/errors'
+import { ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from '../utils/errors'
 
-import sessionMiddleware, { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from '../middleware/session'
+import { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from '../middleware/session'
 import tokenUtil from '../utils/token'
 import { checkToken } from '../middleware/security'
 
@@ -32,7 +29,6 @@ router.use('/post', postRouter)
 router.use('/contest', contestRouter)
 router.use('/task', taskRouter)
 router.use('/third-party', thirdPartyRouter)
-
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
@@ -69,7 +65,6 @@ router.post(
   }
 )
 
-
 router.post(
   '/signout',
   checkToken,
@@ -85,7 +80,6 @@ router.post(
     })
   }
 )
-
 
 router.get('/identity', detectScope, (request, response, next) => {
   let token = tokenUtil.encode(tokenUtil.generate(32))
@@ -133,7 +127,6 @@ router.get('/identity', detectScope, (request, response, next) => {
   }
 })
 
-
 router.get('/events', detectScope, (request, response, next) => {
   if (!request.scope) {
     throw new UnknownIdentityError()
@@ -168,6 +161,5 @@ router.get('/events', detectScope, (request, response, next) => {
     }
   })
 })
-
 
 export default router

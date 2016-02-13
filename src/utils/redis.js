@@ -13,7 +13,7 @@ if (process.env.REDIS_DB) {
 }
 
 export default {
-  createClient: function() {
+  createClient: function () {
     return redis.createClient(port, host, { db: database })
   }
 }

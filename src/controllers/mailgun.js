@@ -1,9 +1,8 @@
 import logger from '../utils/logger'
 import mailgun from 'mailgun-js'
 
-
 export default class MailgunController {
-  static sendEmail(message, recipientEmail, recipientName) {
+  static sendEmail (message, recipientEmail, recipientName) {
     return new Promise((resolve, reject) => {
       let data = {
         from: `VolgaCTF <${process.env.EMAIL_SENDER}>`,

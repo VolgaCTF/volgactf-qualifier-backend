@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt'
 
-
-export function getPasswordHash(password, callback) {
+export function getPasswordHash (password, callback) {
   bcrypt.hash(password, 10, (err, hash) => {
     if (err) {
       callback(err, null)
@@ -11,7 +10,7 @@ export function getPasswordHash(password, callback) {
   })
 }
 
-export function checkPassword(password, hash, callback) {
+export function checkPassword (password, hash, callback) {
   bcrypt.compare(password, hash, (err, res) => {
     if (err) {
       callback(err, null)

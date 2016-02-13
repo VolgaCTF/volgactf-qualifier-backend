@@ -1,8 +1,5 @@
 import Team from '../models/team'
 import { getPasswordHash, checkPassword } from '../utils/security'
-import fs from 'fs'
-import path from 'path'
-import gm from 'gm'
 import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
@@ -13,9 +10,8 @@ import constants from '../utils/constants'
 
 import teamSerializer from '../serializers/team'
 
-
 class UpdateTeamProfileEvent extends BaseEvent {
-  constructor(team) {
+  constructor (team) {
     super('updateTeamProfile')
     let publicData = teamSerializer(team)
     this.data.guests = publicData
@@ -25,9 +21,8 @@ class UpdateTeamProfileEvent extends BaseEvent {
   }
 }
 
-
 class QualifyTeamEvent extends BaseEvent {
-  constructor(team) {
+  constructor (team) {
     super('qualifyTeam')
     let publicData = teamSerializer(team)
     this.data.guests = publicData
@@ -37,25 +32,22 @@ class QualifyTeamEvent extends BaseEvent {
   }
 }
 
-
 class CreateTeamEvent extends BaseEvent {
-  constructor(team) {
+  constructor (team) {
     super('createTeam')
     this.data.supervisors = teamSerializer(team, { exposeEmail: true })
   }
 }
 
-
 class ChangeTeamEmailEvent extends BaseEvent {
-  constructor(team) {
+  constructor (team) {
     super('changeTeamEmail')
     this.data.supervisors = teamSerializer(team, { exposeEmail: true })
   }
 }
 
-
 class TeamController {
-  static restore(email, callback) {
+  static restore (email, callback) {
     Team
       .query()
       .where('email', email.toLowerCase())
@@ -90,15 +82,15 @@ class TeamController {
       })
   }
 
-  static isTeamNameUniqueConstraintViolation(err) {
+  static isTeamNameUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_name_unique')
   }
 
-  static isTeamEmailUniqueConstraintViolation(err) {
+  static isTeamEmailUniqueConstraintViolation (err) {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_email_unique')
   }
 
-  static create(options, callback) {
+  static create (options, callback) {
     getPasswordHash(options.password, (err, hash) => {
       if (err) {
         logger.error(err)
@@ -136,7 +128,6 @@ class TeamController {
 
             callback(null)
             publish('realtime', new CreateTeamEvent(team))
-
           })
           .catch((err) => {
             if (this.isTeamNameUniqueConstraintViolation(err)) {
@@ -152,7 +143,7 @@ class TeamController {
     })
   }
 
-  static signin(name, password, callback) {
+  static signin (name, password, callback) {
     Team
       .query()
       .where('name', name)
@@ -181,7 +172,7 @@ class TeamController {
       })
   }
 
-  static resendConfirmationEmail(id, callback) {
+  static resendConfirmationEmail (id, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -213,7 +204,7 @@ class TeamController {
     })
   }
 
-  static changeEmail(id, email, callback) {
+  static changeEmail (id, email, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -251,7 +242,7 @@ class TeamController {
     })
   }
 
-  static editProfile(id, country, locality, institution, callback) {
+  static editProfile (id, country, locality, institution, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -275,7 +266,7 @@ class TeamController {
     })
   }
 
-  static changeLogo(id, logoFilename, callback) {
+  static changeLogo (id, logoFilename, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -289,7 +280,7 @@ class TeamController {
     })
   }
 
-  static changePassword(id, currentPassword, newPassword, callback) {
+  static changePassword (id, currentPassword, newPassword, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -328,7 +319,7 @@ class TeamController {
     })
   }
 
-  static list(callback) {
+  static list (callback) {
     Team
       .query()
       .then((teams) => {
@@ -340,7 +331,7 @@ class TeamController {
       })
   }
 
-  static listQualified(callback) {
+  static listQualified (callback) {
     Team
       .query()
       .where('emailConfirmed', true)
@@ -353,14 +344,14 @@ class TeamController {
       })
   }
 
-  static resetPassword(encodedEmail, encodedToken, newPassword, callback) {
+  static resetPassword (encodedEmail, encodedToken, newPassword, callback) {
     let email = null
     let code = null
     try {
       email = token.decodeString(encodedEmail)
       code = token.decode(encodedToken)
       if (!code) {
-        throw 'Reset password code is null'
+        throw new Error('Reset password code is null')
       }
     } catch (e) {
       logger.error(e)
@@ -405,7 +396,7 @@ class TeamController {
       })
   }
 
-  static verifyEmail(encodedEmail, encodedToken, callback) {
+  static verifyEmail (encodedEmail, encodedToken, callback) {
     let email = null
     let code = null
     try {
@@ -449,7 +440,7 @@ class TeamController {
       })
   }
 
-  static get(id, callback) {
+  static get (id, callback) {
     Team
       .query()
       .where('id', id)
@@ -467,6 +458,5 @@ class TeamController {
       })
   }
 }
-
 
 export default TeamController

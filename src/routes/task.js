@@ -33,9 +33,7 @@ import LimitController from '../controllers/limit'
 import when_ from 'when'
 import LogController from '../controllers/log'
 
-
 router.param('taskId', taskParam.id)
-
 
 router.get('/all', detectScope, (request, response, next) => {
   let onFetch = (exposeEmail) => {
@@ -56,7 +54,6 @@ router.get('/all', detectScope, (request, response, next) => {
     TaskController.listEligible(onFetch(false))
   }
 })
-
 
 router.get('/:taskId', detectScope, getState, (request, response, next) => {
   let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
@@ -80,7 +77,6 @@ router.get('/:taskId', detectScope, getState, (request, response, next) => {
   })
 })
 
-
 router.get('/:taskId/full', needsToBeAuthorizedSupervisor, (request, response, next) => {
   let serializer = _.partial(taskSerializer, _, { full: true })
   TaskController.get(request.taskId, (err, task) => {
@@ -91,7 +87,6 @@ router.get('/:taskId/full', needsToBeAuthorizedSupervisor, (request, response, n
     }
   })
 })
-
 
 router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
   if (!request.team.emailConfirmed) {
@@ -150,7 +145,6 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
   })
 })
 
-
 router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTask, urlencodedParser, (request, response, next) => {
   let reviseConstraints = {
     answer: constraints.taskAnswer
@@ -173,7 +167,6 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
     }
   })
 })
-
 
 router.post('/:taskId/check', checkToken, detectScope, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
   if (!_.contains(['guests', 'teams'], request.scope)) {
@@ -202,7 +195,6 @@ router.post('/:taskId/check', checkToken, detectScope, contestIsFinished, getTas
   })
 })
 
-
 router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
   TaskController.open(request.task, (err) => {
     if (err) {
@@ -212,7 +204,6 @@ router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAd
     }
   })
 })
-
 
 router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
   TaskController.close(request.task, (err) => {
@@ -224,21 +215,20 @@ router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedA
   })
 })
 
-
-function sanitizeCreateTaskParams(params, callback) {
-  let sanitizeTitle = function() {
+function sanitizeCreateTaskParams (params, callback) {
+  let sanitizeTitle = function () {
     let deferred = when_.defer()
     deferred.resolve(params.title)
     return deferred.promise
   }
 
-  let sanitizeDescription = function() {
+  let sanitizeDescription = function () {
     let deferred = when_.defer()
     deferred.resolve(params.description)
     return deferred.promise
   }
 
-  let sanitizeHints = function() {
+  let sanitizeHints = function () {
     let deferred = when_.defer()
     let hints = params.hints
     if (!hints) {
@@ -252,7 +242,7 @@ function sanitizeCreateTaskParams(params, callback) {
     return deferred.promise
   }
 
-  let sanitizeValue = function() {
+  let sanitizeValue = function () {
     let deferred = when_.defer()
     let value = parseInt(params.value, 10)
     if (is_.number(value)) {
@@ -264,7 +254,7 @@ function sanitizeCreateTaskParams(params, callback) {
     return deferred.promise
   }
 
-  let sanitizeCategories = function() {
+  let sanitizeCategories = function () {
     let deferred = when_.defer()
     let categories = params.categories
     if (!categories) {
@@ -290,7 +280,7 @@ function sanitizeCreateTaskParams(params, callback) {
     return deferred.promise
   }
 
-  let sanitizeAnswers = function() {
+  let sanitizeAnswers = function () {
     let deferred = when_.defer()
     let answers = params.answers
     if (!answers) {
@@ -310,7 +300,7 @@ function sanitizeCreateTaskParams(params, callback) {
     return deferred.promise
   }
 
-  let sanitizeCaseSensitive = function() {
+  let sanitizeCaseSensitive = function () {
     let deferred = when_.defer()
     let caseSensitive = (params.caseSensitive === 'true')
     if (is_.boolean(caseSensitive)) {
@@ -332,14 +322,13 @@ function sanitizeCreateTaskParams(params, callback) {
         value: res[3],
         categories: res[4],
         answers: res[5],
-        caseSensitive: res[6],
+        caseSensitive: res[6]
       })
     })
     .catch((err) => {
       callback(err, null)
     })
 }
-
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   sanitizeCreateTaskParams(request.body, (err, taskParams) => {
@@ -372,15 +361,14 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
   })
 })
 
-
-function sanitizeUpdateTaskParams(params, task, callback) {
-  let sanitizeDescription = function() {
+function sanitizeUpdateTaskParams (params, task, callback) {
+  let sanitizeDescription = function () {
     let deferred = when_.defer()
     deferred.resolve(params.description)
     return deferred.promise
   }
 
-  let sanitizeHints = function() {
+  let sanitizeHints = function () {
     let deferred = when_.defer()
     let hints = params.hints
     if (!hints) {
@@ -394,7 +382,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
     return deferred.promise
   }
 
-  let sanitizeCategories = function() {
+  let sanitizeCategories = function () {
     let deferred = when_.defer()
     let categories = params.categories
     if (!categories) {
@@ -420,7 +408,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
     return deferred.promise
   }
 
-  let sanitizeAnswers = function() {
+  let sanitizeAnswers = function () {
     let deferred = when_.defer()
     let answers = params.answers
     if (!answers) {
@@ -431,7 +419,7 @@ function sanitizeUpdateTaskParams(params, task, callback) {
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.uniq (answers))
+      deferred.resolve(_.uniq(answers))
     } else {
       deferred.reject(new ValidationError())
     }
@@ -453,7 +441,6 @@ function sanitizeUpdateTaskParams(params, task, callback) {
       callback(err, null)
     })
 }
-
 
 router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedParser, (request, response, next) => {
   sanitizeUpdateTaskParams(request.body, request.task, (err, taskParams) => {
@@ -483,6 +470,5 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
     }
   })
 })
-
 
 export default router

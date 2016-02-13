@@ -1,5 +1,5 @@
 
-export default function(log) {
+export default function (log) {
   return {
     id: log.id,
     event: log.event,

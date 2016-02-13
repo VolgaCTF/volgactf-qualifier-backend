@@ -1,5 +1,5 @@
 
-export default function(teamTaskProgress) {
+export default function (teamTaskProgress) {
   return {
     teamId: teamTaskProgress.teamId,
     taskId: teamTaskProgress.taskId,

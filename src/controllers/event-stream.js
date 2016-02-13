@@ -1,20 +1,18 @@
 import { EventEmitter } from 'events'
 import EventSubscriber from '../utils/subscriber'
 import _ from 'underscore'
-import logger from '../utils/logger'
-
 
 class EventStream extends EventEmitter {
-  constructor(maxListeners) {
+  constructor (maxListeners) {
     super()
     this.setMaxListeners(maxListeners)
   }
 
-  format(id, name, retry, obj) {
+  format (id, name, retry, obj) {
     return `id: ${id}\nevent: ${name}\nretry: ${retry}\ndata: ${JSON.stringify(obj)}\n\n`
   }
 
-  run() {
+  run () {
     let subscriber = new EventSubscriber('realtime')
 
     subscriber.on('message', (channel, data) => {
@@ -45,11 +43,9 @@ class EventStream extends EventEmitter {
   }
 }
 
-
 let maxStreamConnections = 1024
 if (process.env.MAX_STREAM_CONNECTIONS) {
   maxStreamConnections = parseInt(process.env.MAX_STREAM_CONNECTIONS, 10)
 }
-
 
 export default new EventStream(maxStreamConnections)

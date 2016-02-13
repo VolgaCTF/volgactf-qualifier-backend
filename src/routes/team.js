@@ -8,7 +8,6 @@ import fs from 'fs'
 import gm from 'gm'
 import path from 'path'
 
-import Team from '../models/team'
 import TeamController from '../controllers/team'
 import Validator from 'validator.js'
 let validator = new Validator.Validator()
@@ -16,21 +15,17 @@ let router = express.Router()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError } from '../utils/errors'
 import _ from 'underscore'
-import is_ from 'is_js'
 
 import { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } from '../middleware/session'
 import { checkToken } from '../middleware/security'
 import { contestNotFinished } from '../middleware/contest'
 
 import teamSerializer from '../serializers/team'
-import teamTaskProgressSerializer from '../serializers/team-task-progress'
 
-import teamTaskProgressController from '../controllers/team-task-progress'
 import teamParam from '../params/team'
 
-
 router.get('/all', detectScope, (request, response, next) => {
-  let onFetch = function(exposeEmail) {
+  let onFetch = function (exposeEmail) {
     let serializer = _.partial(teamSerializer, _, { exposeEmail: exposeEmail })
     return (err, teams) => {
       if (err) {
@@ -49,9 +44,7 @@ router.get('/all', detectScope, (request, response, next) => {
   }
 })
 
-
 router.param('teamId', teamParam.id)
-
 
 router.get('/:teamId/logo', (request, response) => {
   TeamController.get(request.teamId, (err, team) => {
@@ -74,7 +67,6 @@ router.get('/:teamId/logo', (request, response) => {
   })
 })
 
-
 router.get('/:teamId/profile', (request, response) => {
   TeamController.get(request.teamId, (err, team) => {
     if (team) {
@@ -87,7 +79,7 @@ router.get('/:teamId/profile', (request, response) => {
         createdAt: team.createdAt.getTime()
       }
 
-      if (request.session.authenticated && ((request.session.role == 'team' && request.session.identityID === team.id) || _.contains(['admin', 'manager'], request.session.role))) {
+      if (request.session.authenticated && ((request.session.role === 'team' && request.session.identityID === team.id) || _.contains(['admin', 'manager'], request.session.role))) {
         result.email = team.email
         result.emailConfirmed = team.emailConfirmed
       }
@@ -100,7 +92,6 @@ router.get('/:teamId/profile', (request, response) => {
     }
   })
 })
-
 
 router.post('/verify-email', checkToken, urlencodedParser, (request, response, next) => {
   let verifyConstraints = {
@@ -121,7 +112,6 @@ router.post('/verify-email', checkToken, urlencodedParser, (request, response, n
     }
   })
 })
-
 
 router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let resetConstraints = {
@@ -144,7 +134,6 @@ router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedPars
   })
 })
 
-
 router.post('/change-password', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let changeConstraints = {
     currentPassword: constraints.password,
@@ -164,7 +153,6 @@ router.post('/change-password', checkToken, needsToBeAuthorizedTeam, urlencodedP
     }
   })
 })
-
 
 router.post('/edit-profile', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let editConstraints = {
@@ -187,7 +175,6 @@ router.post('/edit-profile', checkToken, needsToBeAuthorizedTeam, urlencodedPars
   })
 })
 
-
 router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, (request, response, next) => {
   TeamController.resendConfirmationEmail(request.session.identityID, (err) => {
     if (err) {
@@ -197,7 +184,6 @@ router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, (
     }
   })
 })
-
 
 router.post('/change-email', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
   let changeConstraints = {
@@ -218,7 +204,6 @@ router.post('/change-email', checkToken, needsToBeAuthorizedTeam, urlencodedPars
   })
 })
 
-
 router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let restoreConstraints = {
     email: constraints.email
@@ -237,7 +222,6 @@ router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (re
     }
   })
 })
-
 
 router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
   let signinConstraints = {
@@ -262,7 +246,6 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
   })
 })
 
-
 let multidataParser = busboy({
   immediate: true,
   limits: {
@@ -272,7 +255,6 @@ let multidataParser = busboy({
     files: 1
   }
 })
-
 
 router.post('/upload-logo', checkToken, needsToBeAuthorizedTeam, multidataParser, (request, response, next) => {
   let teamLogo = tmp.fileSync()
@@ -293,7 +275,7 @@ router.post('/upload-logo', checkToken, needsToBeAuthorizedTeam, multidataParser
       } else {
         if (size.width < 48) {
           next(new ImageDimensionsError())
-        } else if (size.width != size.height) {
+        } else if (size.width !== size.height) {
           next(new ImageAspectRatioError())
         } else {
           TeamController.changeLogo(request.session.identityID, teamLogo.name, (err) => {
@@ -308,7 +290,6 @@ router.post('/upload-logo', checkToken, needsToBeAuthorizedTeam, multidataParser
     })
   })
 })
-
 
 router.post('/signup', contestNotFinished, checkToken, needsToBeUnauthorized, multidataParser, (request, response, next) => {
   let teamInfo = {}
@@ -346,7 +327,7 @@ router.post('/signup', contestNotFinished, checkToken, needsToBeUnauthorized, mu
         } else {
           if (size.width < 48) {
             next(new ImageDimensionsError())
-          } else if (size.width != size.height) {
+          } else if (size.width !== size.height) {
             next(new ImageAspectRatioError())
           } else {
             TeamController.create(teamInfo, (err, team) => {
@@ -364,6 +345,5 @@ router.post('/signup', contestNotFinished, checkToken, needsToBeUnauthorized, mu
     }
   })
 })
-
 
 export default router
