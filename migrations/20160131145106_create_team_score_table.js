@@ -5,6 +5,7 @@ exports.up = function(knex, Promise) {
     table.integer('teamId').notNullable().references('id').inTable('teams')
     table.integer('score').notNullable()
     table.dateTime('updatedAt').notNullable()
+    table.unique(['teamId'], 'team_scores_ndx_team_unique')
   })
 }
 

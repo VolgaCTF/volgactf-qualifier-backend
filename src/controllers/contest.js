@@ -246,17 +246,13 @@ class ContestController {
                     callback(err)
                   } else {
                     let recalculateTeamScore = function (team, next) {
-                      let teamScore = _.findWhere(teamScores, { teamId: team.id })
                       let taskProgressEntries = _.where(teamTaskProgress, { teamId: team.id })
                       let totalScore = 0
                       let lastUpdatedAt = null
 
-                      let countedTaskIds = []
-
                       for (let taskProgress of taskProgressEntries) {
                         let task = _.findWhere(tasks, { id: taskProgress.taskId })
-                        if (task && !_.contains(countedTaskIds, taskProgress.taskId)) {
-                          countedTaskIds.push(taskProgress.taskId)
+                        if (task) {
                           totalScore += task.value
                           if (lastUpdatedAt) {
                             if (lastUpdatedAt.getTime() < taskProgress.createdAt.getTime()) {
@@ -268,43 +264,26 @@ class ContestController {
                         }
                       }
 
-                      let needCreate = (!teamScore && totalScore > 0)
-                      let needUpdate = (teamScore && totalScore !== teamScore.score)
-
-                      if (needUpdate) {
-                        TeamScore
-                          .query()
-                          .patchAndFetchById(teamScore.id, {
-                            score: totalScore,
-                            updatedAt: lastUpdatedAt
-                          })
-                          .then((updatedTeamScore) => {
-                            next(null, updatedTeamScore)
-                            publish('realtime', new UpdateTeamScoreEvent(updatedTeamScore))
-                          })
-                          .catch((err) => {
-                            logger.error(err)
-                            next(err, null)
-                          })
-                      } else if (needCreate) {
-                        TeamScore
-                          .query()
-                          .insert({
-                            teamId: team.id,
-                            score: totalScore,
-                            updatedAt: lastUpdatedAt
-                          })
-                          .then((teamScore) => {
-                            next(null, teamScore)
-                            publish('realtime', new UpdateTeamScoreEvent(teamScore))
-                          })
-                          .catch((err) => {
-                            logger.error(err)
-                            next(err, null)
-                          })
-                      } else {
-                        next(null, null)
-                      }
+                      TeamScore
+                        .raw(
+                          `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
+                          VALUES (?, ?, ?)
+                          ON CONFLICT ("teamId") DO
+                          UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
+                          WHERE t."score" != EXCLUDED."score"
+                          RETURNING *`,
+                          [team.id, totalScore, lastUpdatedAt]
+                        )
+                        .then((response) => {
+                          next(null, null)
+                          if (response.rowCount == 1 ) {
+                            publish('realtime', new UpdateTeamScoreEvent(response.rows[0]))
+                          }
+                        })
+                        .catch((err) => {
+                          logger.error(err)
+                          next(err, null)
+                        })
                     }
 
                     async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {
