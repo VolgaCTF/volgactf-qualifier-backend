@@ -1,5 +1,5 @@
 
-exports.up = function(knex, Promise) {
+exports.up = function (knex, Promise) {
   return knex.schema.createTable('teams', (table) => {
     table.increments('id').primary()
     table.string('name', 100).notNullable()
@@ -12,11 +12,10 @@ exports.up = function(knex, Promise) {
     table.string('locality', 150).notNullable()
     table.string('institution', 150).notNullable()
     table.boolean('disqualified', 150).notNullable()
-    table.binary('resetPasswordToken')
     table.unique(['name'], 'teams_ndx_name_unique')
   }).raw('CREATE UNIQUE INDEX teams_ndx_email_unique ON teams (LOWER(email))')
 }
 
-exports.down = function(knex, Promise) {
+exports.down = function (knex, Promise) {
   return knex.schema.dropTableIfExists('teams')
 }

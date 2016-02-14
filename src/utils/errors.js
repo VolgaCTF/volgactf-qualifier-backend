@@ -230,6 +230,12 @@ export class EmailNotConfirmedError extends BaseError {
 
 export class InvalidResetPasswordURLError extends BaseError {
   constructor () {
-    super('Invalid reset password URL!', 'InvalidResetPasswordURLError', 400)
+    super('Reset password URL is invalid or has expired!', 'InvalidResetPasswordURLError', 400)
+  }
+}
+
+export class ResetPasswordAttemptsLimitError extends BaseError {
+  constructor () {
+    super('Too many reset password attempts! Please wait some time before requesting a password reset again.', ResetPasswordAttemptsLimitError, 400)
   }
 }

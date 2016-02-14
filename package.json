@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "async": "~0.9.0",
+    "babel-plugin-transform-class-properties": "^6.5.2",
     "base64url": "~1.0.4",
     "bcrypt": "^0.8.5",
     "body-parser": "~1.11.0",
@@ -38,6 +39,7 @@
     "knex": "^0.9.0",
     "mailgun-js": "^0.7.7",
     "mandrill-api": "~1.0.41",
+    "moment": "^2.11.2",
     "mustache": "~1.1.0",
     "nomnom": "~1.8.1",
     "objection": "^0.4.0",

@@ -2,9 +2,7 @@ import constants from '../utils/constants'
 import Model from '../utils/model'
 
 export default class Contest extends Model {
-  static get tableName () {
-    return 'contests'
-  }
+  static tableName = 'contests'
 
   isInitial () {
     return this.state === constants.CONTEST_INITIAL

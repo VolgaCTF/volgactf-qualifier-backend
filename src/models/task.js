@@ -2,9 +2,7 @@ import constants from '../utils/constants'
 import Model from '../utils/model'
 
 export default class Task extends Model {
-  static get tableName () {
-    return 'tasks'
-  }
+  static tableName = 'tasks'
 
   isInitial () {
     return this.state === constants.TASK_INITIAL

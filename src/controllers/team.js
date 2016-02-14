@@ -1,12 +1,15 @@
 import Team from '../models/team'
+import TeamResetPasswordToken from '../models/team-reset-password-token'
 import { getPasswordHash, checkPassword } from '../utils/security'
 import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
-import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError } from '../utils/errors'
+import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError } from '../utils/errors'
 import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
 import constants from '../utils/constants'
+import moment from 'moment'
+import { transaction } from 'objection'
 
 import teamSerializer from '../serializers/team'
 
@@ -54,19 +57,38 @@ class TeamController {
       .first()
       .then((team) => {
         if (team) {
-          Team
+          TeamResetPasswordToken
             .query()
-            .patchAndFetchById(team.id, {
-              resetPasswordToken: token.generate()
-            })
-            .then((updatedTeam) => {
-              queue('sendEmailQueue').add({
-                message: 'restore',
-                name: updatedTeam.name,
-                email: updatedTeam.email,
-                token: updatedTeam.resetPasswordToken
-              })
-              callback(null)
+            .where('teamId', team.id)
+            .andWhere('used', false)
+            .andWhere('expiresAt', '>', new Date())
+            .then((teamResetPasswordTokens) => {
+              if (teamResetPasswordTokens.length >= 2) {
+                callback(new ResetPasswordAttemptsLimitError())
+              } else {
+                TeamResetPasswordToken
+                  .query()
+                  .insert({
+                    teamId: team.id,
+                    token: token.generate(),
+                    used: false,
+                    createdAt: new Date(),
+                    expiresAt: moment().add(1, 'h').toDate()
+                  })
+                  .then((teamResetPasswordToken) => {
+                    queue('sendEmailQueue').add({
+                      message: 'restore',
+                      name: team.name,
+                      email: team.email,
+                      token: teamResetPasswordToken.token
+                    })
+                    callback(null)
+                  })
+                  .catch((err) => {
+                    logger.error(err)
+                    callback(new InternalError())
+                  })
+              }
             })
             .catch((err) => {
               logger.error(err)
@@ -108,8 +130,7 @@ class TeamController {
             country: options.country,
             locality: options.locality,
             institution: options.institution,
-            disqualified: false,
-            resetPasswordToken: null
+            disqualified: false
           })
           .then((team) => {
             if (options.logoFilename) {
@@ -362,30 +383,50 @@ class TeamController {
     Team
       .query()
       .where('email', email)
-      .andWhere('resetPasswordToken', code)
       .first()
       .then((team) => {
         if (team) {
-          getPasswordHash(newPassword, (err, hash) => {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
-              Team
-                .query()
-                .patchAndFetchById(team.id, {
-                  passwordHash: hash,
-                  resetPasswordToken: null
+          TeamResetPasswordToken
+            .query()
+            .where('teamId', team.id)
+            .andWhere('token', code)
+            .andWhere('used', false)
+            .andWhere('expiresAt', '>', new Date())
+            .first()
+            .then((teamResetPasswordToken) => {
+              if (teamResetPasswordToken) {
+                getPasswordHash(newPassword, (err, hash) => {
+                  if (err) {
+                    logger.error(err)
+                    callback(new InternalError())
+                  } else {
+                    transaction(Team, TeamResetPasswordToken, (Team, TeamResetPasswordToken) => {
+                      return Team
+                        .query()
+                        .patchAndFetchById(team.id, {
+                          passwordHash: hash
+                        })
+                        .then(() => {
+                          return TeamResetPasswordToken
+                            .query()
+                            .patchAndFetchById(teamResetPasswordToken.id, {
+                              used: true
+                            })
+                        })
+                    })
+                    .then(() => {
+                      callback(null)
+                    })
+                    .catch((err) => {
+                      logger.error(err)
+                      callback(new InternalError())
+                    })
+                  }
                 })
-                .then((updatedTeam) => {
-                  callback(null)
-                })
-                .catch((err) => {
-                  logger.error(err)
-                  callback(new InternalError())
-                })
-            }
-          })
+              } else {
+                callback(new InvalidResetPasswordURLError())
+              }
+            })
         } else {
           callback(new InvalidResetPasswordURLError())
         }
