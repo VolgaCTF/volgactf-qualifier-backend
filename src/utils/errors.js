@@ -236,6 +236,12 @@ export class InvalidResetPasswordURLError extends BaseError {
 
 export class ResetPasswordAttemptsLimitError extends BaseError {
   constructor () {
-    super('Too many reset password attempts! Please wait some time before requesting a password reset again.', ResetPasswordAttemptsLimitError, 400)
+    super('Too many reset password attempts! Please wait some time before requesting a password reset again.', 'ResetPasswordAttemptsLimitError', 400)
+  }
+}
+
+export class EmailVerificationAttemptsLimitError extends BaseError {
+  constructor () {
+    super('Too many email verification attempts! Please wait some time before requesting a confirmation email again.', 'EmailVerificationAttemptsLimitError', 400)
   }
 }

@@ -1,10 +1,11 @@
 import Team from '../models/team'
 import TeamResetPasswordToken from '../models/team-reset-password-token'
+import TeamEmailVerificationToken from '../models/team-email-verification-token'
 import { getPasswordHash, checkPassword } from '../utils/security'
 import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
-import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError } from '../utils/errors'
+import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError } from '../utils/errors'
 import publish from '../utils/publisher'
 import BaseEvent from '../utils/events'
 import constants from '../utils/constants'
@@ -118,48 +119,67 @@ class TeamController {
         logger.error(err)
         callback(new InternalError())
       } else {
-        Team
-          .query()
-          .insert({
-            name: options.team,
-            email: options.email,
-            createdAt: new Date(),
-            emailConfirmed: false,
-            emailConfirmationToken: token.generate(),
-            passwordHash: hash,
-            country: options.country,
-            locality: options.locality,
-            institution: options.institution,
-            disqualified: false
-          })
-          .then((team) => {
-            if (options.logoFilename) {
-              queue('createLogoQueue').add({
-                id: team.id,
-                filename: options.logoFilename
-              })
-            }
+        let team = null
+        let teamEmailVerificationToken = null
 
-            queue('sendEmailQueue').add({
-              message: 'welcome',
-              name: team.name,
-              email: team.email,
-              token: team.emailConfirmationToken
+        transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+          return Team
+            .query()
+            .insert({
+              name: options.team,
+              email: options.email,
+              createdAt: new Date(),
+              emailConfirmed: false,
+              passwordHash: hash,
+              country: options.country,
+              locality: options.locality,
+              institution: options.institution,
+              disqualified: false
             })
+            .then((newTeam) => {
+              team = newTeam
+              return TeamEmailVerificationToken
+                .query()
+                .insert({
+                  teamId: newTeam.id,
+                  token: token.generate(),
+                  used: false,
+                  createdAt: new Date(),
+                  expiresAt: moment().add(1, 'h').toDate()
+                })
+                .then((newTeamEmailVerificationToken) => {
+                  teamEmailVerificationToken = newTeamEmailVerificationToken
+                })
+            })
+        })
+        .then(() => {
+          if (options.logoFilename) {
+            queue('createLogoQueue').add({
+              id: team.id,
+              filename: options.logoFilename
+            })
+          }
 
-            callback(null)
-            publish('realtime', new CreateTeamEvent(team))
+          queue('sendEmailQueue').add({
+            message: 'welcome',
+            name: team.name,
+            email: team.email,
+            token: teamEmailVerificationToken.token
           })
-          .catch((err) => {
-            if (this.isTeamNameUniqueConstraintViolation(err)) {
-              callback(new TeamCredentialsTakenError())
-            } else if (this.isTeamEmailUniqueConstraintViolation(err)) {
-              callback(new TeamCredentialsTakenError())
-            } else {
-              logger.error(err)
-              callback(new InternalError())
-            }
-          })
+
+          callback(null)
+          publish('realtime', new CreateTeamEvent(team))
+        })
+        .catch((err) => {
+          if (this.isTeamNameUniqueConstraintViolation(err)) {
+            callback(new TeamCredentialsTakenError())
+          } else if (this.isTeamEmailUniqueConstraintViolation(err)) {
+            callback(new TeamCredentialsTakenError())
+          } else {
+            logger.error(err)
+            callback(new InternalError())
+          }
+        })
       }
     })
   }
@@ -201,20 +221,39 @@ class TeamController {
         if (team.emailConfirmed) {
           callback(new EmailConfirmedError())
         } else {
-          Team
+          TeamEmailVerificationToken
             .query()
-            .patchAndFetchById(team.id, {
-              emailConfirmationToken: token.generate()
-            })
-            .then((updatedTeam) => {
-              queue('sendEmailQueue').add({
-                message: 'welcome',
-                name: updatedTeam.name,
-                email: updatedTeam.email,
-                token: updatedTeam.emailConfirmationToken
-              })
+            .where('teamId', team.id)
+            .andWhere('used', false)
+            .andWhere('expiresAt', '>', new Date())
+            .then((teamEmailVerificationTokens) => {
+              if (teamEmailVerificationTokens.length >= 2) {
+                callback(new EmailVerificationAttemptsLimitError())
+              } else {
+                TeamEmailVerificationToken
+                  .query()
+                  .insert({
+                    teamId: team.id,
+                    token: token.generate(),
+                    used: false,
+                    createdAt: new Date(),
+                    expiresAt: moment().add(1, 'h').toDate()
+                  })
+                  .then((teamEmailVerificationToken) => {
+                    queue('sendEmailQueue').add({
+                      message: 'welcome',
+                      name: team.name,
+                      email: team.email,
+                      token: teamEmailVerificationToken.token
+                    })
 
-              callback(null)
+                    callback(null)
+                  })
+                  .catch((err) => {
+                    logger.error(err)
+                    callback(new InternalError())
+                  })
+              }
             })
             .catch((err) => {
               logger.error(err)
@@ -233,30 +272,72 @@ class TeamController {
         if (team.emailConfirmed) {
           callback(new EmailConfirmedError())
         } else {
-          Team
+          TeamEmailVerificationToken
             .query()
-            .patchAndFetchById(id, {
-              email: email,
-              emailConfirmationToken: token.generate()
-            })
-            .then((updatedTeam) => {
-              queue('sendEmailQueue').add({
-                message: 'welcome',
-                name: updatedTeam.name,
-                email: updatedTeam.email,
-                token: updatedTeam.emailConfirmationToken
-              })
+            .where('teamId', team.id)
+            .andWhere('used', false)
+            .andWhere('expiresAt', '>', new Date())
+            .then((teamEmailVerificationTokens) => {
+              if (teamEmailVerificationTokens.length >= 2) {
+                callback(new EmailVerificationAttemptsLimitError())
+              } else {
+                let updatedTeam = null
+                let updatedTeamEmailVerificationToken = null
 
-              callback(null)
-              publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
+                transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+                  return Team
+                    .query()
+                    .patchAndFetchById(id, {
+                      email: email
+                    })
+                    .then((updatedTeamObject) => {
+                      updatedTeam = updatedTeamObject
+                      return TeamEmailVerificationToken
+                        .query()
+                        .delete()
+                        .where('teamId', team.id)
+                        .andWhere('used', false)
+                        .andWhere('expiresAt', '>', new Date())
+                        .then((numDeleted) => {
+                          return TeamEmailVerificationToken
+                            .query()
+                            .insert({
+                              teamId: team.id,
+                              token: token.generate(),
+                              used: false,
+                              createdAt: new Date(),
+                              expiresAt: moment().add(1, 'h').toDate()
+                            })
+                            .then((updatedTeamEmailVerificationTokenObject) => {
+                              updatedTeamEmailVerificationToken = updatedTeamEmailVerificationTokenObject
+                            })
+                        })
+                    })
+                })
+                .then(() => {
+                  queue('sendEmailQueue').add({
+                    message: 'welcome',
+                    name: updatedTeam.name,
+                    email: updatedTeam.email,
+                    token: updatedTeamEmailVerificationToken.token
+                  })
+
+                  callback(null)
+                  publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
+                })
+                .catch((err) => {
+                  if (this.isTeamEmailUniqueConstraintViolation(err)) {
+                    callback(new EmailTakenError())
+                  } else {
+                    logger.error(err)
+                    callback(new InternalError())
+                  }
+                })
+              }
             })
             .catch((err) => {
-              if (this.isTeamEmailUniqueConstraintViolation(err)) {
-                callback(new EmailTakenError())
-              } else {
-                logger.error(err)
-                callback(new InternalError())
-              }
+              logger.error(err)
+              callback(new InternalError())
             })
         }
       }
@@ -452,25 +533,55 @@ class TeamController {
     Team
       .query()
       .where('email', email)
-      .andWhere('emailConfirmed', false)
-      .andWhere('emailConfirmationToken', code)
       .first()
       .then((team) => {
         if (team) {
-          Team
-            .query()
-            .patchAndFetchById(team.id, {
-              emailConfirmed: true,
-              emailConfirmationToken: null
-            })
-            .then((updatedTeam) => {
-              callback(null)
-              publish('realtime', new QualifyTeamEvent(updatedTeam))
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new InternalError())
-            })
+          if (team.emailConfirmed) {
+            callback(new EmailConfirmedError())
+          } else {
+            TeamEmailVerificationToken
+              .query()
+              .where('teamId', team.id)
+              .andWhere('token', code)
+              .andWhere('used', false)
+              .andWhere('expiresAt', '>', new Date())
+              .first()
+              .then((teamEmailVerificationToken) => {
+                if (teamEmailVerificationToken) {
+                  let updatedTeam = null
+
+                  transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+                    return Team
+                      .query()
+                      .patchAndFetchById(team.id, {
+                        emailConfirmed: true
+                      })
+                      .then((updatedTeamObject) => {
+                        updatedTeam = updatedTeamObject
+                        return TeamEmailVerificationToken
+                          .query()
+                          .patchAndFetchById(teamEmailVerificationToken.id, {
+                            used: true
+                          })
+                      })
+                  })
+                  .then(() => {
+                    callback(null)
+                    publish('realtime', new QualifyTeamEvent(updatedTeam))
+                  })
+                  .catch((err) => {
+                    logger.error(err)
+                    callback(new InternalError())
+                  })
+                } else {
+                  callback(new InvalidVerificationURLError())
+                }
+              })
+              .catch((err) => {
+                logger.error(err)
+                callback(new InternalError())
+              })
+          }
         } else {
           callback(new InvalidVerificationURLError())
         }
