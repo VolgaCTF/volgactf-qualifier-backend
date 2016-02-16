@@ -21,7 +21,7 @@ import is_ from 'is_js'
 import _ from 'underscore'
 
 import TaskController from '../controllers/task'
-import TeamTaskProgressController from '../controllers/team-task-progress'
+import TeamTaskHitController from '../controllers/team-task-hit'
 import taskSerializer from '../serializers/task'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
@@ -113,7 +113,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
               next(err)
             } else {
               if (checkResult) {
-                TeamTaskProgressController.create(request.session.identityID, request.task, (err, teamTaskProgress) => {
+                TeamTaskHitController.create(request.session.identityID, request.task, (err, teamTaskHit) => {
                   if (err) {
                     next(err)
                   } else {

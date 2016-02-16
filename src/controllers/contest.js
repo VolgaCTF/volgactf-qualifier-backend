@@ -4,10 +4,10 @@ import Contest from '../models/contest'
 import TeamScore from '../models/team-score'
 import Category from '../models/category'
 import Task from '../models/task'
-import TeamTaskProgress from '../models/team-task-progress'
+import TeamTaskHit from '../models/team-task-hit'
 
 import TeamController from '../controllers/team'
-import TeamTaskProgressController from '../controllers/team-task-progress'
+import TeamTaskHitController from '../controllers/team-task-hit'
 import TaskController from '../controllers/task'
 
 import { InternalError } from '../utils/errors'
@@ -156,10 +156,10 @@ class ContestController {
 
             promises.push(removeTeamScores())
 
-            let removeTeamTaskProgressEntries = function () {
+            let removeTeamTaskHits = function () {
               let deferred = when_.defer()
 
-              TeamTaskProgress
+              TeamTaskHit
                 .query()
                 .delete()
                 .then((numDeleted) => {
@@ -173,7 +173,7 @@ class ContestController {
               return deferred.promise
             }
 
-            promises.push(removeTeamTaskProgressEntries())
+            promises.push(removeTeamTaskHits())
           } else {
             promises.push(alwaysResolves())
           }
@@ -238,25 +238,25 @@ class ContestController {
               if (err) {
                 callback(err)
               } else {
-                TeamTaskProgressController.list((err, teamTaskProgress) => {
+                TeamTaskHitController.list((err, teamTaskHits) => {
                   if (err) {
                     callback(err)
                   } else {
                     let recalculateTeamScore = function (team, next) {
-                      let taskProgressEntries = _.where(teamTaskProgress, { teamId: team.id })
+                      let taskHitEntries = _.where(teamTaskHits, { teamId: team.id })
                       let totalScore = 0
                       let lastUpdatedAt = null
 
-                      for (let taskProgress of taskProgressEntries) {
-                        let task = _.findWhere(tasks, { id: taskProgress.taskId })
+                      for (let taskHit of taskHitEntries) {
+                        let task = _.findWhere(tasks, { id: taskHit.taskId })
                         if (task) {
                           totalScore += task.value
                           if (lastUpdatedAt) {
-                            if (lastUpdatedAt.getTime() < taskProgress.createdAt.getTime()) {
-                              lastUpdatedAt = taskProgress.createdAt
+                            if (lastUpdatedAt.getTime() < taskHit.createdAt.getTime()) {
+                              lastUpdatedAt = taskHit.createdAt
                             }
                           } else {
-                            lastUpdatedAt = taskProgress.createdAt
+                            lastUpdatedAt = taskHit.createdAt
                           }
                         }
                       }
