@@ -2,7 +2,7 @@ import _ from 'underscore'
 
 import Contest from '../models/contest'
 import TeamScore from '../models/team-score'
-import TaskCategory from '../models/task-category'
+import Category from '../models/category'
 import Task from '../models/task'
 import TeamTaskProgress from '../models/team-task-progress'
 
@@ -102,7 +102,7 @@ class ContestController {
           if (contest && contest.state !== state) {
             let removeTaskCategories = function () {
               let deferred = when_.defer()
-              TaskCategory
+              Category
                 .query()
                 .delete()
                 .then((numDeleted) => {

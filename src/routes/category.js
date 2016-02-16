@@ -2,8 +2,8 @@ import express from 'express'
 import _ from 'underscore'
 let router = express.Router()
 
-import TaskCategoryController from '../controllers/task-category'
-import taskCategorySerializer from '../serializers/task-category'
+import CategoryController from '../controllers/category'
+import categorySerializer from '../serializers/category'
 
 import { checkToken } from '../middleware/security'
 import { needsToBeAuthorizedAdmin } from '../middleware/session'
@@ -16,23 +16,23 @@ import constraints from '../utils/constraints'
 import bodyParser from 'body-parser'
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-import taskCategoryParam from '../params/task-category'
+import categoryParam from '../params/category'
 import { ValidationError } from '../utils/errors'
 
 router.get('/all', (request, response, next) => {
-  TaskCategoryController.list((err, taskCategories) => {
+  CategoryController.list((err, categories) => {
     if (err) {
       next(err)
     } else {
-      response.json(_.map(taskCategories, taskCategorySerializer))
+      response.json(_.map(categories, categorySerializer))
     }
   })
 })
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let createConstraints = {
-    title: constraints.taskCategoryTitle,
-    description: constraints.taskCategoryDescription
+    title: constraints.categoryTitle,
+    description: constraints.categoryDescription
   }
 
   let validationResult = validator.validate(request.body, createConstraints)
@@ -40,7 +40,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
     throw new ValidationError()
   }
 
-  TaskCategoryController.create(request.body.title, request.body.description, (err, taskCategory) => {
+  CategoryController.create(request.body.title, request.body.description, (err, category) => {
     if (err) {
       next(err)
     } else {
@@ -49,10 +49,10 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
   })
 })
 
-router.param('taskCategoryId', taskCategoryParam.id)
+router.param('categoryId', categoryParam.id)
 
-router.post('/:taskCategoryId/remove', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
-  TaskCategoryController.remove(request.taskCategoryId, (err) => {
+router.post('/:categoryId/remove', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
+  CategoryController.remove(request.categoryId, (err) => {
     if (err) {
       next(err)
     } else {
@@ -61,10 +61,10 @@ router.post('/:taskCategoryId/remove', contestNotFinished, checkToken, needsToBe
   })
 })
 
-router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/:categoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
   let updateConstraints = {
-    title: constraints.taskCategoryTitle,
-    description: constraints.taskCategoryDescription
+    title: constraints.categoryTitle,
+    description: constraints.categoryDescription
   }
 
   let validationResult = validator.validate(request.body, updateConstraints)
@@ -72,7 +72,7 @@ router.post('/:taskCategoryId/update', contestNotFinished, checkToken, needsToBe
     throw new ValidationError()
   }
 
-  TaskCategoryController.update(request.taskCategoryId, request.body.title, request.body.description, (err, post) => {
+  CategoryController.update(request.categoryId, request.body.title, request.body.description, (err, post) => {
     if (err) {
       next(err)
     } else {

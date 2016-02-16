@@ -1,7 +1,5 @@
 import express from 'express'
 
-import categoryRouter from './task-category'
-
 import { checkToken } from '../middleware/security'
 import { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin } from '../middleware/session'
 import { getState, contestIsStarted, contestIsFinished, contestNotFinished } from '../middleware/contest'
@@ -17,7 +15,6 @@ let validator = new Validator.Validator()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 let router = express.Router()
-router.use('/category', categoryRouter)
 
 import { InternalError, NotAuthenticatedError, EmailNotConfirmedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError } from '../utils/errors'
 import is_ from 'is_js'

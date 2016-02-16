@@ -132,15 +132,15 @@ export class ContestNotInitializedError extends BaseError {
   }
 }
 
-export class TaskCategoryNotFoundError extends BaseError {
+export class CategoryNotFoundError extends BaseError {
   constructor () {
-    super('Task category not found!', 'TaskCategoryNotFoundError', 400)
+    super('Category not found!', 'CategoryNotFoundError', 400)
   }
 }
 
-export class DuplicateTaskCategoryTitleError extends BaseError {
+export class DuplicateCategoryTitleError extends BaseError {
   constructor () {
-    super('Task category title should be unique!', 'DuplicateTaskCategoryTitleError', 400)
+    super('Category title should be unique!', 'DuplicateCategoryTitleError', 400)
   }
 }
 
@@ -210,9 +210,9 @@ export class TaskAlreadySolvedError extends BaseError {
   }
 }
 
-export class TaskCategoryAttachedError extends BaseError {
+export class CategoryAttachedError extends BaseError {
   constructor () {
-    super('Task category is attached to one or more tasks!', 'TaskCategoryAttachedError', 400)
+    super('Category is attached to one or more tasks!', 'CategoryAttachedError', 400)
   }
 }
 
