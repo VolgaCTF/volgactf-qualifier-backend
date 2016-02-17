@@ -13,7 +13,6 @@ export default function (task, options = {}) {
     value: task.value,
     createdAt: task.createdAt.getTime(),
     updatedAt: task.updatedAt.getTime(),
-    categories: task.categories,
     state: task.state
   }
 

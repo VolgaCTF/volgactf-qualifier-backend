@@ -21,8 +21,10 @@ import is_ from 'is_js'
 import _ from 'underscore'
 
 import TaskController from '../controllers/task'
+import TaskCategoryController from '../controllers/task-category'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import taskSerializer from '../serializers/task'
+import taskCategorySerializer from '../serializers/task-category'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
 
@@ -50,6 +52,16 @@ router.get('/all', detectScope, (request, response, next) => {
   } else {
     TaskController.listEligible(onFetch(false))
   }
+})
+
+router.get('/category/all', detectScope, (request, response, next) => {
+  TaskCategoryController.list((err, taskCategories) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(_.map(taskCategories, taskCategorySerializer))
+    }
+  })
 })
 
 router.get('/:taskId', detectScope, getState, (request, response, next) => {

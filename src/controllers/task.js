@@ -1,4 +1,5 @@
 import Task from '../models/task'
+import TaskCategory from '../models/task-category'
 
 import logger from '../utils/logger'
 import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
@@ -6,15 +7,27 @@ import constants from '../utils/constants'
 import publish from '../utils/publisher'
 
 import _ from 'underscore'
+import { transaction } from 'objection'
 import BaseEvent from '../utils/events'
 
 import taskSerializer from '../serializers/task'
+import taskCategorySerializer from '../serializers/task-category'
 
 class CreateTaskEvent extends BaseEvent {
   constructor (task) {
     super('createTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
+  }
+}
+
+class CreateTaskCategoryEvent extends BaseEvent {
+  constructor (taskCategory) {
+    super('createTaskCategory')
+    let taskCategoryData = taskCategorySerializer(taskCategory)
+    this.data.supervisors = taskCategoryData
+    this.data.teams = taskCategoryData
+    this.data.guests = taskCategoryData
   }
 }
 
@@ -57,33 +70,54 @@ class TaskController {
 
   static create (options, callback) {
     let now = new Date()
+    let task = null
+    let taskCategories = null
 
-    Task
-      .query()
-      .insert({
-        title: options.title,
-        description: options.description,
-        createdAt: now,
-        updatedAt: now,
-        hints: JSON.stringify(options.hints),
-        value: options.value,
-        categories: JSON.stringify(options.categories),
-        answers: JSON.stringify(options.answers),
-        caseSensitive: options.caseSensitive,
-        state: constants.TASK_INITIAL
-      })
-      .then((task) => {
-        callback(null, task)
-        publish('realtime', new CreateTaskEvent(task))
-      })
-      .catch((err) => {
-        if (this.isTaskTitleUniqueConstraintViolation(err)) {
-          callback(new DuplicateTaskTitleError(), null)
-        } else {
-          logger.error(err)
-          callback(new InternalError(), null)
-        }
-      })
+    transaction(Task, TaskCategory, (Task, TaskCategory) => {
+      return Task
+        .query()
+        .insert({
+          title: options.title,
+          description: options.description,
+          createdAt: now,
+          updatedAt: now,
+          hints: JSON.stringify(options.hints),
+          value: options.value,
+          answers: JSON.stringify(options.answers),
+          caseSensitive: options.caseSensitive,
+          state: constants.TASK_INITIAL
+        })
+        .then((newTask) => {
+          task = newTask
+          return TaskCategory
+            .query()
+            .insert(options.categories.map((categoryId) => {
+              return {
+                taskId: task.id,
+                categoryId: categoryId,
+                createdAt: now
+              }
+            }))
+            .then((newTaskCategories) => {
+              taskCategories = newTaskCategories
+            })
+        })
+    })
+    .then(() => {
+      callback(null, task)
+      publish('realtime', new CreateTaskEvent(task))
+      for (let taskCategory of taskCategories) {
+        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+      }
+    })
+    .catch((err) => {
+      if (this.isTaskTitleUniqueConstraintViolation(err)) {
+        callback(new DuplicateTaskTitleError(), null)
+      } else {
+        logger.error(err)
+        callback(new InternalError(), null)
+      }
+    })
   }
 
   static update (task, options, callback) {
