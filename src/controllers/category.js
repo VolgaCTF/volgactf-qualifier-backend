@@ -4,7 +4,6 @@ import categorySerializer from '../serializers/category'
 import publish from '../utils/publisher'
 
 import BaseEvent from '../utils/events'
-import TaskController from './task'
 import logger from '../utils/logger'
 import constants from '../utils/constants'
 
@@ -73,6 +72,10 @@ class CategoryController {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'categories_ndx_title_unique')
   }
 
+  static isTaskCategoryForeignKeyConstraintViolation (err) {
+    return (err.code && err.code === constants.POSTGRES_FOREIGN_KEY_CONSTRAINT_VIOLATION && err.table && err.table === 'task_categories')
+  }
+
   static create (title, description, callback) {
     let now = new Date()
     Category
@@ -120,32 +123,27 @@ class CategoryController {
   }
 
   static remove (id, callback) {
-    TaskController.getByCategory(id, (err, tasks) => {
-      if (err) {
-        callback(err)
-      } else {
-        if (tasks.length > 0) {
+    // CategoryAttachedError
+    Category
+      .query()
+      .delete()
+      .where('id', id)
+      .then((numDeleted) => {
+        if (numDeleted === 0) {
+          callback(new CategoryNotFoundError())
+        } else {
+          publish('realtime', new RemoveCategoryEvent(id))
+          callback(null)
+        }
+      })
+      .catch((err) => {
+        if (this.isTaskCategoryForeignKeyConstraintViolation(err)) {
           callback(new CategoryAttachedError())
         } else {
-          Category
-            .query()
-            .delete()
-            .where('id', id)
-            .then((numDeleted) => {
-              if (numDeleted === 0) {
-                callback(new CategoryNotFoundError())
-              } else {
-                publish('realtime', new RemoveCategoryEvent(id))
-                callback(null)
-              }
-            })
-            .catch((err) => {
-              logger.error(err)
-              callback(new CategoryNotFoundError())
-            })
+          logger.error(err)
+          callback(new InternalError())
         }
-      }
-    })
+      })
   }
 }
 

@@ -257,20 +257,6 @@ class TaskController {
         callback(new InternalError(), null)
       })
   }
-
-  static getByCategory (categoryId, callback) {
-    Task
-      .query()
-      .then((tasks) => {
-        callback(null, _.filter(tasks, (task) => {
-          return _.contains(task.categories, categoryId)
-        }))
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
-  }
 }
 
 export default TaskController
