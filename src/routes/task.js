@@ -55,11 +55,40 @@ router.get('/all', detectScope, (request, response, next) => {
 })
 
 router.get('/category/all', detectScope, (request, response, next) => {
+  // TODO: Take scope into account
   TaskCategoryController.list((err, taskCategories) => {
     if (err) {
       next(err)
     } else {
       response.json(_.map(taskCategories, taskCategorySerializer))
+    }
+  })
+})
+
+router.get('/:taskId/category', detectScope, getState, (request, response, next) => {
+  let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
+  let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
+  let supervisorsEligible = (request.scope === 'supervisors')
+
+  if (!guestsEligible && !teamsEligible && !supervisorsEligible) {
+    throw new NotAuthenticatedError()
+  }
+
+  TaskController.get(request.taskId, (err, task) => {
+    if (err) {
+      next(err)
+    } else {
+      if (request.scope === 'teams' && task.isInitial()) {
+        throw new NotAuthenticatedError()
+      } else {
+        TaskCategoryController.listByTask(task.id, (err, taskCategories) => {
+          if (err) {
+            next(err)
+          } else {
+            response.json(_.map(taskCategories, taskCategorySerializer))
+          }
+        })
+      }
     }
   })
 })

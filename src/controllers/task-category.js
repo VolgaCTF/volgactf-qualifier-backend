@@ -14,6 +14,19 @@ class TaskCategoryController {
         callback(new InternalError(), null)
       })
   }
+
+  static listByTask (taskId, callback) {
+    TaskCategory
+      .query()
+      .where('taskId', taskId)
+      .then((taskCategories) => {
+        callback(null, taskCategories)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
+  }
 }
 
 export default TaskCategoryController
