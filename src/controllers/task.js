@@ -13,6 +13,8 @@ import BaseEvent from '../utils/events'
 import taskSerializer from '../serializers/task'
 import taskCategorySerializer from '../serializers/task-category'
 
+import util from 'util'
+
 class CreateTaskEvent extends BaseEvent {
   constructor (task) {
     super('createTask')
@@ -25,6 +27,16 @@ class CreateTaskCategoryEvent extends BaseEvent {
   constructor (taskCategory) {
     super('createTaskCategory')
     let taskCategoryData = taskCategorySerializer(taskCategory)
+    this.data.supervisors = taskCategoryData
+    this.data.teams = taskCategoryData
+    this.data.guests = taskCategoryData
+  }
+}
+
+class RemoveTaskCategoryEvent extends BaseEvent {
+  constructor (taskCategoryId) {
+    super('removeTaskCategory')
+    let taskCategoryData = { id: taskCategoryId }
     this.data.supervisors = taskCategoryData
     this.data.teams = taskCategoryData
     this.data.guests = taskCategoryData
@@ -106,6 +118,7 @@ class TaskController {
     .then(() => {
       callback(null, task)
       publish('realtime', new CreateTaskEvent(task))
+      // TODO: take scope into account
       for (let taskCategory of taskCategories) {
         publish('realtime', new CreateTaskCategoryEvent(taskCategory))
       }
@@ -121,23 +134,74 @@ class TaskController {
   }
 
   static update (task, options, callback) {
-    Task
-      .query()
-      .patchAndFetchById(task.id, {
-        description: options.description,
-        categories: JSON.stringify(options.categories),
-        hints: JSON.stringify(options.hints),
-        answers: JSON.stringify(_.union(task.answers, options.answers)),
-        updatedAt: new Date()
-      })
-      .then((updatedTask) => {
-        callback(null, updatedTask)
-        publish('realtime', new UpdateTaskEvent(updatedTask))
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
+    let updatedTask = null
+    let deletedTaskCategoryIds = null
+    let createdTaskCategories = null
+
+    transaction(Task, TaskCategory, (Task, TaskCategory) => {
+      let now = new Date()
+      return Task
+        .query()
+        .patchAndFetchById(task.id, {
+          description: options.description,
+          hints: JSON.stringify(options.hints),
+          answers: JSON.stringify(_.union(task.answers, options.answers)),
+          updatedAt: now
+        })
+        .then((updatedTaskObject) => {
+          updatedTask = updatedTaskObject
+          return TaskCategory
+            .query()
+            .delete()
+            .whereNotIn('categoryId', options.categories)
+            .andWhere('taskId', task.id)
+            .returning('id')
+            .then((deletedTaskCategoryIdObjects) => {
+              deletedTaskCategoryIds = deletedTaskCategoryIdObjects
+
+              let valuePlaceholderExpressions = _.times(options.categories.length, () => {
+                return '(?, ?, ?)'
+              })
+
+              let values = options.categories.map((categoryId) => {
+                return [
+                  task.id,
+                  categoryId,
+                  now
+                ]
+              })
+
+              return TaskCategory
+                .raw(
+                  `INSERT INTO task_categories ("taskId", "categoryId", "createdAt")
+                  VALUES ${valuePlaceholderExpressions.join(', ')}
+                  ON CONFLICT ("taskId", "categoryId") DO NOTHING
+                  RETURNING *`,
+                  _.flatten(values)
+                )
+                .then((response) => {
+                  createdTaskCategories = response.rows
+                })
+            })
+        })
+    })
+    .then(() => {
+      callback(null, updatedTask)
+      publish('realtime', new UpdateTaskEvent(updatedTask))
+
+      // TODO: take scope into account
+      for (let taskCategoryId of deletedTaskCategoryIds) {
+        publish('realtime', new RemoveTaskCategoryEvent(taskCategoryId))
+      }
+
+      for (let taskCategory of createdTaskCategories) {
+        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+      }
+    })
+    .catch((err) => {
+      logger.error(err)
+      callback(new InternalError(), null)
+    })
   }
 
   static list (callback) {
