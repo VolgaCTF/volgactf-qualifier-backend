@@ -1,5 +1,8 @@
 import Task from '../models/task'
 import TaskCategory from '../models/task-category'
+import TaskAnswer from '../models/task-answer'
+
+import TaskAnswerController from './task-answer'
 
 import logger from '../utils/logger'
 import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
@@ -12,8 +15,6 @@ import BaseEvent from '../utils/events'
 
 import taskSerializer from '../serializers/task'
 import taskCategorySerializer from '../serializers/task-category'
-
-import util from 'util'
 
 class CreateTaskEvent extends BaseEvent {
   constructor (task) {
@@ -85,7 +86,7 @@ class TaskController {
     let task = null
     let taskCategories = null
 
-    transaction(Task, TaskCategory, (Task, TaskCategory) => {
+    transaction(Task, TaskCategory, TaskAnswer, (Task, TaskCategory, TaskAnswer) => {
       return Task
         .query()
         .insert({
@@ -95,8 +96,6 @@ class TaskController {
           updatedAt: now,
           hints: JSON.stringify(options.hints),
           value: options.value,
-          answers: JSON.stringify(options.answers),
-          caseSensitive: options.caseSensitive,
           state: constants.TASK_INITIAL
         })
         .then((newTask) => {
@@ -112,6 +111,18 @@ class TaskController {
             }))
             .then((newTaskCategories) => {
               taskCategories = newTaskCategories
+              return TaskAnswer
+                .query()
+                .insert(options.answers.map((entry) => {
+                  return {
+                    taskId: task.id,
+                    answer: entry.answer,
+                    caseSensitive: entry.caseSensitive,
+                    createdAt: now
+                  }
+                }))
+                .then((newTaskAnswers) => {
+                })
             })
         })
     })
@@ -138,14 +149,13 @@ class TaskController {
     let deletedTaskCategoryIds = null
     let createdTaskCategories = null
 
-    transaction(Task, TaskCategory, (Task, TaskCategory) => {
+    transaction(Task, TaskCategory, TaskAnswer, (Task, TaskCategory, TaskAnswer) => {
       let now = new Date()
       return Task
         .query()
         .patchAndFetchById(task.id, {
           description: options.description,
           hints: JSON.stringify(options.hints),
-          answers: JSON.stringify(_.union(task.answers, options.answers)),
           updatedAt: now
         })
         .then((updatedTaskObject) => {
@@ -181,6 +191,18 @@ class TaskController {
                 )
                 .then((response) => {
                   createdTaskCategories = response.rows
+                  return TaskAnswer
+                    .query()
+                    .insert(options.answers.map((entry) => {
+                      return {
+                        taskId: task.id,
+                        answer: entry.answer,
+                        caseSensitive: entry.caseSensitive,
+                        createdAt: now
+                      }
+                    }))
+                    .then((newTaskAnswers) => {
+                    })
                 })
             })
         })
@@ -235,19 +257,25 @@ class TaskController {
       proposedAnswer = proposedAnswer.toLowerCase()
     }
 
-    let answerCorrect = false
-    for (let answer of task.answers) {
-      if (task.caseSensitive) {
-        answerCorrect = (proposedAnswer === answer)
+    TaskAnswerController.listByTask(task.id, (err, taskAnswers) => {
+      if (err) {
+        callback(err, null)
       } else {
-        answerCorrect = (proposedAnswer === answer.toLowerCase())
-      }
-      if (answerCorrect) {
-        break
-      }
-    }
+        let answerCorrect = false
+        for (let entry of taskAnswers) {
+          if (entry.caseSensitive) {
+            answerCorrect = (proposedAnswer === entry.answer)
+          } else {
+            answerCorrect = (proposedAnswer === entry.answer.toLowerCase())
+          }
+          if (answerCorrect) {
+            break
+          }
+        }
 
-    callback(null, answerCorrect)
+        callback(null, answerCorrect)
+      }
+    })
   }
 
   static open (task, callback) {

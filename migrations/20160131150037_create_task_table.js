@@ -8,8 +8,6 @@ exports.up = function (knex, Promise) {
     table.dateTime('updatedAt').notNullable()
     table.json('hints').notNullable()
     table.integer('value').notNullable()
-    table.json('answers').notNullable()
-    table.boolean('caseSensitive').notNullable()
     table.integer('state').notNullable()
     table.unique(['title'], 'tasks_ndx_title_unique')
   })

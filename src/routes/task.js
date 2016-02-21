@@ -13,6 +13,7 @@ import bodyParser from 'body-parser'
 import Validator from 'validator.js'
 let validator = new Validator.Validator()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
+let urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
 
 let router = express.Router()
 
@@ -22,15 +23,18 @@ import _ from 'underscore'
 
 import TaskController from '../controllers/task'
 import TaskCategoryController from '../controllers/task-category'
+import TaskAnswerController from '../controllers/task-answer'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import taskSerializer from '../serializers/task'
 import taskCategorySerializer from '../serializers/task-category'
+import taskAnswerSerializer from '../serializers/task-answer'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
 
 import LimitController from '../controllers/limit'
 import when_ from 'when'
 import LogController from '../controllers/log'
+import util from 'util'
 
 router.param('taskId', taskParam.id)
 
@@ -93,6 +97,16 @@ router.get('/:taskId/category', detectScope, getState, (request, response, next)
   })
 })
 
+router.get('/:taskId/answer', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TaskAnswerController.listByTask(request.taskId, (err, taskAnswers) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(taskAnswers.map(taskAnswerSerializer))
+    }
+  })
+})
+
 router.get('/:taskId', detectScope, getState, (request, response, next) => {
   let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
   let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
@@ -111,17 +125,6 @@ router.get('/:taskId', detectScope, getState, (request, response, next) => {
       } else {
         response.json(taskSerializer(task))
       }
-    }
-  })
-})
-
-router.get('/:taskId/full', needsToBeAuthorizedSupervisor, (request, response, next) => {
-  let serializer = _.partial(taskSerializer, _, { full: true })
-  TaskController.get(request.taskId, (err, task) => {
-    if (err) {
-      next(err)
-    } else {
-      response.json(serializer(task))
     }
   })
 })
@@ -254,6 +257,7 @@ router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedA
 })
 
 function sanitizeCreateTaskParams (params, callback) {
+  logger.info(`Params: ${util.inspect(params)}`)
   let sanitizeTitle = function () {
     let deferred = when_.defer()
     deferred.resolve(params.title)
@@ -325,24 +329,13 @@ function sanitizeCreateTaskParams (params, callback) {
       answers = []
     }
 
-    if (is_.string(answers)) {
-      answers = [answers]
-    }
-
     if (is_.array(answers)) {
-      deferred.resolve(_.uniq(answers))
-    } else {
-      deferred.reject(new ValidationError())
-    }
-
-    return deferred.promise
-  }
-
-  let sanitizeCaseSensitive = function () {
-    let deferred = when_.defer()
-    let caseSensitive = (params.caseSensitive === 'true')
-    if (is_.boolean(caseSensitive)) {
-      deferred.resolve(caseSensitive)
+      deferred.resolve(_.map(answers), (entry) => {
+        return {
+          answer: entry.answer,
+          caseSensitive: entry.caseSensitive === 'true'
+        }
+      })
     } else {
       deferred.reject(new ValidationError())
     }
@@ -351,7 +344,7 @@ function sanitizeCreateTaskParams (params, callback) {
   }
 
   when_
-    .all([sanitizeTitle(), sanitizeDescription(), sanitizeHints(), sanitizeValue(), sanitizeCategories(), sanitizeAnswers(), sanitizeCaseSensitive()])
+    .all([sanitizeTitle(), sanitizeDescription(), sanitizeHints(), sanitizeValue(), sanitizeCategories(), sanitizeAnswers()])
     .then((res) => {
       callback(null, {
         title: res[0],
@@ -359,16 +352,16 @@ function sanitizeCreateTaskParams (params, callback) {
         hints: res[2],
         value: res[3],
         categories: res[4],
-        answers: res[5],
-        caseSensitive: res[6]
+        answers: res[5]
       })
     })
     .catch((err) => {
+      logger.error(err)
       callback(err, null)
     })
 }
 
-router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, (request, response, next) => {
   sanitizeCreateTaskParams(request.body, (err, taskParams) => {
     if (err) {
       next(err)
@@ -379,12 +372,12 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         hints: constraints.taskHints,
         value: constraints.taskValue,
         categories: constraints.taskCategories,
-        answers: constraints.taskAnswers,
-        caseSensitive: constraints.taskCaseSensitive
+        answers: constraints.taskAnswers
       }
 
       let validationResult = validator.validate(taskParams, createConstraints)
       if (validationResult) {
+        logger.info(`Task params: ${util.inspect(taskParams)}`)
         TaskController.create(taskParams, (err, task) => {
           if (err) {
             next(err)
@@ -452,12 +445,14 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     if (!answers) {
       answers = []
     }
-    if (is_.string(answers)) {
-      answers = [answers]
-    }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.uniq(answers))
+      deferred.resolve(_.map(answers), (entry) => {
+        return {
+          answer: entry.answer,
+          caseSensitive: entry.caseSensitive === 'true'
+        }
+      })
     } else {
       deferred.reject(new ValidationError())
     }
@@ -480,7 +475,7 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     })
 }
 
-router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedExtendedParser, (request, response, next) => {
   sanitizeUpdateTaskParams(request.body, request.task, (err, taskParams) => {
     if (err) {
       next(err)
@@ -489,7 +484,7 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         description: constraints.taskDescription,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
-        answers: constraints.taskAnswersExtra
+        answers: constraints.taskAnswers
       }
 
       let validationResult = validator.validate(taskParams, updateConstraints)
