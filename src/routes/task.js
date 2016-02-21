@@ -34,7 +34,6 @@ import taskParam from '../params/task'
 import LimitController from '../controllers/limit'
 import when_ from 'when'
 import LogController from '../controllers/log'
-import util from 'util'
 
 router.param('taskId', taskParam.id)
 
@@ -257,7 +256,6 @@ router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedA
 })
 
 function sanitizeCreateTaskParams (params, callback) {
-  logger.info(`Params: ${util.inspect(params)}`)
   let sanitizeTitle = function () {
     let deferred = when_.defer()
     deferred.resolve(params.title)
@@ -377,7 +375,6 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
 
       let validationResult = validator.validate(taskParams, createConstraints)
       if (validationResult) {
-        logger.info(`Task params: ${util.inspect(taskParams)}`)
         TaskController.create(taskParams, (err, task) => {
           if (err) {
             next(err)
