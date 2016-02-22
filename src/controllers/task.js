@@ -1,4 +1,9 @@
 import Task from '../models/task'
+import TaskCategory from '../models/task-category'
+import TaskAnswer from '../models/task-answer'
+import TaskHint from '../models/task-hint'
+
+import TaskAnswerController from './task-answer'
 
 import logger from '../utils/logger'
 import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
@@ -6,15 +11,37 @@ import constants from '../utils/constants'
 import publish from '../utils/publisher'
 
 import _ from 'underscore'
+import { transaction } from 'objection'
 import BaseEvent from '../utils/events'
 
 import taskSerializer from '../serializers/task'
+import taskCategorySerializer from '../serializers/task-category'
 
 class CreateTaskEvent extends BaseEvent {
   constructor (task) {
     super('createTask')
     let taskData = taskSerializer(task, { preview: true })
     this.data.supervisors = taskData
+  }
+}
+
+class CreateTaskCategoryEvent extends BaseEvent {
+  constructor (taskCategory) {
+    super('createTaskCategory')
+    let taskCategoryData = taskCategorySerializer(taskCategory)
+    this.data.supervisors = taskCategoryData
+    this.data.teams = taskCategoryData
+    this.data.guests = taskCategoryData
+  }
+}
+
+class RemoveTaskCategoryEvent extends BaseEvent {
+  constructor (taskCategoryId) {
+    super('removeTaskCategory')
+    let taskCategoryData = { id: taskCategoryId }
+    this.data.supervisors = taskCategoryData
+    this.data.teams = taskCategoryData
+    this.data.guests = taskCategoryData
   }
 }
 
@@ -57,53 +84,167 @@ class TaskController {
 
   static create (options, callback) {
     let now = new Date()
+    let task = null
+    let taskCategories = null
 
-    Task
-      .query()
-      .insert({
-        title: options.title,
-        description: options.description,
-        createdAt: now,
-        updatedAt: now,
-        hints: JSON.stringify(options.hints),
-        value: options.value,
-        categories: JSON.stringify(options.categories),
-        answers: JSON.stringify(options.answers),
-        caseSensitive: options.caseSensitive,
-        state: constants.TASK_INITIAL
-      })
-      .then((task) => {
-        callback(null, task)
-        publish('realtime', new CreateTaskEvent(task))
-      })
-      .catch((err) => {
-        if (this.isTaskTitleUniqueConstraintViolation(err)) {
-          callback(new DuplicateTaskTitleError(), null)
-        } else {
-          logger.error(err)
-          callback(new InternalError(), null)
-        }
-      })
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
+      return Task
+        .query()
+        .insert({
+          title: options.title,
+          description: options.description,
+          createdAt: now,
+          updatedAt: now,
+          value: options.value,
+          state: constants.TASK_INITIAL
+        })
+        .then((newTask) => {
+          task = newTask
+          return TaskCategory
+            .query()
+            .insert(options.categories.map((categoryId) => {
+              return {
+                taskId: task.id,
+                categoryId: categoryId,
+                createdAt: now
+              }
+            }))
+            .then((newTaskCategories) => {
+              taskCategories = newTaskCategories
+              return TaskAnswer
+                .query()
+                .insert(options.answers.map((entry) => {
+                  return {
+                    taskId: task.id,
+                    answer: entry.answer,
+                    caseSensitive: entry.caseSensitive,
+                    createdAt: now
+                  }
+                }))
+                .then((newTaskAnswers) => {
+                  return TaskHint
+                    .query()
+                    .insert(options.hints.map((hint) => {
+                      return {
+                        taskId: task.id,
+                        hint: hint,
+                        createdAt: now
+                      }
+                    }))
+                    .then((newTaskHints) => {
+                    })
+                })
+            })
+        })
+    })
+    .then(() => {
+      callback(null, task)
+      publish('realtime', new CreateTaskEvent(task))
+      // TODO: take scope into account
+      for (let taskCategory of taskCategories) {
+        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+      }
+    })
+    .catch((err) => {
+      if (this.isTaskTitleUniqueConstraintViolation(err)) {
+        callback(new DuplicateTaskTitleError(), null)
+      } else {
+        logger.error(err)
+        callback(new InternalError(), null)
+      }
+    })
   }
 
   static update (task, options, callback) {
-    Task
-      .query()
-      .patchAndFetchById(task.id, {
-        description: options.description,
-        categories: JSON.stringify(options.categories),
-        hints: JSON.stringify(options.hints),
-        answers: JSON.stringify(_.union(task.answers, options.answers)),
-        updatedAt: new Date()
-      })
-      .then((updatedTask) => {
-        callback(null, updatedTask)
-        publish('realtime', new UpdateTaskEvent(updatedTask))
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
+    let updatedTask = null
+    let deletedTaskCategoryIds = null
+    let createdTaskCategories = null
+
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
+      let now = new Date()
+      return Task
+        .query()
+        .patchAndFetchById(task.id, {
+          description: options.description,
+          updatedAt: now
+        })
+        .then((updatedTaskObject) => {
+          updatedTask = updatedTaskObject
+          return TaskCategory
+            .query()
+            .delete()
+            .whereNotIn('categoryId', options.categories)
+            .andWhere('taskId', task.id)
+            .returning('id')
+            .then((deletedTaskCategoryIdObjects) => {
+              deletedTaskCategoryIds = deletedTaskCategoryIdObjects
+
+              let valuePlaceholderExpressions = _.times(options.categories.length, () => {
+                return '(?, ?, ?)'
+              })
+
+              let values = options.categories.map((categoryId) => {
+                return [
+                  task.id,
+                  categoryId,
+                  now
+                ]
+              })
+
+              return TaskCategory
+                .raw(
+                  `INSERT INTO task_categories ("taskId", "categoryId", "createdAt")
+                  VALUES ${valuePlaceholderExpressions.join(', ')}
+                  ON CONFLICT ("taskId", "categoryId") DO NOTHING
+                  RETURNING *`,
+                  _.flatten(values)
+                )
+                .then((response) => {
+                  createdTaskCategories = response.rows
+                  return TaskAnswer
+                    .query()
+                    .insert(options.answers.map((entry) => {
+                      return {
+                        taskId: task.id,
+                        answer: entry.answer,
+                        caseSensitive: entry.caseSensitive,
+                        createdAt: now
+                      }
+                    }))
+                    .then((newTaskAnswers) => {
+                      return TaskHint
+                        .query()
+                        .insert(options.hints.map((hint) => {
+                          return {
+                            taskId: task.id,
+                            hint: hint,
+                            createdAt: now
+                          }
+                        }))
+                        .then((newTaskHints) => {
+                        })
+                    })
+                })
+            })
+        })
+    })
+    .then(() => {
+      callback(null, updatedTask)
+      publish('realtime', new UpdateTaskEvent(updatedTask))
+
+      // TODO: take scope into account
+      for (let taskCategoryId of deletedTaskCategoryIds) {
+        publish('realtime', new RemoveTaskCategoryEvent(taskCategoryId))
+      }
+
+      for (let taskCategory of createdTaskCategories) {
+        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+      }
+    })
+    .catch((err) => {
+      logger.error(err)
+      callback(new InternalError(), null)
+    })
   }
 
   static list (callback) {
@@ -137,19 +278,25 @@ class TaskController {
       proposedAnswer = proposedAnswer.toLowerCase()
     }
 
-    let answerCorrect = false
-    for (let answer of task.answers) {
-      if (task.caseSensitive) {
-        answerCorrect = (proposedAnswer === answer)
+    TaskAnswerController.listByTask(task.id, (err, taskAnswers) => {
+      if (err) {
+        callback(err, null)
       } else {
-        answerCorrect = (proposedAnswer === answer.toLowerCase())
-      }
-      if (answerCorrect) {
-        break
-      }
-    }
+        let answerCorrect = false
+        for (let entry of taskAnswers) {
+          if (entry.caseSensitive) {
+            answerCorrect = (proposedAnswer === entry.answer)
+          } else {
+            answerCorrect = (proposedAnswer === entry.answer.toLowerCase())
+          }
+          if (answerCorrect) {
+            break
+          }
+        }
 
-    callback(null, answerCorrect)
+        callback(null, answerCorrect)
+      }
+    })
   }
 
   static open (task, callback) {
@@ -217,20 +364,6 @@ class TaskController {
         } else {
           callback(new TaskNotFoundError())
         }
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
-  }
-
-  static getByCategory (categoryId, callback) {
-    Task
-      .query()
-      .then((tasks) => {
-        callback(null, _.filter(tasks, (task) => {
-          return _.contains(task.categories, categoryId)
-        }))
       })
       .catch((err) => {
         logger.error(err)

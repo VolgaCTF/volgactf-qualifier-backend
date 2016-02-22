@@ -5,6 +5,7 @@ import teamRouter from '../routes/team'
 import postRouter from '../routes/post'
 import contestRouter from '../routes/contest'
 import taskRouter from '../routes/task'
+import categoryRouter from '../routes/category'
 import thirdPartyRouter from '../routes/third-party'
 
 import SupervisorController from '../controllers/supervisor'
@@ -28,6 +29,7 @@ router.use('/team', teamRouter)
 router.use('/post', postRouter)
 router.use('/contest', contestRouter)
 router.use('/task', taskRouter)
+router.use('/category', categoryRouter)
 router.use('/third-party', thirdPartyRouter)
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })

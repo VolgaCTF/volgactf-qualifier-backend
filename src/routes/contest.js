@@ -23,8 +23,8 @@ import contestSerializer from '../serializers/contest'
 import teamParam from '../params/team'
 import taskParam from '../params/task'
 
-import teamTaskProgressController from '../controllers/team-task-progress'
-import teamTaskProgressSerializer from '../serializers/team-task-progress'
+import TeamTaskHitController from '../controllers/team-task-hit'
+import teamTaskHitSerializer from '../serializers/team-task-hit'
 
 import LogController from '../controllers/log'
 import logSerializer from '../serializers/log'
@@ -52,36 +52,36 @@ router.get('/scores', (request, response, next) => {
 router.param('teamId', teamParam.id)
 router.param('taskId', taskParam.id)
 
-router.get('/progress', needsToBeAuthorizedSupervisor, (request, response, next) => {
-  teamTaskProgressController.list((err, teamTaskProgressEntries) => {
+router.get('/hits', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TeamTaskHitController.list((err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      response.json(_.map(teamTaskProgressEntries, teamTaskProgressSerializer))
+      response.json(_.map(teamTaskHits, teamTaskHitSerializer))
     }
   })
 })
 
-router.get('/team/:teamId/progress', detectScope, (request, response, next) => {
-  teamTaskProgressController.listForTeam(request.teamId, (err, teamTaskProgressEntries) => {
+router.get('/team/:teamId/hits', detectScope, (request, response, next) => {
+  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
       if (request.scope === 'supervisors' || (request.scope === 'teams' && request.teamId === request.session.identityID)) {
-        response.json(_.map(teamTaskProgressEntries, teamTaskProgressSerializer))
+        response.json(_.map(teamTaskHits, teamTaskHitSerializer))
       } else {
-        response.json(teamTaskProgressEntries.length)
+        response.json(teamTaskHits.length)
       }
     }
   })
 })
 
-router.get('/task/:taskId/progress', needsToBeAuthorizedTeam, (request, response, next) => {
-  teamTaskProgressController.listForTask(request.taskId, (err, teamTaskProgressEntries) => {
+router.get('/task/:taskId/hits', needsToBeAuthorizedTeam, (request, response, next) => {
+  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      response.json(teamTaskProgressEntries.length)
+      response.json(teamTaskHits.length)
     }
   })
 })

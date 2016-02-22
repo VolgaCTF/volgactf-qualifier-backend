@@ -1,36 +1,36 @@
-import TeamTaskProgress from '../models/team-task-progress'
+import TeamTaskHit from '../models/team-task-hit'
 import logger from '../utils/logger'
 import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
 import BaseEvent from '../utils/events'
 import publish from '../utils/publisher'
-import teamTaskProgressSerializer from '../serializers/team-task-progress'
+import teamTaskHitSerializer from '../serializers/team-task-hit'
 import constants from '../utils/constants'
 
-class CreateTeamTaskProgressEvent extends BaseEvent {
-  constructor (teamTaskProgress) {
-    super('createTeamTaskProgress')
-    let teamTaskProgressData = teamTaskProgressSerializer(teamTaskProgress)
-    this.data.supervisors = teamTaskProgressData
-    this.data.team[teamTaskProgress.teamId] = teamTaskProgressData
+class CreateTeamTaskHitEvent extends BaseEvent {
+  constructor (teamTaskHit) {
+    super('createTeamTaskHit')
+    let teamTaskHitData = teamTaskHitSerializer(teamTaskHit)
+    this.data.supervisors = teamTaskHitData
+    this.data.team[teamTaskHit.teamId] = teamTaskHitData
   }
 }
 
-class TeamTaskProgressController {
+class TeamTaskHitController {
   static isTeamTaskUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_progresses_ndx_team_task_unique')
+    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_hits_ndx_team_task_unique')
   }
 
   static create (teamId, task, callback) {
-    TeamTaskProgress
+    TeamTaskHit
       .query()
       .insert({
         teamId: teamId,
         taskId: task.id,
         createdAt: new Date()
       })
-      .then((teamTaskProgress) => {
-        callback(null, teamTaskProgress)
-        publish('realtime', new CreateTeamTaskProgressEvent(teamTaskProgress))
+      .then((teamTaskHit) => {
+        callback(null, teamTaskHit)
+        publish('realtime', new CreateTeamTaskHitEvent(teamTaskHit))
       })
       .catch((err) => {
         if (this.isTeamTaskUniqueConstraintViolation(err)) {
@@ -43,10 +43,10 @@ class TeamTaskProgressController {
   }
 
   static list (callback) {
-    TeamTaskProgress
+    TeamTaskHit
       .query()
-      .then((teamTaskProgress) => {
-        callback(null, teamTaskProgress)
+      .then((teamTaskHits) => {
+        callback(null, teamTaskHits)
       })
       .catch((err) => {
         logger.error(err)
@@ -55,11 +55,11 @@ class TeamTaskProgressController {
   }
 
   static listForTeam (teamId, callback) {
-    TeamTaskProgress
+    TeamTaskHit
       .query()
       .where('teamId', teamId)
-      .then((teamTaskProgress) => {
-        callback(null, teamTaskProgress)
+      .then((teamTaskHits) => {
+        callback(null, teamTaskHits)
       })
       .catch((err) => {
         logger.error(err)
@@ -68,11 +68,11 @@ class TeamTaskProgressController {
   }
 
   static listForTask (taskId, callback) {
-    TeamTaskProgress
+    TeamTaskHit
       .query()
       .where('taskId', taskId)
-      .then((teamTaskProgress) => {
-        callback(null, teamTaskProgress)
+      .then((teamTaskHits) => {
+        callback(null, teamTaskHits)
       })
       .catch((err) => {
         logger.error(err)
@@ -81,4 +81,4 @@ class TeamTaskProgressController {
   }
 }
 
-export default TeamTaskProgressController
+export default TeamTaskHitController
