@@ -1,15 +1,15 @@
-import TaskAnswer from '../models/task-answer'
+import TaskHint from '../models/task-hint'
 import { InternalError } from '../utils/errors'
 import logger from '../utils/logger'
 
-class TaskAnswerController {
+class TaskHintController {
   static listByTask (taskId, callback) {
-    TaskAnswer
+    TaskHint
       .query()
       .where('taskId', taskId)
       .orderBy('id')
-      .then((taskAnswers) => {
-        callback(null, taskAnswers)
+      .then((taskHints) => {
+        callback(null, taskHints)
       })
       .catch((err) => {
         logger.error(err)
@@ -18,4 +18,4 @@ class TaskAnswerController {
   }
 }
 
-export default TaskAnswerController
+export default TaskHintController

@@ -24,10 +24,12 @@ import _ from 'underscore'
 import TaskController from '../controllers/task'
 import TaskCategoryController from '../controllers/task-category'
 import TaskAnswerController from '../controllers/task-answer'
+import TaskHintController from '../controllers/task-hint'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import taskSerializer from '../serializers/task'
 import taskCategorySerializer from '../serializers/task-category'
 import taskAnswerSerializer from '../serializers/task-answer'
+import taskHintSerializer from '../serializers/task-hint'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
 
@@ -102,6 +104,34 @@ router.get('/:taskId/answer', needsToBeAuthorizedSupervisor, (request, response,
       next(err)
     } else {
       response.json(taskAnswers.map(taskAnswerSerializer))
+    }
+  })
+})
+
+router.get('/:taskId/hint', detectScope, getState, (request, response, next) => {
+  let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
+  let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
+  let supervisorsEligible = (request.scope === 'supervisors')
+
+  if (!guestsEligible && !teamsEligible && !supervisorsEligible) {
+    throw new NotAuthenticatedError()
+  }
+
+  TaskController.get(request.taskId, (err, task) => {
+    if (err) {
+      next(err)
+    } else {
+      if (request.scope === 'teams' && task.isInitial()) {
+        throw new NotAuthenticatedError()
+      } else {
+        TaskHintController.listByTask(task.id, (err, taskHints) => {
+          if (err) {
+            next(err)
+          } else {
+            response.json(_.map(taskHints, taskHintSerializer))
+          }
+        })
+      }
     }
   })
 })

@@ -1,6 +1,7 @@
 import Task from '../models/task'
 import TaskCategory from '../models/task-category'
 import TaskAnswer from '../models/task-answer'
+import TaskHint from '../models/task-hint'
 
 import TaskAnswerController from './task-answer'
 
@@ -86,7 +87,7 @@ class TaskController {
     let task = null
     let taskCategories = null
 
-    transaction(Task, TaskCategory, TaskAnswer, (Task, TaskCategory, TaskAnswer) => {
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
       return Task
         .query()
         .insert({
@@ -94,7 +95,6 @@ class TaskController {
           description: options.description,
           createdAt: now,
           updatedAt: now,
-          hints: JSON.stringify(options.hints),
           value: options.value,
           state: constants.TASK_INITIAL
         })
@@ -122,6 +122,17 @@ class TaskController {
                   }
                 }))
                 .then((newTaskAnswers) => {
+                  return TaskHint
+                    .query()
+                    .insert(options.hints.map((hint) => {
+                      return {
+                        taskId: task.id,
+                        hint: hint,
+                        createdAt: now
+                      }
+                    }))
+                    .then((newTaskHints) => {
+                    })
                 })
             })
         })
@@ -149,13 +160,12 @@ class TaskController {
     let deletedTaskCategoryIds = null
     let createdTaskCategories = null
 
-    transaction(Task, TaskCategory, TaskAnswer, (Task, TaskCategory, TaskAnswer) => {
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
       let now = new Date()
       return Task
         .query()
         .patchAndFetchById(task.id, {
           description: options.description,
-          hints: JSON.stringify(options.hints),
           updatedAt: now
         })
         .then((updatedTaskObject) => {
@@ -202,6 +212,17 @@ class TaskController {
                       }
                     }))
                     .then((newTaskAnswers) => {
+                      return TaskHint
+                        .query()
+                        .insert(options.hints.map((hint) => {
+                          return {
+                            taskId: task.id,
+                            hint: hint,
+                            createdAt: now
+                          }
+                        }))
+                        .then((newTaskHints) => {
+                        })
                     })
                 })
             })

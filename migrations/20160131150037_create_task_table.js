@@ -6,7 +6,6 @@ exports.up = function (knex, Promise) {
     table.text('description').notNullable()
     table.dateTime('createdAt').notNullable()
     table.dateTime('updatedAt').notNullable()
-    table.json('hints').notNullable()
     table.integer('value').notNullable()
     table.integer('state').notNullable()
     table.unique(['title'], 'tasks_ndx_title_unique')

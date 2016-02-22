@@ -17,7 +17,6 @@ export default function (task, options = {}) {
 
   if (!options.preview) {
     result.description = task.description
-    result.hints = task.hints
   }
 
   return result
