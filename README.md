@@ -1,4 +1,6 @@
 # Themis Quals Backend
+Themis Quals platform backend. Part of [Themis Quals](https://github.com/aspyatkin/themis-quals) project.
+
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 ## For developers
@@ -34,3 +36,6 @@ $ npm run knex -- migrate:rollback
 ```sh
 $ npm run lint
 ```
+
+## License
+MIT @ [Alexander Pyatkin](https://github.com/aspyatkin) and contributors
