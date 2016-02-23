@@ -15,6 +15,7 @@ let router = express.Router()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError } from '../utils/errors'
 import _ from 'underscore'
+import is_ from 'is_js'
 
 import { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } from '../middleware/session'
 import { checkToken } from '../middleware/security'
@@ -73,7 +74,7 @@ router.get('/:teamId/profile', (request, response) => {
       let result = {
         id: team.id,
         name: team.name,
-        country: team.country,
+        countryId: team.countryId,
         locality: team.locality,
         institution: team.institution,
         createdAt: team.createdAt.getTime()
@@ -100,7 +101,7 @@ router.post('/verify-email', checkToken, urlencodedParser, (request, response, n
   }
 
   let validationResult = validator.validate(request.body, verifyConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -121,7 +122,7 @@ router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedPars
   }
 
   let validationResult = validator.validate(request.body, resetConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -141,7 +142,7 @@ router.post('/change-password', checkToken, needsToBeAuthorizedTeam, urlencodedP
   }
 
   let validationResult = validator.validate(request.body, changeConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -155,18 +156,25 @@ router.post('/change-password', checkToken, needsToBeAuthorizedTeam, urlencodedP
 })
 
 router.post('/edit-profile', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
+  let countryId = parseInt(request.body.countryId, 10)
+  if (is_.number(countryId)) {
+    request.body.countryId = countryId
+  } else {
+    throw new ValidationError()
+  }
+
   let editConstraints = {
-    country: constraints.country,
+    countryId: constraints.countryId,
     locality: constraints.locality,
     institution: constraints.institution
   }
 
   let validationResult = validator.validate(request.body, editConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.editProfile(request.session.identityID, request.body.country, request.body.locality, request.body.institution, (err) => {
+  TeamController.editProfile(request.session.identityID, request.body.countryId, request.body.locality, request.body.institution, (err) => {
     if (err) {
       next(err)
     } else {
@@ -191,7 +199,7 @@ router.post('/change-email', checkToken, needsToBeAuthorizedTeam, urlencodedPars
   }
 
   let validationResult = validator.validate(request.body, changeConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -210,7 +218,7 @@ router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (re
   }
 
   let validationResult = validator.validate(request.body, restoreConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -230,7 +238,7 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
   }
 
   let validationResult = validator.validate(request.body, signinConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -309,17 +317,24 @@ router.post('/signup', contestNotFinished, checkToken, needsToBeUnauthorized, mu
   })
 
   request.busboy.on('finish', () => {
+    let countryId = parseInt(teamInfo.countryId, 10)
+    if (is_.number(countryId)) {
+      teamInfo.countryId = countryId
+    } else {
+      throw new ValidationError()
+    }
+
     let signupConstraints = {
       team: constraints.team,
       email: constraints.email,
       password: constraints.password,
-      country: constraints.country,
+      countryId: constraints.countryId,
       locality: constraints.locality,
       institution: constraints.institution
     }
 
     let validationResult = validator.validate(teamInfo, signupConstraints)
-    if (validationResult) {
+    if (validationResult === true) {
       gm(teamLogo.name).size((err, size) => {
         if (err) {
           logger.error(err)

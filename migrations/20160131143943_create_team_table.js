@@ -7,7 +7,7 @@ exports.up = function (knex, Promise) {
     table.dateTime('createdAt').notNullable()
     table.boolean('emailConfirmed').notNullable()
     table.string('passwordHash', 100).notNullable()
-    table.string('country', 150).notNullable()
+    table.integer('countryId').notNullable().references('id').inTable('countries')
     table.string('locality', 150).notNullable()
     table.string('institution', 150).notNullable()
     table.boolean('disqualified').notNullable()

@@ -180,7 +180,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
         }
 
         let validationResult = validator.validate(request.body, submitConstraints)
-        if (validationResult) {
+        if (validationResult === true) {
           TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
             if (err) {
               next(err)
@@ -221,7 +221,7 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
   }
 
   let validationResult = validator.validate(request.body, reviseConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -248,7 +248,7 @@ router.post('/:taskId/check', checkToken, detectScope, contestIsFinished, getTas
   }
 
   let validationResult = validator.validate(request.body, checkConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -358,12 +358,12 @@ function sanitizeCreateTaskParams (params, callback) {
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers), (entry) => {
+      deferred.resolve(_.map(answers, (entry) => {
         return {
           answer: entry.answer,
           caseSensitive: entry.caseSensitive === 'true'
         }
-      })
+      }))
     } else {
       deferred.reject(new ValidationError())
     }
@@ -404,7 +404,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
       }
 
       let validationResult = validator.validate(taskParams, createConstraints)
-      if (validationResult) {
+      if (validationResult === true) {
         TaskController.create(taskParams, (err, task) => {
           if (err) {
             next(err)
@@ -474,12 +474,12 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers), (entry) => {
+      deferred.resolve(_.map(answers, (entry) => {
         return {
           answer: entry.answer,
           caseSensitive: entry.caseSensitive === 'true'
         }
-      })
+      }))
     } else {
       deferred.reject(new ValidationError())
     }
@@ -511,11 +511,11 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         description: constraints.taskDescription,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
-        answers: constraints.taskAnswers
+        answers: constraints.taskExtraAnswers
       }
 
       let validationResult = validator.validate(taskParams, updateConstraints)
-      if (validationResult) {
+      if (validationResult === true) {
         TaskController.update(request.task, taskParams, (err, task) => {
           if (err) {
             next(err)

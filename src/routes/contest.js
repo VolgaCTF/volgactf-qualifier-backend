@@ -125,7 +125,7 @@ router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (
   }
 
   let validationResult = validator.validate(request.body, updateConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     logger.error(validationResult)
     throw new ValidationError()
   }

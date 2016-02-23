@@ -131,7 +131,7 @@ class TeamController {
               createdAt: new Date(),
               emailConfirmed: false,
               passwordHash: hash,
-              country: options.country,
+              countryId: options.countryId,
               locality: options.locality,
               institution: options.institution,
               disqualified: false
@@ -344,7 +344,7 @@ class TeamController {
     })
   }
 
-  static editProfile (id, country, locality, institution, callback) {
+  static editProfile (id, countryId, locality, institution, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -352,7 +352,7 @@ class TeamController {
         Team
           .query()
           .patchAndFetchById(team.id, {
-            country: country,
+            countryId: countryId,
             locality: locality,
             institution: institution
           })

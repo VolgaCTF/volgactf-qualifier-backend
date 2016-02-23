@@ -23,9 +23,9 @@ let constraints = {
     new Assert().Length({ min: 6, max: 40 }),
     new Assert().Regexp(pwdRegex, 'g')
   ],
-  country: [
-    new Assert().Callback(is_.string),
-    new Assert().Length({ min: 0, max: 150 })
+  countryId: [
+    new Assert().Required(),
+    new Assert().Callback(is_.number)
   ],
   locality: [
     new Assert().Callback(is_.string),
@@ -96,7 +96,7 @@ let constraints = {
   ],
   taskAnswers: [
     new Assert().Required(),
-    new Assert().Collection(new Constraint({
+    new Assert().Collection({
       answer: [
         new Assert().Required(),
         new Assert().Callback(is_.string),
@@ -106,13 +106,27 @@ let constraints = {
         new Assert().Required(),
         new Assert().Callback(is_.boolean)
       ]
-    })),
+    }),
     new Assert().Length({ min: 1, max: constants.TASK_MAX_ANSWERS })
   ],
   taskAnswer: [
     new Assert().Required(),
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 256 })
+  ],
+  taskExtraAnswers: [
+    new Assert().Collection({
+      answer: [
+        new Assert().Required(),
+        new Assert().Callback(is_.string),
+        new Assert().Length({ min: 2, max: 256 })
+      ],
+      caseSensitive: [
+        new Assert().Required(),
+        new Assert().Callback(is_.boolean)
+      ]
+    }),
+    new Assert().Length({ min: 0, max: constants.TASK_MAX_ANSWERS })
   ]
 }
 

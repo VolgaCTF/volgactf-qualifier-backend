@@ -35,7 +35,7 @@ router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedPars
   }
 
   let validationResult = validator.validate(request.body, createConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -67,7 +67,7 @@ router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlenc
   }
 
   let validationResult = validator.validate(request.body, updateConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 

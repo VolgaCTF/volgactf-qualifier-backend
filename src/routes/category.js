@@ -36,7 +36,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
   }
 
   let validationResult = validator.validate(request.body, createConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 
@@ -68,7 +68,7 @@ router.post('/:categoryId/update', contestNotFinished, checkToken, needsToBeAuth
   }
 
   let validationResult = validator.validate(request.body, updateConstraints)
-  if (!validationResult) {
+  if (validationResult !== true) {
     throw new ValidationError()
   }
 

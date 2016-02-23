@@ -7,6 +7,7 @@ import contestRouter from '../routes/contest'
 import taskRouter from '../routes/task'
 import categoryRouter from '../routes/category'
 import thirdPartyRouter from '../routes/third-party'
+import countryRouter from '../routes/country'
 
 import SupervisorController from '../controllers/supervisor'
 
@@ -31,6 +32,7 @@ router.use('/contest', contestRouter)
 router.use('/task', taskRouter)
 router.use('/category', categoryRouter)
 router.use('/third-party', thirdPartyRouter)
+router.use('/country', countryRouter)
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
@@ -46,7 +48,7 @@ router.post(
     }
 
     let validationResult = validator.validate(request.body, loginConstraints)
-    if (!validationResult) {
+    if (validationResult !== true) {
       throw new ValidationError()
     }
 

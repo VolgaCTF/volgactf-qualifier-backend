@@ -9,7 +9,7 @@ export default function (team, options = {}) {
   let obj = {
     id: team.id,
     name: team.name,
-    country: team.country,
+    countryId: team.countryId,
     locality: team.locality,
     institution: team.institution,
     createdAt: team.createdAt.getTime()
