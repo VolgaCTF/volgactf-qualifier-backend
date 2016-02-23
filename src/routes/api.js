@@ -150,7 +150,7 @@ router.get('/events', detectScope, (request, response, next) => {
   let mainChannel = `message:${request.scope}`
   let extraChannel = null
   if (request.scope === 'teams') {
-    extraChannel = `message:team${request.session.identityID}`
+    extraChannel = `message:team-${request.session.identityID}`
   }
 
   eventStream.on(mainChannel, pushEventFunc)

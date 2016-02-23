@@ -4,78 +4,23 @@ import TaskAnswer from '../models/task-answer'
 import TaskHint from '../models/task-hint'
 
 import TaskAnswerController from './task-answer'
+import TaskCategoryController from './task-category'
 
 import logger from '../utils/logger'
 import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
 import constants from '../utils/constants'
-import publish from '../utils/publisher'
 
 import _ from 'underscore'
 import { transaction } from 'objection'
-import BaseEvent from '../utils/events'
 
-import taskSerializer from '../serializers/task'
-import taskCategorySerializer from '../serializers/task-category'
-
-class CreateTaskEvent extends BaseEvent {
-  constructor (task) {
-    super('createTask')
-    let taskData = taskSerializer(task, { preview: true })
-    this.data.supervisors = taskData
-  }
-}
-
-class CreateTaskCategoryEvent extends BaseEvent {
-  constructor (taskCategory) {
-    super('createTaskCategory')
-    let taskCategoryData = taskCategorySerializer(taskCategory)
-    this.data.supervisors = taskCategoryData
-    this.data.teams = taskCategoryData
-    this.data.guests = taskCategoryData
-  }
-}
-
-class RemoveTaskCategoryEvent extends BaseEvent {
-  constructor (taskCategoryId) {
-    super('removeTaskCategory')
-    let taskCategoryData = { id: taskCategoryId }
-    this.data.supervisors = taskCategoryData
-    this.data.teams = taskCategoryData
-    this.data.guests = taskCategoryData
-  }
-}
-
-class UpdateTaskEvent extends BaseEvent {
-  constructor (task) {
-    super('updateTask')
-    let taskData = taskSerializer(task, { preview: true })
-    this.data.supervisors = taskData
-    if (!task.isInitial()) {
-      this.data.teams = taskData
-      this.data.guests = taskData
-    }
-  }
-}
-
-class OpenTaskEvent extends BaseEvent {
-  constructor (task) {
-    super('openTask')
-    let taskData = taskSerializer(task, { preview: true })
-    this.data.supervisors = taskData
-    this.data.teams = taskData
-    this.data.guests = taskData
-  }
-}
-
-class CloseTaskEvent extends BaseEvent {
-  constructor (task) {
-    super('closeTask')
-    let taskData = taskSerializer(task, { preview: true })
-    this.data.supervisors = taskData
-    this.data.teams = taskData
-    this.data.guests = taskData
-  }
-}
+import EventController from './event'
+import CreateTaskEvent from '../events/create-task'
+import UpdateTaskEvent from '../events/update-task'
+import OpenTaskEvent from '../events/open-task'
+import CloseTaskEvent from '../events/close-task'
+import CreateTaskCategoryEvent from '../events/create-task-category'
+import RemoveTaskCategoryEvent from '../events/remove-task-category'
+import RevealTaskCategoryEvent from '../events/reveal-task-category'
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
@@ -139,10 +84,9 @@ class TaskController {
     })
     .then(() => {
       callback(null, task)
-      publish('realtime', new CreateTaskEvent(task))
-      // TODO: take scope into account
+      EventController.push(new CreateTaskEvent(task))
       for (let taskCategory of taskCategories) {
-        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+        EventController.push(new CreateTaskCategoryEvent(task, taskCategory))
       }
     })
     .catch((err) => {
@@ -230,15 +174,14 @@ class TaskController {
     })
     .then(() => {
       callback(null, updatedTask)
-      publish('realtime', new UpdateTaskEvent(updatedTask))
+      EventController.push(new UpdateTaskEvent(updatedTask))
 
-      // TODO: take scope into account
       for (let taskCategoryId of deletedTaskCategoryIds) {
-        publish('realtime', new RemoveTaskCategoryEvent(taskCategoryId))
+        EventController.push(new RemoveTaskCategoryEvent(updatedTask, taskCategoryId))
       }
 
       for (let taskCategory of createdTaskCategories) {
-        publish('realtime', new CreateTaskCategoryEvent(taskCategory))
+        EventController.push(new CreateTaskCategoryEvent(updatedTask, taskCategory))
       }
     })
     .catch((err) => {
@@ -247,23 +190,15 @@ class TaskController {
     })
   }
 
-  static list (callback) {
-    Task
-      .query()
-      .then((tasks) => {
-        callback(null, tasks)
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
-  }
+  static list (callback, filterNew = false) {
+    let taskPromise = Task.query()
+    if (filterNew) {
+      taskPromise = taskPromise
+        .where('state', constants.TASK_OPENED)
+        .orWhere('state', constants.TASK_CLOSED)
+    }
 
-  static listEligible (callback) {
-    Task
-      .query()
-      .where('state', constants.TASK_OPENED)
-      .orWhere('state', constants.TASK_CLOSED)
+    taskPromise
       .then((tasks) => {
         callback(null, tasks)
       })
@@ -309,7 +244,17 @@ class TaskController {
         })
         .then((updatedTask) => {
           callback(null)
-          publish('realtime', new OpenTaskEvent(updatedTask))
+          EventController.push(new OpenTaskEvent(updatedTask))
+          TaskCategoryController.listByTask(updatedTask.id, (err, taskCategories) => {
+            if (err) {
+              logger.error(err)
+              callback(new InternalError())
+            } else {
+              for (let taskCategory of taskCategories) {
+                EventController.push(new RevealTaskCategoryEvent(taskCategory))
+              }
+            }
+          })
         })
         .catch((err) => {
           logger.error(err)
@@ -336,7 +281,7 @@ class TaskController {
         })
         .then((updatedTask) => {
           callback(null)
-          publish('realtime', new CloseTaskEvent(updatedTask))
+          EventController.push(new CloseTaskEvent(updatedTask))
         })
         .catch((err) => {
           logger.error(err)

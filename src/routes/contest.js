@@ -26,9 +26,6 @@ import taskParam from '../params/task'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import teamTaskHitSerializer from '../serializers/team-task-hit'
 
-import LogController from '../controllers/log'
-import logSerializer from '../serializers/log'
-
 router.get('/', (request, response, next) => {
   ContestController.get((err, contest) => {
     if (err) {
@@ -82,16 +79,6 @@ router.get('/task/:taskId/hits', needsToBeAuthorizedTeam, (request, response, ne
       next(err)
     } else {
       response.json(teamTaskHits.length)
-    }
-  })
-})
-
-router.get('/logs', needsToBeAuthorizedSupervisor, (request, response, next) => {
-  LogController.list((err, logs) => {
-    if (err) {
-      next(err)
-    } else {
-      response.json(_.map(logs, logSerializer))
     }
   })
 })

@@ -14,34 +14,12 @@ import { InternalError } from '../utils/errors'
 import constants from '../utils/constants'
 import logger from '../utils/logger'
 
-import publish from '../utils/publisher'
-import BaseEvent from '../utils/events'
-
-import contestSerializer from '../serializers/contest'
-import teamScoreSerializer from '../serializers/team-score'
+import EventController from './event'
+import UpdateContestEvent from '../events/update-contest'
+import UpdateTeamScoreEvent from '../events/update-team-score'
 
 import when_ from 'when'
 import async from 'async'
-
-class UpdateContestEvent extends BaseEvent {
-  constructor (contest) {
-    super('updateContest')
-    let contestData = contestSerializer(contest)
-    this.data.supervisors = contestData
-    this.data.teams = contestData
-    this.data.guests = contest
-  }
-}
-
-class UpdateTeamScoreEvent extends BaseEvent {
-  constructor (teamScore) {
-    super('updateTeamScore')
-    let teamScoreData = teamScoreSerializer(teamScore)
-    this.data.supervisors = teamScoreData
-    this.data.teams = teamScoreData
-    this.data.guests = teamScoreData
-  }
-}
 
 class ContestController {
   static get (callback) {
@@ -194,7 +172,7 @@ class ContestController {
                 })
                 .then((updatedContest) => {
                   callback(null, updatedContest)
-                  publish('realtime', new UpdateContestEvent(updatedContest))
+                  EventController.push(new UpdateContestEvent(updatedContest))
                 })
                 .catch((err) => {
                   logger.error(err)
@@ -210,7 +188,7 @@ class ContestController {
                 })
                 .then((contest) => {
                   callback(null, contest)
-                  publish('realtime', new UpdateContestEvent(contest))
+                  EventController.push(new UpdateContestEvent(contest))
                 })
                 .catch((err) => {
                   logger.error(err)
@@ -274,7 +252,7 @@ class ContestController {
                         .then((response) => {
                           next(null, null)
                           if (response.rowCount === 1) {
-                            publish('realtime', new UpdateTeamScoreEvent(response.rows[0]))
+                            EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
                           }
                         })
                         .catch((err) => {

@@ -1,19 +1,9 @@
 import TeamTaskHit from '../models/team-task-hit'
 import logger from '../utils/logger'
 import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
-import BaseEvent from '../utils/events'
-import publish from '../utils/publisher'
-import teamTaskHitSerializer from '../serializers/team-task-hit'
 import constants from '../utils/constants'
-
-class CreateTeamTaskHitEvent extends BaseEvent {
-  constructor (teamTaskHit) {
-    super('createTeamTaskHit')
-    let teamTaskHitData = teamTaskHitSerializer(teamTaskHit)
-    this.data.supervisors = teamTaskHitData
-    this.data.team[teamTaskHit.teamId] = teamTaskHitData
-  }
-}
+import EventController from './event'
+import CreateTeamTaskHitEvent from '../events/create-team-task-hit'
 
 class TeamTaskHitController {
   static isTeamTaskUniqueConstraintViolation (err) {
@@ -30,7 +20,7 @@ class TeamTaskHitController {
       })
       .then((teamTaskHit) => {
         callback(null, teamTaskHit)
-        publish('realtime', new CreateTeamTaskHitEvent(teamTaskHit))
+        EventController.push(new CreateTeamTaskHitEvent(teamTaskHit))
       })
       .catch((err) => {
         if (this.isTeamTaskUniqueConstraintViolation(err)) {

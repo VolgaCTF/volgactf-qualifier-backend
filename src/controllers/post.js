@@ -1,41 +1,11 @@
 import Post from '../models/post'
 import logger from '../utils/logger'
 import { InternalError, DuplicatePostTitleError, PostNotFoundError } from '../utils/errors'
-import publish from '../utils/publisher'
-import BaseEvent from '../utils/events'
 import constants from '../utils/constants'
-
-import postSerializer from '../serializers/post'
-
-class CreatePostEvent extends BaseEvent {
-  constructor (post) {
-    super('createPost')
-    let postData = postSerializer(post)
-    this.data.supervisors = postData
-    this.data.teams = postData
-    this.data.guests = postData
-  }
-}
-
-class UpdatePostEvent extends BaseEvent {
-  constructor (post) {
-    super('updatePost')
-    let postData = postSerializer(post)
-    this.data.supervisors = postData
-    this.data.teams = postData
-    this.data.guests = postData
-  }
-}
-
-class RemovePostEvent extends BaseEvent {
-  constructor (postId) {
-    super('removePost')
-    let postData = { id: postId }
-    this.data.supervisors = postData
-    this.data.teams = postData
-    this.data.guests = postData
-  }
-}
+import EventController from './event'
+import CreatePostEvent from '../events/create-post'
+import UpdatePostEvent from '../events/update-post'
+import RemovePostEvent from '../events/remove-post'
 
 class PostController {
   static isPostTitleUniqueConstraintViolation (err) {
@@ -55,7 +25,7 @@ class PostController {
       })
       .then((post) => {
         callback(null, post)
-        publish('realtime', new CreatePostEvent(post))
+        EventController.push(new CreatePostEvent(post))
       })
       .catch((err) => {
         if (this.isPostTitleUniqueConstraintViolation(err)) {
@@ -77,7 +47,7 @@ class PostController {
       })
       .then((post) => {
         callback(null, post)
-        publish('realtime', new UpdatePostEvent(post))
+        EventController.push(new UpdatePostEvent(post))
       })
       .catch((err) => {
         if (this.isPostTitleUniqueConstraintViolation(err)) {
@@ -99,7 +69,7 @@ class PostController {
           callback(new PostNotFoundError())
         } else {
           callback(null)
-          publish('realtime', new RemovePostEvent(id))
+          EventController.push(new RemovePostEvent(id))
         }
       })
       .catch((err) => {
