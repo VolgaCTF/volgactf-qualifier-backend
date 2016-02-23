@@ -209,10 +209,6 @@ class TaskController {
   }
 
   static checkAnswer (task, proposedAnswer, callback) {
-    if (!task.caseSensitive) {
-      proposedAnswer = proposedAnswer.toLowerCase()
-    }
-
     TaskAnswerController.listByTask(task.id, (err, taskAnswers) => {
       if (err) {
         callback(err, null)
@@ -222,7 +218,7 @@ class TaskController {
           if (entry.caseSensitive) {
             answerCorrect = (proposedAnswer === entry.answer)
           } else {
-            answerCorrect = (proposedAnswer === entry.answer.toLowerCase())
+            answerCorrect = (proposedAnswer.toLowerCase() === entry.answer.toLowerCase())
           }
           if (answerCorrect) {
             break
