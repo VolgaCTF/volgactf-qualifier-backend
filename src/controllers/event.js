@@ -24,4 +24,18 @@ export default class EventController {
         }
       })
   }
+
+  static list (lastEventId, callback) {
+    Event
+      .query()
+      .where('id', '>', lastEventId)
+      .orderBy('id')
+      .then((events) => {
+        callback(null, events)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(err, null)
+      })
+  }
 }
