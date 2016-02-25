@@ -150,10 +150,12 @@ function getLatestEvents (lastEventId, callback) {
   }
 }
 
-router.get('/events', detectScope, getLastEventId, (request, response, next) => {
+router.get('/stream', detectScope, getLastEventId, (request, response, next) => {
   if (!request.scope) {
     throw new UnknownIdentityError()
   }
+
+  request.socket.setTimeout(0)
 
   response.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -197,7 +199,7 @@ router.get('/events', detectScope, getLastEventId, (request, response, next) => 
         response.write('event: heartbeat\nretry: 5000\ndata: heartbeat\n\n')
       }
 
-      let interval = setInterval(heartbeatFunc, 15000)
+      // let interval = setInterval(heartbeatFunc, 15000)
 
       let mainChannel = `message:${request.scope}`
       let extraChannel = null
@@ -211,11 +213,12 @@ router.get('/events', detectScope, getLastEventId, (request, response, next) => 
       }
 
       request.once('close', () => {
-        clearInterval(interval)
+        // clearInterval(interval)
         eventStream.removeListener(mainChannel, writeFunc)
         if (extraChannel) {
           eventStream.removeListener(extraChannel, writeFunc)
         }
+        logger.info('Connection lost')
       })
     }
   })
