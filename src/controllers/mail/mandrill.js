@@ -1,4 +1,4 @@
-import logger from '../utils/logger'
+import logger from '../../utils/logger'
 import mandrill from 'mandrill-api/mandrill'
 
 export default class MandrillController {

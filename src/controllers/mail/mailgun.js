@@ -1,4 +1,4 @@
-import logger from '../utils/logger'
+import logger from '../../utils/logger'
 import mailgun from 'mailgun-js'
 
 export default class MailgunController {

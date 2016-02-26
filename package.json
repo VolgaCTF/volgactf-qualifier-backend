@@ -45,6 +45,7 @@
     "objection": "^0.4.0",
     "pg": "^4.4.4",
     "redis": "~0.12.1",
+    "sendgrid": "^2.0.0",
     "tmp": "0.0.25",
     "underscore": "~1.8.2",
     "validator.js": "~1.0.1",

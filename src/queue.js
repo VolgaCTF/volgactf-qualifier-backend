@@ -5,8 +5,9 @@ import path from 'path'
 import EmailController from './controllers/email'
 import token from './utils/token'
 import ContestController from './controllers/contest'
-import MandrillController from './controllers/mandrill'
-import MailgunController from './controllers/mailgun'
+import MandrillController from './controllers/mail/mandrill'
+import MailgunController from './controllers/mail/mailgun'
+import SendGridController from './controllers/mail/sendgrid'
 
 queue('updateScoresQueue').process((job, done) => {
   ContestController.updateScores((err) => {
@@ -61,6 +62,8 @@ queue('sendEmailQueue').process((job, done) => {
     senderController = MandrillController
   } else if (process.env.MAIL_TRANSPORT === 'mailgun') {
     senderController = MailgunController
+  } else if (process.env.MAIL_TRANSPORT === 'sendgrid') {
+    senderController = SendGridController
   }
 
   if (!senderController) {
