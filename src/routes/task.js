@@ -32,42 +32,48 @@ import taskAnswerSerializer from '../serializers/task-answer'
 import taskHintSerializer from '../serializers/task-hint'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
+import TeamTaskHitAttemptController from '../controllers/team-task-hit-attempt'
 
 import LimitController from '../controllers/limit'
 import when_ from 'when'
-import LogController from '../controllers/log'
 
 router.param('taskId', taskParam.id)
 
 router.get('/all', detectScope, (request, response, next) => {
-  let onFetch = (exposeEmail) => {
-    let serializer = _.partial(taskSerializer, _, { preview: true })
-    return (err, tasks) => {
-      if (err) {
-        logger.error(err)
-        next(new InternalError())
-      } else {
-        response.json(_.map(tasks, serializer))
-      }
-    }
-  }
+  let isSupervisor = request.scope === 'supervisors'
 
-  if (request.scope === 'supervisors') {
-    TaskController.list(onFetch(true))
-  } else {
-    TaskController.listEligible(onFetch(false))
-  }
+  TaskController.list((err, tasks) => {
+    if (err) {
+      logger.error(err)
+      next(new InternalError())
+    } else {
+      let serializer = _.partial(taskSerializer, _, { preview: true })
+      response.json(_.map(tasks, serializer))
+    }
+  }, !isSupervisor)
 })
 
 router.get('/category/all', detectScope, (request, response, next) => {
-  // TODO: Take scope into account
-  TaskCategoryController.list((err, taskCategories) => {
+  let isSupervisor = request.scope === 'supervisors'
+
+  TaskController.list((err, tasks) => {
     if (err) {
-      next(err)
+      logger.error(err)
+      next(new InternalError())
     } else {
-      response.json(_.map(taskCategories, taskCategorySerializer))
+      let taskIds = _.map(tasks, (task) => {
+        return task.id
+      })
+
+      TaskCategoryController.listByTasks(taskIds, (err, taskCategories) => {
+        if (err) {
+          next(err)
+        } else {
+          response.json(_.map(taskCategories, taskCategorySerializer))
+        }
+      })
     }
-  })
+  }, !isSupervisor)
 })
 
 router.get('/:taskId/category', detectScope, getState, (request, response, next) => {
@@ -191,18 +197,14 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
                     next(err)
                   } else {
                     response.json({ success: true })
-                    LogController.pushLog(constants.LOG_TEAM_TASK_SUBMIT_SUCCESS, {
-                      teamId: request.session.identityID,
-                      taskId: request.taskId
-                    })
                   }
                 })
               } else {
                 next(new WrongTaskAnswerError())
-                LogController.pushLog(constants.LOG_TEAM_TASK_SUBMIT_ERROR, {
-                  teamId: request.session.identityID,
-                  taskId: request.taskId,
-                  answer: request.body.answer
+                TeamTaskHitAttemptController.create(request.session.identityID, request.task.id, request.body.answer, (err, teamTaskHitAttempt) => {
+                  if (err) {
+                    logger.error(err)
+                  }
                 })
               }
             }

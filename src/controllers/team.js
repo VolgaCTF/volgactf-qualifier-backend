@@ -6,49 +6,15 @@ import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
 import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError } from '../utils/errors'
-import publish from '../utils/publisher'
-import BaseEvent from '../utils/events'
 import constants from '../utils/constants'
 import moment from 'moment'
 import { transaction } from 'objection'
 
-import teamSerializer from '../serializers/team'
-
-class UpdateTeamProfileEvent extends BaseEvent {
-  constructor (team) {
-    super('updateTeamProfile')
-    let publicData = teamSerializer(team)
-    this.data.guests = publicData
-    this.data.teams = publicData
-
-    this.data.supervisors = teamSerializer(team, { exposeEmail: true })
-  }
-}
-
-class QualifyTeamEvent extends BaseEvent {
-  constructor (team) {
-    super('qualifyTeam')
-    let publicData = teamSerializer(team)
-    this.data.guests = publicData
-    this.data.teams = publicData
-
-    this.data.supervisors = teamSerializer(team, { exposeEmail: true })
-  }
-}
-
-class CreateTeamEvent extends BaseEvent {
-  constructor (team) {
-    super('createTeam')
-    this.data.supervisors = teamSerializer(team, { exposeEmail: true })
-  }
-}
-
-class ChangeTeamEmailEvent extends BaseEvent {
-  constructor (team) {
-    super('changeTeamEmail')
-    this.data.supervisors = teamSerializer(team, { exposeEmail: true })
-  }
-}
+import EventController from './event'
+import CreateTeamEvent from '../events/create-team'
+import UpdateTeamEmailEvent from '../events/update-team-email'
+import UpdateTeamProfileEvent from '../events/update-team-profile'
+import QualifyTeamEvent from '../events/qualify-team'
 
 class TeamController {
   static restore (email, callback) {
@@ -168,7 +134,7 @@ class TeamController {
           })
 
           callback(null)
-          publish('realtime', new CreateTeamEvent(team))
+          EventController.push(new CreateTeamEvent(team))
         })
         .catch((err) => {
           if (this.isTeamNameUniqueConstraintViolation(err)) {
@@ -323,7 +289,7 @@ class TeamController {
                   })
 
                   callback(null)
-                  publish('realtime', new ChangeTeamEmailEvent(updatedTeam))
+                  EventController.push(new UpdateTeamEmailEvent(updatedTeam))
                 })
                 .catch((err) => {
                   if (this.isTeamEmailUniqueConstraintViolation(err)) {
@@ -358,7 +324,7 @@ class TeamController {
           })
           .then((updatedTeam) => {
             callback(null)
-            publish('realtime', new UpdateTeamProfileEvent(updatedTeam))
+            EventController.push(new UpdateTeamProfileEvent(updatedTeam))
           })
           .catch((err) => {
             logger.error(err)
@@ -567,7 +533,7 @@ class TeamController {
                   })
                   .then(() => {
                     callback(null)
-                    publish('realtime', new QualifyTeamEvent(updatedTeam))
+                    EventController.push(new QualifyTeamEvent(updatedTeam))
                   })
                   .catch((err) => {
                     logger.error(err)

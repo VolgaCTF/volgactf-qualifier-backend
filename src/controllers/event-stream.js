@@ -1,10 +1,12 @@
 import { EventEmitter } from 'events'
 import EventSubscriber from '../utils/subscriber'
 import _ from 'underscore'
+import eventNameList from '../utils/event-name-list'
 
 class EventStream extends EventEmitter {
-  constructor (maxListeners) {
+  constructor (maxListeners, channel) {
     super()
+    this.channel = channel
     this.setMaxListeners(maxListeners)
   }
 
@@ -12,33 +14,33 @@ class EventStream extends EventEmitter {
     return `id: ${id}\nevent: ${name}\nretry: ${retry}\ndata: ${JSON.stringify(obj)}\n\n`
   }
 
+  emitMessage (message) {
+    let name = eventNameList.getName(message.type)
+
+    if (message.data.supervisors) {
+      this.emit('message:supervisors', this.format(message.id, name, 5000, message.data.supervisors))
+    }
+
+    if (message.data.teams) {
+      this.emit('message:teams', this.format(message.id, name, 5000, message.data.teams))
+    }
+
+    if (message.data.guests) {
+      this.emit('message:guests', this.format(message.id, name, 5000, message.data.guests))
+    }
+
+    if (message.data.team) {
+      _.each(message.data.team, (teamData, teamId, list) => {
+        this.emit(`message:team-${teamId}`, this.format(message.id, name, 5000, teamData))
+      })
+    }
+  }
+
   run () {
-    let subscriber = new EventSubscriber('realtime')
+    let subscriber = new EventSubscriber(this.channel)
 
     subscriber.on('message', (channel, data) => {
-      let message = JSON.parse(data)
-
-      let name = message.name
-      let eventId = (new Date()).getTime()
-
-      let dataForSupervisors = message.data.supervisors
-      if (dataForSupervisors) {
-        this.emit('message:supervisors', this.format(eventId, name, 5000, dataForSupervisors))
-      }
-
-      let dataForTeams = message.data.teams
-      if (dataForTeams) {
-        this.emit('message:teams', this.format(eventId, name, 5000, dataForTeams))
-      }
-
-      let dataForGuests = message.data.guests
-      if (dataForGuests) {
-        this.emit('message:guests', this.format(eventId, name, 5000, dataForGuests))
-      }
-
-      _.each(message.data.team, (dataForTeam, teamId, list) => {
-        this.emit(`message:team${teamId}`, this.format(eventId, name, 5000, dataForTeam))
-      })
+      this.emitMessage(JSON.parse(data))
     })
   }
 }
@@ -48,4 +50,6 @@ if (process.env.MAX_STREAM_CONNECTIONS) {
   maxStreamConnections = parseInt(process.env.MAX_STREAM_CONNECTIONS, 10)
 }
 
-export default new EventStream(maxStreamConnections)
+let channel = process.env.REDIS_REALTIME_CHANNEL || 'themis_realtime'
+
+export default new EventStream(maxStreamConnections, channel)

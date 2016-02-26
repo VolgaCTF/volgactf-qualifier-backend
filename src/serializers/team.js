@@ -12,7 +12,8 @@ export default function (team, options = {}) {
     countryId: team.countryId,
     locality: team.locality,
     institution: team.institution,
-    createdAt: team.createdAt.getTime()
+    createdAt: team.createdAt.getTime(),
+    disqualified: team.disqualified
   }
 
   if (options.exposeEmail) {

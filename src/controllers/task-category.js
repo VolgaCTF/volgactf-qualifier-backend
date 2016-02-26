@@ -15,6 +15,19 @@ class TaskCategoryController {
       })
   }
 
+  static listByTasks (taskIds, callback) {
+    TaskCategory
+      .query()
+      .whereIn('taskId', taskIds)
+      .then((taskCategories) => {
+        callback(null, taskCategories)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
+  }
+
   static listByTask (taskId, callback) {
     TaskCategory
       .query()

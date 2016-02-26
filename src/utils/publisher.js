@@ -1,7 +1,22 @@
 import redis from './redis'
 
-let client = redis.createClient()
+class EventPublisher {
+  constructor (channel) {
+    this.client = redis.createClient()
+    this.channel = channel
+  }
 
-export default function publish (channel, eventObject) {
-  return client.publish(channel, JSON.stringify(eventObject.serialize()))
+  push (event) {
+    let data = {
+      id: event.id,
+      type: event.type,
+      data: event.data,
+      createdAt: event.createdAt
+    }
+    return this.client.publish(this.channel, JSON.stringify(data))
+  }
 }
+
+let channel = process.env.REDIS_REALTIME_CHANNEL || 'themis_realtime'
+
+export default new EventPublisher(channel)

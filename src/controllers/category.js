@@ -1,41 +1,13 @@
 import Category from '../models/category'
 import { InternalError, CategoryNotFoundError, DuplicateCategoryTitleError, CategoryAttachedError } from '../utils/errors'
-import categorySerializer from '../serializers/category'
-import publish from '../utils/publisher'
+import EventController from './event'
 
-import BaseEvent from '../utils/events'
 import logger from '../utils/logger'
 import constants from '../utils/constants'
 
-class CreateCategoryEvent extends BaseEvent {
-  constructor (category) {
-    super('createCategory')
-    let categoryData = categorySerializer(category)
-    this.data.supervisors = categoryData
-    this.data.teams = categoryData
-    this.data.guests = categoryData
-  }
-}
-
-class UpdateCategoryEvent extends BaseEvent {
-  constructor (category) {
-    super('updateCategory')
-    let categoryData = categorySerializer(category)
-    this.data.supervisors = categoryData
-    this.data.teams = categoryData
-    this.data.guests = categoryData
-  }
-}
-
-class RemoveCategoryEvent extends BaseEvent {
-  constructor (categoryId) {
-    super('removeCategory')
-    let categoryData = { id: categoryId }
-    this.data.supervisors = categoryData
-    this.data.teams = categoryData
-    this.data.guests = categoryData
-  }
-}
+import CreateCategoryEvent from '../events/create-category'
+import UpdateCategoryEvent from '../events/update-category'
+import RemoveCategoryEvent from '../events/remove-category'
 
 class CategoryController {
   static list (callback) {
@@ -88,7 +60,7 @@ class CategoryController {
       })
       .then((category) => {
         callback(null, category)
-        publish('realtime', new CreateCategoryEvent(category))
+        EventController.push(new CreateCategoryEvent(category))
       })
       .catch((err) => {
         if (this.isCategoryTitleUniqueConstraintViolation(err)) {
@@ -110,7 +82,7 @@ class CategoryController {
       })
       .then((category) => {
         callback(null, category)
-        publish('realtime', new UpdateCategoryEvent(category))
+        EventController.push(new UpdateCategoryEvent(category))
       })
       .catch((err) => {
         if (this.isCategoryTitleUniqueConstraintViolation(err)) {
@@ -123,7 +95,6 @@ class CategoryController {
   }
 
   static remove (id, callback) {
-    // CategoryAttachedError
     Category
       .query()
       .delete()
@@ -132,8 +103,8 @@ class CategoryController {
         if (numDeleted === 0) {
           callback(new CategoryNotFoundError())
         } else {
-          publish('realtime', new RemoveCategoryEvent(id))
           callback(null)
+          EventController.push(new RemoveCategoryEvent(id))
         }
       })
       .catch((err) => {
