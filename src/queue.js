@@ -2,12 +2,15 @@ import queue from './utils/queue'
 import logger from './utils/logger'
 import gm from 'gm'
 import path from 'path'
-import EmailController from './controllers/email'
 import token from './utils/token'
 import ContestController from './controllers/contest'
 import MandrillController from './controllers/mail/mandrill'
 import MailgunController from './controllers/mail/mailgun'
 import SendGridController from './controllers/mail/sendgrid'
+
+let Customizer = require(process.env.THEMIS_CUSTOMIZER_PACKAGE || 'themis-quals-customizer-default').default
+let customizer = new Customizer()
+let emailGenerator = customizer.getEmailGenerator()
 
 queue('updateScoresQueue').process((job, done) => {
   ContestController.updateScores((err) => {
@@ -37,14 +40,14 @@ queue('createLogoQueue').process((job, done) => {
 queue('sendEmailQueue').process((job, done) => {
   let message = null
   if (job.data.message === 'welcome') {
-    message = EmailController.generateWelcomeEmail({
+    message = emailGenerator.getWelcomeEmail({
       name: job.data.name,
       domain: process.env.THEMIS_DOMAIN,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
   } else if (job.data.message === 'restore') {
-    message = EmailController.generateRestoreEmail({
+    message = emailGenerator.getRestoreEmail({
       name: job.data.name,
       domain: process.env.THEMIS_DOMAIN,
       team: token.encode(job.data.email),
