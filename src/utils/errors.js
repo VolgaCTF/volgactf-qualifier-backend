@@ -122,7 +122,7 @@ export class DuplicatePostTitleError extends BaseError {
 
 export class InvalidCSRFTokenError extends BaseError {
   constructor () {
-    super('Invalid CSRF token!', 'InvalidCSRFTokenError', 400)
+    super('CSRF-protection token is invalid or has expired! Please reload the page.', 'InvalidCSRFTokenError', 400)
   }
 }
 

@@ -19,16 +19,13 @@ import TeamController from '../controllers/team'
 import { ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from '../utils/errors'
 
 import { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from '../middleware/session'
-import tokenUtil from '../utils/token'
-import { checkToken } from '../middleware/security'
+import { checkToken, issueToken } from '../middleware/security'
 import getLastEventId from '../middleware/last-event-id'
 
 import eventStream from '../controllers/event-stream'
 import EventController from '../controllers/event'
 import logger from '../utils/logger'
 import eventNameList from '../utils/event-name-list'
-
-import moment from 'moment'
 
 let router = express.Router()
 
@@ -91,16 +88,7 @@ router.post(
   }
 )
 
-router.get('/identity', detectScope, (request, response, next) => {
-  if ((!request.session.token) || (!request.session.tokenExpires) || (moment().diff(request.session.tokenExpires) > 0)) {
-    request.session.token = tokenUtil.encode(tokenUtil.generate(32))
-    request.session.tokenExpires = moment().add(1, 'm').toDate()
-  }
-  // let subs = moment().diff(request.session.tokenExpires)
-  // if (subs > 0) {
-  //  request.session.token = tokenUtil.encode(tokenUtil.generate(32)) // moment()
-  //  request.session.tokenExpires = moment().add(1,'h').toDate()
-  // }
+router.get('/identity', detectScope, issueToken, (request, response, next) => {
   let token = request.session.token
   switch (request.scope) {
     case 'supervisors':
