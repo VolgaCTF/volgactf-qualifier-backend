@@ -45,11 +45,11 @@ class EventStream extends EventEmitter {
   }
 }
 
-let maxStreamConnections = 1024
-if (process.env.MAX_STREAM_CONNECTIONS) {
-  maxStreamConnections = parseInt(process.env.MAX_STREAM_CONNECTIONS, 10)
+let streamMaxConnections = 1024
+if (process.env.THEMIS_STREAM_MAX_CONNECTIONS) {
+  streamMaxConnections = parseInt(process.env.THEMIS_STREAM_MAX_CONNECTIONS, 10)
 }
 
-let channel = process.env.REDIS_REALTIME_CHANNEL || 'themis_realtime'
+let redisChannel = process.env.THEMIS_STREAM_REDIS_CHANNEL || 'themis_realtime'
 
-export default new EventStream(maxStreamConnections, channel)
+export default new EventStream(streamMaxConnections, redisChannel)

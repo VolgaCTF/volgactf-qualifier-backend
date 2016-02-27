@@ -64,12 +64,12 @@ export default session({
   store: new RedisStore({
     client: redis.createClient()
   }),
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.THEMIS_SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   name: 'themis-session-id',
   cookie: {
-    domain: process.env.DOMAIN,
+    domain: process.env.THEMIS_DOMAIN,
     path: '/api',
     httpOnly: true,
     secure: true,

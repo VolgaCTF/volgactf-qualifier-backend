@@ -21,7 +21,7 @@ queue('updateScoresQueue').process((job, done) => {
 })
 
 queue('createLogoQueue').process((job, done) => {
-  let newFilename = path.join(process.env.LOGOS_DIR, `team-${job.data.id}.png`)
+  let newFilename = path.join(process.env.THEMIS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
     .write(newFilename, (err) => {
@@ -39,14 +39,14 @@ queue('sendEmailQueue').process((job, done) => {
   if (job.data.message === 'welcome') {
     message = EmailController.generateWelcomeEmail({
       name: job.data.name,
-      domain: process.env.DOMAIN,
+      domain: process.env.THEMIS_DOMAIN,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
   } else if (job.data.message === 'restore') {
     message = EmailController.generateRestoreEmail({
       name: job.data.name,
-      domain: process.env.DOMAIN,
+      domain: process.env.THEMIS_DOMAIN,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
@@ -58,11 +58,13 @@ queue('sendEmailQueue').process((job, done) => {
   }
 
   let senderController = null
-  if (process.env.MAIL_TRANSPORT === 'mandrill') {
+  let emailTransport = process.env.THEMIS_EMAIL_TRANSPORT
+
+  if (emailTransport === 'mandrill') {
     senderController = MandrillController
-  } else if (process.env.MAIL_TRANSPORT === 'mailgun') {
+  } else if (emailTransport === 'mailgun') {
     senderController = MailgunController
-  } else if (process.env.MAIL_TRANSPORT === 'sendgrid') {
+  } else if (emailTransport === 'sendgrid') {
     senderController = SendGridController
   }
 

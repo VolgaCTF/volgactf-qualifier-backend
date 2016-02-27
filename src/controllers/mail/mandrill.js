@@ -9,8 +9,8 @@ export default class MandrillController {
           html: message.html,
           text: message.plain,
           subject: message.subject,
-          from_email: process.env.EMAIL_SENDER,
-          from_name: 'VolgaCTF',
+          from_email: process.env.THEMIS_EMAIL_SENDER_ADDRESS,
+          from_name: process.env.THEMIS_EMAIL_SENDER_NAME,
           to: [{
             email: recipientEmail,
             name: recipientName,

@@ -239,26 +239,30 @@ class ContestController {
                         }
                       }
 
-                      TeamScore
-                        .raw(
-                          `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
-                          VALUES (?, ?, ?)
-                          ON CONFLICT ("teamId") DO
-                          UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
-                          WHERE t."score" != EXCLUDED."score"
-                          RETURNING *`,
-                          [team.id, totalScore, lastUpdatedAt]
-                        )
-                        .then((response) => {
-                          next(null, null)
-                          if (response.rowCount === 1) {
-                            EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
-                          }
-                        })
-                        .catch((err) => {
-                          logger.error(err)
-                          next(err, null)
-                        })
+                      if (totalScore > 0 && lastUpdatedAt) {
+                        TeamScore
+                          .raw(
+                            `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
+                            VALUES (?, ?, ?)
+                            ON CONFLICT ("teamId") DO
+                            UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
+                            WHERE t."score" != EXCLUDED."score"
+                            RETURNING *`,
+                            [team.id, totalScore, lastUpdatedAt]
+                          )
+                          .then((response) => {
+                            next(null, null)
+                            if (response.rowCount === 1) {
+                              EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
+                            }
+                          })
+                          .catch((err) => {
+                            logger.error(err)
+                            next(err, null)
+                          })
+                      } else {
+                        next(null, null)
+                      }
                     }
 
                     async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {

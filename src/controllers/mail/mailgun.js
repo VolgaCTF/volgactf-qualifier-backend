@@ -5,7 +5,7 @@ export default class MailgunController {
   static sendEmail (message, recipientEmail, recipientName) {
     return new Promise((resolve, reject) => {
       let data = {
-        from: `VolgaCTF <${process.env.EMAIL_SENDER}>`,
+        from: `${process.env.THEMIS_EMAIL_SENDER_NAME} <${process.env.THEMIS_EMAIL_SENDER_ADDRESS}>`,
         to: `${recipientName} <${recipientEmail}>`,
         subject: message.subject,
         text: message.plain,

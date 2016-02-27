@@ -3,8 +3,8 @@ import tokenUtil from '../utils/token'
 import moment from 'moment'
 
 let tokenExpirationDate = 1000 * 60 * 60  // 1 hour
-if (process.env.TOKEN_EXPIRATION_DATE) {
-  tokenExpirationDate = parseInt(process.env.TOKEN_EXPIRATION_DATE, 10)
+if (process.env.THEMIS_TOKEN_EXPIRATION_DATE) {
+  tokenExpirationDate = parseInt(process.env.THEMIS_TOKEN_EXPIRATION_DATE, 10)
 }
 
 export function checkToken (request, response, next) {
