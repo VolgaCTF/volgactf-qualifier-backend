@@ -170,33 +170,19 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
         response.write(data)
       }
 
-      logger.info(`Last-Event-ID: ${request.lastEventId}`)
-
       for (let event of events) {
         if (request.scope === 'supervisors' && event.data.supervisors) {
-          logger.info(`Supervisors event: ${event.id}, ${event.type}, ${event.data.supervisors}`)
           writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.supervisors))
         } else if (request.scope === 'teams') {
           if (event.data.teams) {
-            logger.info(`Teams event: ${event.id}, ${event.type}, ${event.data.teams}`)
             writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.teams))
           } else if (event.data.team && event.data.team.hasOwnProperty(request.session.identityID)) {
-            logger.info(`Team ${request.session.identityID} event: ${event.id}, ${event.type}, ${event.data.team[request.session.identityID]}`)
             writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.team[request.session.identityID]))
           }
         } else if (request.scope === 'guests') {
-          logger.info(`Guests event: ${event.id}, ${event.type}, ${event.data.guests}`)
           writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.guests))
         }
       }
-
-      logger.info('====================')
-
-      let heartbeatFunc = () => {
-        response.write('event: heartbeat\nretry: 5000\ndata: heartbeat\n\n')
-      }
-
-      // let interval = setInterval(heartbeatFunc, 15000)
 
       let mainChannel = `message:${request.scope}`
       let extraChannel = null
@@ -210,12 +196,10 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
       }
 
       request.once('close', () => {
-        // clearInterval(interval)
         eventStream.removeListener(mainChannel, writeFunc)
         if (extraChannel) {
           eventStream.removeListener(extraChannel, writeFunc)
         }
-        logger.info('Connection lost')
       })
     }
   })

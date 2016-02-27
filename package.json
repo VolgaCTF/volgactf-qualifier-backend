@@ -1,7 +1,7 @@
 {
   "name": "themis-quals-backend",
   "version": "1.0.0",
-  "description": "VolgaCTF contest system",
+  "description": "Themis Quals platform backend",
   "main": "index.js",
   "scripts": {
     "build": "babel src -d lib",
