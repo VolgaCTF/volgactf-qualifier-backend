@@ -24,6 +24,9 @@ import { contestNotFinished } from '../middleware/contest'
 import teamSerializer from '../serializers/team'
 
 import teamParam from '../params/team'
+import { getTeam } from '../middleware/team'
+import EventController from '../controllers/event'
+import LogoutTeamEvent from '../events/logout-team'
 
 router.get('/all', detectScope, (request, response, next) => {
   let onFetch = function (exposeEmail) {
@@ -250,6 +253,18 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
       request.session.identityID = team.id
       request.session.role = 'team'
       response.json({ success: true })
+    }
+  })
+})
+
+router.post('/signout', checkToken, needsToBeAuthorizedTeam, getTeam, (request, response, next) => {
+  request.session.authenticated = false
+  request.session.destroy((err) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json({ success: true })
+      EventController.push(new LogoutTeamEvent(request.team))
     }
   })
 })

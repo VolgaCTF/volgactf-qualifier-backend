@@ -1,5 +1,4 @@
 import express from 'express'
-import bodyParser from 'body-parser'
 
 import teamRouter from '../routes/team'
 import postRouter from '../routes/post'
@@ -8,18 +7,16 @@ import taskRouter from '../routes/task'
 import categoryRouter from '../routes/category'
 import thirdPartyRouter from '../routes/third-party'
 import countryRouter from '../routes/country'
+import supervisorRouter from '../routes/supervisor'
 
 import SupervisorController from '../controllers/supervisor'
 
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-import constraints from '../utils/constraints'
 import TeamController from '../controllers/team'
 
-import { ValidationError, InvalidSupervisorCredentialsError, UnknownIdentityError } from '../utils/errors'
+import { UnknownIdentityError } from '../utils/errors'
 
-import { needsToBeUnauthorized, needsToBeAuthorized, detectScope } from '../middleware/session'
-import { checkToken, issueToken } from '../middleware/security'
+import { detectScope } from '../middleware/session'
+import { issueToken } from '../middleware/security'
 import getLastEventId from '../middleware/last-event-id'
 
 import eventStream from '../controllers/event-stream'
@@ -36,57 +33,7 @@ router.use('/task', taskRouter)
 router.use('/category', categoryRouter)
 router.use('/third-party', thirdPartyRouter)
 router.use('/country', countryRouter)
-
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
-
-router.post(
-  '/login',
-  checkToken,
-  needsToBeUnauthorized,
-  urlencodedParser,
-  (request, response, next) => {
-    let loginConstraints = {
-      username: constraints.username,
-      password: constraints.password
-    }
-
-    let validationResult = validator.validate(request.body, loginConstraints)
-    if (validationResult !== true) {
-      throw new ValidationError()
-    }
-
-    SupervisorController.login(request.body.username, request.body.password, (err, supervisor) => {
-      if (err) {
-        next(err)
-      } else {
-        if (supervisor) {
-          request.session.authenticated = true
-          request.session.identityID = supervisor.id
-          request.session.role = supervisor.rights
-          response.json({ success: true })
-        } else {
-          next(new InvalidSupervisorCredentialsError())
-        }
-      }
-    })
-  }
-)
-
-router.post(
-  '/signout',
-  checkToken,
-  needsToBeAuthorized,
-  (request, response, next) => {
-    request.session.authenticated = false
-    request.session.destroy((err) => {
-      if (err) {
-        next(err)
-      } else {
-        response.json({ success: true })
-      }
-    })
-  }
-)
+router.use('/supervisor', supervisorRouter)
 
 router.get('/identity', detectScope, issueToken, (request, response, next) => {
   let token = request.session.token

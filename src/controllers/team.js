@@ -15,6 +15,8 @@ import CreateTeamEvent from '../events/create-team'
 import UpdateTeamEmailEvent from '../events/update-team-email'
 import UpdateTeamProfileEvent from '../events/update-team-profile'
 import QualifyTeamEvent from '../events/qualify-team'
+import LoginTeamEvent from '../events/login-team'
+import UpdateTeamPasswordEvent from '../events/update-team-password'
 
 class TeamController {
   static restore (email, callback) {
@@ -164,6 +166,7 @@ class TeamController {
             } else {
               if (res) {
                 callback(null, team)
+                EventController.push(new LoginTeamEvent(team))
               } else {
                 callback(new InvalidTeamCredentialsError(), null)
               }
@@ -371,6 +374,7 @@ class TeamController {
                     })
                     .then((updatedTeam) => {
                       callback(null)
+                      EventController.push(new UpdateTeamPasswordEvent(updatedTeam))
                     })
                     .catch((err) => {
                       logger.error(err)

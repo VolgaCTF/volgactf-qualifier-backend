@@ -3,6 +3,10 @@ import { getPasswordHash, checkPassword } from '../utils/security'
 import { InvalidSupervisorCredentialsError, InternalError } from '../utils/errors'
 import constants from '../utils/constants'
 import logger from '../utils/logger'
+import EventController from './event'
+import LoginSupervisorEvent from '../events/login-supervisor'
+import CreateSupervisorEvent from '../events/create-supervisor'
+import RemoveSupervisorEvent from '../events/remove-supervisor'
 
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
@@ -23,7 +27,13 @@ class SupervisorController {
             rights: options.rights
           })
           .then((supervisor) => {
-            callback(null, supervisor)
+            EventController.push(new CreateSupervisorEvent(supervisor), (err, event) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, supervisor)
+              }
+            })
           })
           .catch((err) => {
             if (this.isSupervisorUsernameUniqueConstraintViolation(err)) {
@@ -46,7 +56,13 @@ class SupervisorController {
         if (numDeleted === 0) {
           callback("Supervisor doesn't exist!")
         } else {
-          callback(null)
+          EventController.push(new RemoveSupervisorEvent(username), (err, event) => {
+            if (err) {
+              callback(err)
+            } else {
+              callback(null)
+            }
+          })
         }
       })
       .catch((err) => {
@@ -67,6 +83,7 @@ class SupervisorController {
             } else {
               if (res) {
                 callback(null, supervisor)
+                EventController.push(new LoginSupervisorEvent(supervisor))
               } else {
                 callback(new InvalidSupervisorCredentialsError(), null)
               }
