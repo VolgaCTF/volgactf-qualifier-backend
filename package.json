@@ -20,13 +20,11 @@
   },
   "dependencies": {
     "async": "~0.9.0",
-    "babel-plugin-transform-class-properties": "^6.5.2",
     "base64url": "~1.0.4",
     "bcrypt": "^0.8.5",
     "body-parser": "~1.11.0",
     "bull": "~0.2.4",
     "busboy": "^0.2.12",
-    "coffee-script": "~1.8.0",
     "connect-busboy": "0.0.2",
     "connect-redis": "~2.2.0",
     "cookie-parser": "~1.3.4",
@@ -56,10 +54,9 @@
     "babel-cli": "^6.4.5",
     "babel-eslint": "^4.1.8",
     "babel-preset-node5": "^10.5.0",
-    "mocha": "~2.1.0",
+    "babel-plugin-transform-class-properties": "^6.5.2",
     "snazzy": "^2.0.1",
-    "standard": "^6.0.5",
-    "supertest": "~0.15.0"
+    "standard": "^6.0.5"
   },
   "standard": {
     "parser": "babel-eslint"
