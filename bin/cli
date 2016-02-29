@@ -1,7 +1,0 @@
-#!/usr/bin/env node
-
-require('coffee-script/register');
-require('dotenv').load();
-
-var cli = require('../lib/cli');
-cli.run();
