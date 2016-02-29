@@ -7,6 +7,9 @@ import ContestController from './controllers/contest'
 import MandrillController from './controllers/mail/mandrill'
 import MailgunController from './controllers/mail/mailgun'
 import SendGridController from './controllers/mail/sendgrid'
+import TeamController from './controllers/team'
+import EventController from './controllers/event'
+import UpdateTeamLogoEvent from './events/update-team-logo'
 
 let Customizer = require(process.env.THEMIS_CUSTOMIZER_PACKAGE || 'themis-quals-customizer-default').default
 let customizer = new Customizer()
@@ -32,6 +35,13 @@ queue('createLogoQueue').process((job, done) => {
         logger.error(err)
         throw err
       } else {
+        TeamController.get(job.data.id, (err, team) => {
+          if (err) {
+            logger.error(err)
+          } else {
+            EventController.push(new UpdateTeamLogoEvent(team))
+          }
+        })
         done()
       }
     })

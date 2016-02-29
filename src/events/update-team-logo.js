@@ -2,7 +2,7 @@ import BaseEvent from './base'
 import constants from '../utils/constants'
 import teamSerializer from '../serializers/team'
 
-export default class UpdateTeamProfileEvent extends BaseEvent {
+export default class UpdateTeamLogoEvent extends BaseEvent {
   constructor (team) {
     let publicData = null
     let teamData = {}
@@ -13,6 +13,6 @@ export default class UpdateTeamProfileEvent extends BaseEvent {
     }
 
     let data = teamSerializer(team, { exposeEmail: true })
-    super(constants.EVENT_UPDATE_TEAM_PROFILE, data, publicData, publicData, teamData)
+    super(constants.EVENT_UPDATE_TEAM_LOGO, data, publicData, publicData, teamData)
   }
 }
