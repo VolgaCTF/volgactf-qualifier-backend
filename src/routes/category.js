@@ -20,7 +20,7 @@ import categoryParam from '../params/category'
 import { ValidationError } from '../utils/errors'
 
 router.get('/index', (request, response, next) => {
-  CategoryController.list((err, categories) => {
+  CategoryController.index((err, categories) => {
     if (err) {
       next(err)
     } else {

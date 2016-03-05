@@ -10,7 +10,7 @@ import UpdateCategoryEvent from '../events/update-category'
 import DeleteCategoryEvent from '../events/delete-category'
 
 class CategoryController {
-  static list (callback) {
+  static index (callback) {
     Category
       .query()
       .then((categories) => {
