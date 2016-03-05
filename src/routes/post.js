@@ -18,8 +18,8 @@ import postParam from '../params/post'
 
 import postSerializer from '../serializers/post'
 
-router.get('/all', (request, response, next) => {
-  PostController.list((err, posts) => {
+router.get('/index', (request, response, next) => {
+  PostController.index((err, posts) => {
     if (err) {
       next(err)
     } else {
@@ -50,8 +50,8 @@ router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedPars
 
 router.param('postId', postParam.id)
 
-router.post('/:postId/remove', checkToken, needsToBeAuthorizedSupervisor, (request, response, next) => {
-  PostController.remove(request.postId, (err) => {
+router.post('/:postId/delete', checkToken, needsToBeAuthorizedSupervisor, (request, response, next) => {
+  PostController.delete(request.postId, (err) => {
     if (err) {
       next(err)
     } else {

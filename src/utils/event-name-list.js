@@ -20,7 +20,7 @@ class EventNameList {
 
     this.eventNames[constants.EVENT_CREATE_POST] = 'createPost'
     this.eventNames[constants.EVENT_UPDATE_POST] = 'updatePost'
-    this.eventNames[constants.EVENT_REMOVE_POST] = 'removePost'
+    this.eventNames[constants.EVENT_DELETE_POST] = 'deletePost'
 
     this.eventNames[constants.EVENT_CREATE_TASK] = 'createTask'
     this.eventNames[constants.EVENT_UPDATE_TASK] = 'updateTask'
