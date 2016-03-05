@@ -19,7 +19,7 @@ let urlencodedParser = bodyParser.urlencoded({ extended: false })
 import categoryParam from '../params/category'
 import { ValidationError } from '../utils/errors'
 
-router.get('/all', (request, response, next) => {
+router.get('/index', (request, response, next) => {
   CategoryController.list((err, categories) => {
     if (err) {
       next(err)
@@ -51,8 +51,8 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
 
 router.param('categoryId', categoryParam.id)
 
-router.post('/:categoryId/remove', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
-  CategoryController.remove(request.categoryId, (err) => {
+router.post('/:categoryId/delete', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
+  CategoryController.delete(request.categoryId, (err) => {
     if (err) {
       next(err)
     } else {

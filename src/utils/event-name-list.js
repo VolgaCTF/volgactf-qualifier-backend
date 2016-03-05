@@ -16,7 +16,7 @@ class EventNameList {
 
     this.eventNames[constants.EVENT_CREATE_CATEGORY] = 'createCategory'
     this.eventNames[constants.EVENT_UPDATE_CATEGORY] = 'updateCategory'
-    this.eventNames[constants.EVENT_REMOVE_CATEGORY] = 'removeCategory'
+    this.eventNames[constants.EVENT_DELETE_CATEGORY] = 'deleteCategory'
 
     this.eventNames[constants.EVENT_CREATE_POST] = 'createPost'
     this.eventNames[constants.EVENT_UPDATE_POST] = 'updatePost'
