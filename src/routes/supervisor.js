@@ -13,6 +13,7 @@ import SupervisorController from '../controllers/supervisor'
 import EventController from '../controllers/event'
 import LogoutSupervisorEvent from '../events/logout-supervisor'
 import { getSupervisor } from '../middleware/supervisor'
+import constants from '../utils/constants'
 
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
@@ -34,7 +35,11 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
       if (supervisor) {
         request.session.authenticated = true
         request.session.identityID = supervisor.id
-        request.session.role = supervisor.rights
+        if (supervisor.rights === 'admin') {
+          request.session.scopeID = constants.SCOPE_ADMIN
+        } else if (supervisor.rights === 'manager') {
+          request.session.scopeID = constants.SCOPE_MANAGER
+        }
         response.json({ success: true })
       } else {
         next(new InvalidSupervisorCredentialsError())

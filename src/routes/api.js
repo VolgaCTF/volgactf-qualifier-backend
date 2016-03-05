@@ -37,45 +37,41 @@ router.use('/supervisor', supervisorRouter)
 
 router.get('/identity', detectScope, issueToken, (request, response, next) => {
   let token = request.session.token
-  switch (request.scope) {
-    case 'supervisors':
-      SupervisorController.get(request.session.identityID, (err, supervisor) => {
-        if (err) {
-          next(err)
-        } else {
-          response.json({
-            id: request.session.identityID,
-            role: supervisor.rights,
-            name: supervisor.username,
-            token: token
-          })
-        }
-      })
-      break
-    case 'teams':
-      TeamController.get(request.session.identityID, (err, team) => {
-        if (err) {
-          next(err)
-        } else {
-          response.json({
-            id: request.session.identityID,
-            role: 'team',
-            name: team.name,
-            emailConfirmed: team.emailConfirmed,
-            token: token
-          })
-        }
-      })
-      break
-    case 'guests':
-      response.json({
-        role: 'guest',
-        token: token
-      })
-      break
-    default:
-      next(new UnknownIdentityError())
-      break
+
+  if (request.scope.isSupervisor()) {
+    SupervisorController.get(request.session.identityID, (err, supervisor) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json({
+          id: request.session.identityID,
+          role: supervisor.rights,
+          name: supervisor.username,
+          token: token
+        })
+      }
+    })
+  } else if (request.scope.isTeam()) {
+    TeamController.get(request.session.identityID, (err, team) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json({
+          id: request.session.identityID,
+          role: 'team',
+          name: team.name,
+          emailConfirmed: team.emailConfirmed,
+          token: token
+        })
+      }
+    })
+  } else if (request.scope.isGuest()) {
+    response.json({
+      role: 'guest',
+      token: token
+    })
+  } else {
+    next(new UnknownIdentityError())
   }
 })
 
@@ -95,10 +91,6 @@ function getLatestEvents (lastEventId, callback) {
 }
 
 router.get('/stream', detectScope, getLastEventId, (request, response, next) => {
-  if (!request.scope) {
-    throw new UnknownIdentityError()
-  }
-
   request.socket.setTimeout(0)
 
   response.writeHead(200, {
@@ -118,22 +110,22 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
       }
 
       for (let event of events) {
-        if (request.scope === 'supervisors' && event.data.supervisors) {
+        if (request.scope.isSupervisor() && event.data.supervisors) {
           writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.supervisors))
-        } else if (request.scope === 'teams') {
+        } else if (request.scope.isTeam()) {
           if (event.data.teams) {
             writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.teams))
           } else if (event.data.team && event.data.team.hasOwnProperty(request.session.identityID)) {
             writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.team[request.session.identityID]))
           }
-        } else if (request.scope === 'guests') {
+        } else if (request.scope.isGuest()) {
           writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.guests))
         }
       }
 
-      let mainChannel = `message:${request.scope}`
+      let mainChannel = `message:${request.scope.toString()}`
       let extraChannel = null
-      if (request.scope === 'teams') {
+      if (request.scope.isTeam()) {
         extraChannel = `message:team-${request.session.identityID}`
       }
 

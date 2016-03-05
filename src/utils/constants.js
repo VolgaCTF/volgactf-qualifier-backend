@@ -1,5 +1,10 @@
 
 export default {
+  SCOPE_GUEST: 1,
+  SCOPE_TEAM: 2,
+  SCOPE_MANAGER: 3,
+  SCOPE_ADMIN: 4,
+
   TASK_INITIAL: 1,
   TASK_OPENED: 2,
   TASK_CLOSED: 3,

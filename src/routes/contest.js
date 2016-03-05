@@ -64,7 +64,7 @@ router.get('/team/:teamId/hits', detectScope, (request, response, next) => {
     if (err) {
       next(err)
     } else {
-      if (request.scope === 'supervisors' || (request.scope === 'teams' && request.teamId === request.session.identityID)) {
+      if (request.scope.isSupervisor() || (request.scope.isTeam() && request.teamId === request.session.identityID)) {
         response.json(_.map(teamTaskHits, teamTaskHitSerializer))
       } else {
         response.json(teamTaskHits.length)

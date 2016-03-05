@@ -27,6 +27,7 @@ import teamParam from '../params/team'
 import { getTeam } from '../middleware/team'
 import EventController from '../controllers/event'
 import LogoutTeamEvent from '../events/logout-team'
+import constants from '../utils/constants'
 
 router.get('/all', detectScope, (request, response, next) => {
   let onFetch = function (exposeEmail) {
@@ -41,7 +42,7 @@ router.get('/all', detectScope, (request, response, next) => {
     }
   }
 
-  if (request.scope === 'supervisors') {
+  if (request.scope.isSupervisor()) {
     TeamController.list(onFetch(true))
   } else {
     TeamController.listQualified(onFetch(false))
@@ -71,7 +72,7 @@ router.get('/:teamId/logo', (request, response) => {
   })
 })
 
-router.get('/:teamId/profile', (request, response) => {
+router.get('/:teamId/profile', detectScope, (request, response) => {
   TeamController.get(request.teamId, (err, team) => {
     if (team) {
       let result = {
@@ -83,7 +84,7 @@ router.get('/:teamId/profile', (request, response) => {
         createdAt: team.createdAt.getTime()
       }
 
-      if (request.session.authenticated && ((request.session.role === 'team' && request.session.identityID === team.id) || _.contains(['admin', 'manager'], request.session.role))) {
+      if (request.session.authenticated && ((request.scope.isTeam() && request.session.identityID === team.id) || request.scope.isSupervisor())) {
         result.email = team.email
         result.emailConfirmed = team.emailConfirmed
       }
@@ -251,7 +252,7 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
     } else {
       request.session.authenticated = true
       request.session.identityID = team.id
-      request.session.role = 'team'
+      request.session.scopeID = constants.SCOPE_TEAM
       response.json({ success: true })
     }
   })
