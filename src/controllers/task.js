@@ -190,7 +190,7 @@ class TaskController {
     })
   }
 
-  static list (callback, filterNew = false) {
+  static index (callback, filterNew = false) {
     let taskPromise = Task.query()
     if (filterNew) {
       taskPromise = taskPromise
@@ -241,7 +241,7 @@ class TaskController {
         .then((updatedTask) => {
           callback(null)
           EventController.push(new OpenTaskEvent(updatedTask))
-          TaskCategoryController.listByTask(updatedTask.id, (err, taskCategories) => {
+          TaskCategoryController.indexByTask(updatedTask.id, (err, taskCategories) => {
             if (err) {
               logger.error(err)
               callback(new InternalError())

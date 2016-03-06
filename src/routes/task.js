@@ -39,8 +39,8 @@ import when_ from 'when'
 
 router.param('taskId', taskParam.id)
 
-router.get('/all', detectScope, (request, response, next) => {
-  TaskController.list((err, tasks) => {
+router.get('/index', detectScope, (request, response, next) => {
+  TaskController.index((err, tasks) => {
     if (err) {
       logger.error(err)
       next(new InternalError())
@@ -51,8 +51,8 @@ router.get('/all', detectScope, (request, response, next) => {
   }, !request.scope.isSupervisor())
 })
 
-router.get('/category/all', detectScope, (request, response, next) => {
-  TaskController.list((err, tasks) => {
+router.get('/category/index', detectScope, (request, response, next) => {
+  TaskController.index((err, tasks) => {
     if (err) {
       logger.error(err)
       next(new InternalError())
@@ -61,7 +61,7 @@ router.get('/category/all', detectScope, (request, response, next) => {
         return task.id
       })
 
-      TaskCategoryController.listByTasks(taskIds, (err, taskCategories) => {
+      TaskCategoryController.indexByTasks(taskIds, (err, taskCategories) => {
         if (err) {
           next(err)
         } else {
@@ -88,7 +88,7 @@ router.get('/:taskId/category', detectScope, getState, (request, response, next)
       if (request.scope.isTeam() && task.isInitial()) {
         throw new NotAuthenticatedError()
       } else {
-        TaskCategoryController.listByTask(task.id, (err, taskCategories) => {
+        TaskCategoryController.indexByTask(task.id, (err, taskCategories) => {
           if (err) {
             next(err)
           } else {

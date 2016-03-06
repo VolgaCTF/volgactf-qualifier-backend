@@ -212,7 +212,7 @@ class ContestController {
         TeamScore
           .query()
           .then((teamScores) => {
-            TaskController.list((err, tasks) => {
+            TaskController.index((err, tasks) => {
               if (err) {
                 callback(err)
               } else {
