@@ -32,7 +32,7 @@ function rankFunc (a, b) {
 }
 
 router.get('/ctftime', (request, response, next) => {
-  TeamController.listQualified((err, teams) => {
+  TeamController.index((err, teams) => {
     if (err) {
       logger.error(err)
       next(new InternalError(), null)
@@ -76,7 +76,7 @@ router.get('/ctftime', (request, response, next) => {
           next(new InternalError(), null)
         })
     }
-  })
+  }, true)
 })
 
 export default router

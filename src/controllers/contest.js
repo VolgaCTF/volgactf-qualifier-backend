@@ -36,7 +36,7 @@ class ContestController {
   }
 
   static getScores (callback) {
-    TeamController.listQualified((err, teams) => {
+    TeamController.index((err, teams) => {
       if (err) {
         callback(err, null)
       } else {
@@ -61,7 +61,7 @@ class ContestController {
             callback(err, null)
           })
       }
-    })
+    }, true)
   }
 
   static update (state, startsAt, finishesAt, callback) {
@@ -205,7 +205,7 @@ class ContestController {
   }
 
   static updateScores (callback) {
-    TeamController.listQualified((err, teams) => {
+    TeamController.index((err, teams) => {
       if (err) {
         callback(err)
       } else {
@@ -283,7 +283,7 @@ class ContestController {
             callback(err)
           })
       }
-    })
+    }, true)
   }
 }
 

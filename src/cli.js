@@ -80,7 +80,7 @@ parser.command('list_supervisors')
 parser.command('list_teams')
   .help('List all teams')
   .callback((opts) => {
-    TeamController.list((err, teams) => {
+    TeamController.index((err, teams) => {
       if (err) {
         logger.error(err)
         process.exit(1)

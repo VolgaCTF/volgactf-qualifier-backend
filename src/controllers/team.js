@@ -233,7 +233,7 @@ class TeamController {
     })
   }
 
-  static changeEmail (id, email, callback) {
+  static updateEmail (id, email, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -313,7 +313,7 @@ class TeamController {
     })
   }
 
-  static editProfile (id, countryId, locality, institution, callback) {
+  static updateProfile (id, countryId, locality, institution, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -337,7 +337,7 @@ class TeamController {
     })
   }
 
-  static changeLogo (id, logoFilename, callback) {
+  static updateLogo (id, logoFilename, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -351,7 +351,7 @@ class TeamController {
     })
   }
 
-  static changePassword (id, currentPassword, newPassword, callback) {
+  static updatePassword (id, currentPassword, newPassword, callback) {
     TeamController.get(id, (err, team) => {
       if (err) {
         callback(err)
@@ -391,22 +391,13 @@ class TeamController {
     })
   }
 
-  static list (callback) {
-    Team
-      .query()
-      .then((teams) => {
-        callback(null, teams)
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
-  }
+  static index (callback, qualifiedOnly = false) {
+    let query = Team.query()
+    if (qualifiedOnly) {
+      query = query.where('emailConfirmed', true)
+    }
 
-  static listQualified (callback) {
-    Team
-      .query()
-      .where('emailConfirmed', true)
+    query
       .then((teams) => {
         callback(null, teams)
       })
