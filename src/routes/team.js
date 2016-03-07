@@ -30,6 +30,8 @@ import LogoutTeamEvent from '../events/logout-team'
 import constants from '../utils/constants'
 import TeamScoreController from '../controllers/team-score'
 import teamScoreSerializer from '../serializers/team-score'
+import TeamTaskHitController from '../controllers/team-task-hit'
+import teamTaskHitSerializer from '../serializers/team-task-hit'
 
 router.get('/index', detectScope, (request, response, next) => {
   TeamController.index((err, teams) => {
@@ -54,6 +56,20 @@ router.get('/score/index', (request, response, next) => {
 })
 
 router.param('teamId', teamParam.id)
+
+router.get('/:teamId/hits', detectScope, (request, response, next) => {
+  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      if (request.scope.isSupervisor() || (request.scope.isTeam() && request.teamId === request.session.identityID)) {
+        response.json(_.map(teamTaskHits, teamTaskHitSerializer))
+      } else {
+        response.json(teamTaskHits.length)
+      }
+    }
+  })
+})
 
 router.get('/:teamId/logo', (request, response) => {
   TeamController.get(request.teamId, (err, team) => {

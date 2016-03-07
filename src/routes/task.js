@@ -36,6 +36,7 @@ import TeamTaskHitAttemptController from '../controllers/team-task-hit-attempt'
 
 import LimitController from '../controllers/limit'
 import when_ from 'when'
+import teamTaskHitSerializer from '../serializers/team-task-hit'
 
 router.param('taskId', taskParam.id)
 
@@ -110,6 +111,26 @@ router.get('/:taskId/hint', detectScope, getTask, getState, (request, response, 
       next(err)
     } else {
       response.json(_.map(taskHints, taskHintSerializer))
+    }
+  })
+})
+
+router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TeamTaskHitController.list((err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(_.map(teamTaskHits, teamTaskHitSerializer))
+    }
+  })
+})
+
+router.get('/:taskId/hits', needsToBeAuthorizedTeam, (request, response, next) => {
+  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskHits.length)
     }
   })
 })
