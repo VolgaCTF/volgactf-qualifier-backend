@@ -228,6 +228,12 @@ export class EmailNotConfirmedError extends BaseError {
   }
 }
 
+export class TeamNotQualifiedError extends BaseError {
+  constructor () {
+    super('Team has not qualified for the event!', 'TeamNotQualifiedError', 400)
+  }
+}
+
 export class InvalidResetPasswordURLError extends BaseError {
   constructor () {
     super('Reset password URL is invalid or has expired!', 'InvalidResetPasswordURLError', 400)
