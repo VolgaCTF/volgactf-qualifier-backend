@@ -251,3 +251,9 @@ export class EmailVerificationAttemptsLimitError extends BaseError {
     super('Too many email verification attempts! Please wait some time before requesting a confirmation email again.', 'EmailVerificationAttemptsLimitError', 400)
   }
 }
+
+export class InvalidStateTransitionError extends BaseError {
+  constructor () {
+    super('Invalid state transition!', 'InvalidStateTransitionError', 400)
+  }
+}
