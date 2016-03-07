@@ -18,7 +18,6 @@ import logger from '../utils/logger'
 import is_ from 'is_js'
 import _ from 'underscore'
 
-import teamScoreSerializer from '../serializers/team-score'
 import contestSerializer from '../serializers/contest'
 import teamParam from '../params/team'
 import taskParam from '../params/task'
@@ -32,16 +31,6 @@ router.get('/', (request, response, next) => {
       next(err)
     } else {
       response.json(contestSerializer(contest))
-    }
-  })
-})
-
-router.get('/scores', (request, response, next) => {
-  ContestController.getScores((err, teamScores) => {
-    if (err) {
-      next(err)
-    } else {
-      response.json(_.map(teamScores, teamScoreSerializer))
     }
   })
 })

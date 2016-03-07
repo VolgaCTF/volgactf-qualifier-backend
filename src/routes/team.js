@@ -28,6 +28,8 @@ import { getTeam } from '../middleware/team'
 import EventController from '../controllers/event'
 import LogoutTeamEvent from '../events/logout-team'
 import constants from '../utils/constants'
+import TeamScoreController from '../controllers/team-score'
+import teamScoreSerializer from '../serializers/team-score'
 
 router.get('/index', detectScope, (request, response, next) => {
   TeamController.index((err, teams) => {
@@ -39,6 +41,16 @@ router.get('/index', detectScope, (request, response, next) => {
       response.json(_.map(teams, serializer))
     }
   }, !request.scope.isSupervisor())
+})
+
+router.get('/score/index', (request, response, next) => {
+  TeamScoreController.index((err, teamScores) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(_.map(teamScores, teamScoreSerializer))
+    }
+  })
 })
 
 router.param('teamId', teamParam.id)
