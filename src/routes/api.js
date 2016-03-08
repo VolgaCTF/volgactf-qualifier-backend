@@ -23,6 +23,7 @@ import eventStream from '../controllers/event-stream'
 import EventController from '../controllers/event'
 import logger from '../utils/logger'
 import eventNameList from '../utils/event-name-list'
+import _ from 'underscore'
 
 let router = express.Router()
 
@@ -77,7 +78,7 @@ router.get('/identity', detectScope, issueToken, (request, response, next) => {
 
 function getLatestEvents (lastEventId, callback) {
   if (lastEventId != null) {
-    EventController.list(lastEventId, (err, events) => {
+    EventController.indexNew(lastEventId, (err, events) => {
       if (err) {
         logger.error(err)
         callback(err, null)
@@ -111,15 +112,35 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
 
       for (let event of events) {
         if (request.scope.isSupervisor() && event.data.supervisors) {
-          writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.supervisors))
+          writeFunc(eventStream.format(
+            event.id,
+            eventNameList.getName(event.type),
+            5000,
+            _.extend(event.data.supervisors, { __metadataCreatedAt: event.createdAt.getTime() })
+          ))
         } else if (request.scope.isTeam()) {
           if (event.data.teams) {
-            writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.teams))
+            writeFunc(eventStream.format(
+              event.id,
+              eventNameList.getName(event.type),
+              5000,
+              _.extend(event.data.teams, { __metadataCreatedAt: event.createdAt.getTime() })
+            ))
           } else if (event.data.team && event.data.team.hasOwnProperty(request.session.identityID)) {
-            writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.team[request.session.identityID]))
+            writeFunc(eventStream.format(
+              event.id,
+              eventNameList.getName(event.type),
+              5000,
+              _.extend(event.data.team[request.session.identityID], { __metadataCreatedAt: event.createdAt.getTime() })
+            ))
           }
         } else if (request.scope.isGuest()) {
-          writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.guests))
+          writeFunc(eventStream.format(
+            event.id,
+            eventNameList.getName(event.type),
+            5000,
+            _.extend(event.data.guests, { __metadataCreatedAt: event.createdAt.getTime() })
+          ))
         }
       }
 

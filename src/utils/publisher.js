@@ -11,7 +11,7 @@ class EventPublisher {
       id: event.id,
       type: event.type,
       data: event.data,
-      createdAt: event.createdAt
+      createdAt: event.createdAt.getTime()
     }
     return this.client.publish(this.channel, JSON.stringify(data))
   }

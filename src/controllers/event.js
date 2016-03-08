@@ -25,7 +25,7 @@ export default class EventController {
       })
   }
 
-  static list (lastEventId, callback) {
+  static indexNew (lastEventId, callback) {
     Event
       .query()
       .where('id', '>', lastEventId)
