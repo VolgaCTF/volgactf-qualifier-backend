@@ -39,7 +39,7 @@ class EventNameList {
     this.eventNames[constants.EVENT_LOGOUT_TEAM] = 'logoutTeam'
 
     this.eventNames[constants.EVENT_CREATE_TASK_CATEGORY] = 'createTaskCategory'
-    this.eventNames[constants.EVENT_REMOVE_TASK_CATEGORY] = 'removeTaskCategory'
+    this.eventNames[constants.EVENT_DELETE_TASK_CATEGORY] = 'deleteTaskCategory'
     this.eventNames[constants.EVENT_REVEAL_TASK_CATEGORY] = 'revealTaskCategory'
 
     this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT] = 'createTeamTaskHit'
