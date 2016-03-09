@@ -64,12 +64,13 @@ class PostController {
       .query()
       .delete()
       .where('id', id)
-      .then((numDeleted) => {
-        if (numDeleted === 0) {
-          callback(new PostNotFoundError())
-        } else {
+      .returning('*')
+      .then((posts) => {
+        if (posts.length === 1) {
           callback(null)
-          EventController.push(new DeletePostEvent(id))
+          EventController.push(new DeletePostEvent(posts[0]))
+        } else {
+          callback(new PostNotFoundError())
         }
       })
       .catch((err) => {

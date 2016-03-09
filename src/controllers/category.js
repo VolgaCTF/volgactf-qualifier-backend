@@ -99,12 +99,13 @@ class CategoryController {
       .query()
       .delete()
       .where('id', id)
-      .then((numDeleted) => {
-        if (numDeleted === 0) {
-          callback(new CategoryNotFoundError())
-        } else {
+      .returning('*')
+      .then((categories) => {
+        if (categories.length === 1) {
           callback(null)
-          EventController.push(new DeleteCategoryEvent(id))
+          EventController.push(new DeleteCategoryEvent(categories[0]))
+        } else {
+          callback(new CategoryNotFoundError())
         }
       })
       .catch((err) => {
