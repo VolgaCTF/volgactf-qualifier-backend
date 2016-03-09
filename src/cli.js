@@ -1,10 +1,70 @@
-import parser from 'nomnom'
+//import parser from 'nomnom'
 import logger from './utils/logger'
-
+import program from 'commander'
+import promp from 'prompt'
 import SupervisorController from './controllers/supervisor'
-import TeamController from './controllers/team'
+//import TeamController from './controllers/team'
 
-parser.command('create_supervisor')
+program.
+	version('2.9.0')
+//let name
+program
+	.command('hi')
+	.description('TEST COMMAND')
+	.option("-u, --username <user>", "add username")
+	.option("-r, --rights <credents>", "add rights")
+	//.parse(process.argv)
+	.action((options) => {
+	  promp.start()
+	  promp.message = ''
+	  promp.get([{
+   	      name: 'password',
+	      required: true,
+	      hidden: true
+	    }, { 
+	      name: 'confirmation',
+	      required: true,
+	      hidden: true,
+	      conform: ((confirmation) => {
+	        return (promp.history('password').value == confirmation)
+	      })	      
+	    }], ((err, result) => {
+	    if (err) {
+	    logger.error(err)
+	    process.exit(1)
+	    } else { 
+	      logger.info(`You entered ${result.password}`)
+	      logger.info(`${options.username} user`)
+	      let supervisorOpts = {
+      		username: options.username,
+      		password: result.password,
+      		rights: options.rights
+    	      }
+    	      SupervisorController.create(supervisorOpts, (err, supervisor) => {
+                if (err) {
+                  logger.error(err)
+                  process.exit(1)
+                } else {
+                  logger.info(`Supervisor ${supervisor.username} has been created!`)
+                  process.exit(0)
+                }
+              })
+	    }
+	    })
+	  )
+	  //logger.info (`Please, ${options.username}, works!`)
+	})
+	.parse(process.argv)
+
+program 
+	.command('ho')
+	.description('second test command')
+	.option("-m, --mainname <main>", "test param")
+	.action((options) => {
+	  logger.info (`How about ${options.mainname}?!`)
+	})
+	.parse(process.argv)
+/* parser.command('create_supervisor')
   .help('Create supervisor user')
   .option('username', {
     required: true,
@@ -92,7 +152,9 @@ parser.command('list_teams')
       }
     })
   })
-
+*/
 export default function run () {
-  parser.parse()
+  //parser.parse()
+  program.parse(process.argv)
 }
+
