@@ -37,6 +37,28 @@ class SupervisorController {
     })
   }
 
+  static edit (options, callback) {
+    getPasswordHash(options.password, (err, hash) => {
+      if (err) {
+        logger.error(err)
+        callback(new InternalError(), null)
+      } else {
+        Supervisor
+          .query()
+          .where('username', options.username)
+	  .update({
+            passwordHash: hash
+          })
+          .then((supervisor) => {
+            callback(null, supervisor)
+          })
+          .catch((err) => {
+            callback(err)
+          })
+      }
+    })
+  }
+
   static remove (username, callback) {
     Supervisor
       .query()
