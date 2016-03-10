@@ -46,7 +46,7 @@ class SupervisorController {
         Supervisor
           .query()
           .where('username', options.username)
-	  .update({
+	        .update({
             passwordHash: hash
           })
           .then((supervisor) => {
