@@ -1,9 +1,13 @@
-import SupervisorEvent from './supervisor'
+import BaseEvent from './base'
 import constants from '../utils/constants'
 import teamSerializer from '../serializers/team'
 
-export default class UpdateTeamEmailEvent extends SupervisorEvent {
+export default class UpdateTeamEmailEvent extends BaseEvent {
   constructor (team) {
-    super(constants.EVENT_UPDATE_TEAM_EMAIL, teamSerializer(team, { exposeEmail: true }))
+    let data = teamSerializer(team, { exposeEmail: true })
+    let teamData = {}
+    teamData[team.id] = data
+
+    super(constants.EVENT_UPDATE_TEAM_EMAIL, data, null, null, teamData)
   }
 }
