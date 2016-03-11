@@ -7,6 +7,7 @@ import EventController from './event'
 import LoginSupervisorEvent from '../events/login-supervisor'
 import CreateSupervisorEvent from '../events/create-supervisor'
 import DeleteSupervisorEvent from '../events/delete-supervisor'
+import UpdateSupervisorPasswordEvent from '../events/update-supervisor-password'
 
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
@@ -42,6 +43,35 @@ class SupervisorController {
               logger.error(err)
               callback(new InternalError(), null)
             }
+          })
+      }
+    })
+  }
+
+  static edit (options, callback) {
+    getPasswordHash(options.password, (err, hash) => {
+      if (err) {
+        logger.error(err)
+        callback(new InternalError(), null)
+      } else {
+        Supervisor
+          .query()
+          .where('username', options.username)
+          .update({
+            passwordHash: hash
+          })
+          .then((supervisor) => {
+            EventController.push(new UpdateSupervisorPasswordEvent(supervisor), (err, event) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, supervisor)
+              }
+            })
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(new InternalError(), null)
           })
       }
     })
