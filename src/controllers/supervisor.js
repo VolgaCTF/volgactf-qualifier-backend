@@ -54,25 +54,31 @@ class SupervisorController {
         logger.error(err)
         callback(new InternalError(), null)
       } else {
-        Supervisor
-          .query()
-          .where('username', options.username)
-          .update({
-            passwordHash: hash
-          })
-          .then((supervisor) => {
-            EventController.push(new UpdateSupervisorPasswordEvent(supervisor), (err, event) => {
-              if (err) {
-                callback(err, null)
-              } else {
-                callback(null, supervisor)
-              }
-            })
-          })
-          .catch((err) => {
+        this.getByUsername(options.username, (err, supervisor) => {
+          if (err) {
             logger.error(err)
-            callback(new InternalError(), null)
-          })
+            callback(err)
+          } else {
+            Supervisor
+              .query()
+              .patchAndFetchById(supervisor.id, {
+                passwordHash: hash
+              })
+              .then((supervisor) => {
+                EventController.push(new UpdateSupervisorPasswordEvent(supervisor), (err, event) => {
+                  if (err) {
+                    callback(err, null)
+                  } else {
+                    callback(null, supervisor)
+                  }
+                })
+              })
+              .catch((err) => {
+                logger.error(err)
+                callback(new InternalError(), null)
+              })
+          }
+        })
       }
     })
   }

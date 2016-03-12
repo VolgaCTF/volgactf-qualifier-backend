@@ -5,9 +5,9 @@ import SupervisorController from './controllers/supervisor'
 
 parser
   .command('create_supervisor')
-  .description('Create supervisor user')
-  .option('-u, --username <username>', 'add username')
-  .option('-r, --rights <rights>', 'add rights, supervisor rights - admin or manager')
+  .description('Create supervisor')
+  .option('-u, --username <username>', 'username')
+  .option('-r, --rights <rights>', 'rights (admin, manager)')
   .action((options) => {
     prompt.start()
     prompt.message = ''
@@ -19,14 +19,14 @@ parser
       name: 'confirmation',
       required: true,
       hidden: true,
-      conform: ((confirmation) => {
+      conform: (confirmation) => {
         if (prompt.history('password').value !== confirmation) {
           logger.error('Verification has failed')
           process.exit(1)
         } else {
           return true
         }
-      })
+      }
     }], (err, result) => {
       if (err) {
         logger.error(err)
@@ -51,8 +51,8 @@ parser
   })
 
 parser
-  .command('edit_password')
-  .description('Edit password for supervisors')
+  .command('change_supervisor_password')
+  .description("Change supervisor's password")
   .option('-u, --username <user>', 'username')
   .action((options) => {
     prompt.start()
@@ -65,14 +65,14 @@ parser
       name: 'confirmation',
       required: true,
       hidden: true,
-      conform: ((confirmation) => {
+      conform: (confirmation) => {
         if (prompt.history('new_password').value !== confirmation) {
-          logger.err('Verification is failed')
+          logger.err('Verification has failed')
           process.exit(1)
         } else {
           return true
         }
-      })
+      }
     }], (err, result) => {
       if (err) {
         logger.error(err)
@@ -87,7 +87,7 @@ parser
             logger.error(err)
             process.exit(1)
           } else {
-            logger.info(`Password for user ${options.username} has been edited!`)
+            logger.info(`Password for supervisor ${options.username} has been updated!`)
             process.exit(0)
           }
         })
@@ -113,7 +113,7 @@ parser
 
 parser
   .command('index_supervisors')
-  .description('Index all supervisors')
+  .description('Index supervisors')
   .action((opts) => {
     SupervisorController.index((err, supervisors) => {
       if (err) {
@@ -121,7 +121,7 @@ parser
         process.exit(1)
       } else {
         for (let supervisor of supervisors) {
-        logger.info(`Supervisor #${supervisor.id} ${supervisor.username} (${supervisor.rights})`)
+          logger.info(`Supervisor #${supervisor.id} ${supervisor.username} (${supervisor.rights})`)
         }
         process.exit(0)
       }
@@ -131,5 +131,3 @@ parser
 export default function run () {
   parser.parse(process.argv)
 }
-
-

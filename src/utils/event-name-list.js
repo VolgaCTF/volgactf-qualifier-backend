@@ -13,7 +13,7 @@ class EventNameList {
     this.eventNames[constants.EVENT_DELETE_SUPERVISOR] = 'deleteSupervisor'
     this.eventNames[constants.EVENT_LOGIN_SUPERVISOR] = 'loginSupervisor'
     this.eventNames[constants.EVENT_LOGOUT_SUPERVISOR] = 'logoutSupervisor'
-    this.eventNames[constants.EVENT_UPDATE_SUPERVISOR_PASSWORD] = 'updateSupevisorPassword'
+    this.eventNames[constants.EVENT_UPDATE_SUPERVISOR_PASSWORD] = 'updateSupervisorPassword'
 
     this.eventNames[constants.EVENT_CREATE_CATEGORY] = 'createCategory'
     this.eventNames[constants.EVENT_UPDATE_CATEGORY] = 'updateCategory'
