@@ -394,7 +394,9 @@ class TeamController {
   static index (callback, qualifiedOnly = false) {
     let query = Team.query()
     if (qualifiedOnly) {
-      query = query.where('emailConfirmed', true)
+      query = query
+        .where('emailConfirmed', true)
+        .andWhere('disqualified', false)
     }
 
     query
