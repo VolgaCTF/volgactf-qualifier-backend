@@ -257,3 +257,9 @@ export class InvalidStateTransitionError extends BaseError {
     super('Invalid state transition!', 'InvalidStateTransitionError', 400)
   }
 }
+
+export class TaskNotAvailableError extends BaseError {
+  constructor () {
+    super('Task is not available!', 'TaskNotAvailableError', 400)
+  }
+}

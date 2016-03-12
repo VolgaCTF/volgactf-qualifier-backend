@@ -2,6 +2,7 @@ import logger from './utils/logger'
 import parser from 'commander'
 import prompt from 'prompt'
 import SupervisorController from './controllers/supervisor'
+import TeamController from './controllers/team'
 
 parser
   .command('create_supervisor')
@@ -124,6 +125,44 @@ parser
           logger.info(`Supervisor #${supervisor.id} ${supervisor.username} (${supervisor.rights})`)
         }
         process.exit(0)
+      }
+    })
+  })
+
+parser
+  .command('disqualify_team')
+  .description('Disqualify team')
+  .option('-t, --team-id <team>', 'teamId')
+  .action((options) => {
+    prompt.start()
+    prompt.message = ''
+    prompt.get([{
+      name: 'confirmation',
+      required: true,
+      hidden: false,
+      conform: (confirmation) => {
+        if (confirmation !== 'yes') {
+          logger.err('You should have typed yes')
+          process.exit(1)
+        } else {
+          return true
+        }
+      }
+    }], (err, result) => {
+      if (err) {
+        logger.error(err)
+        process.exit(1)
+      } else {
+        let teamId = parseInt(options.teamId, 10)
+        TeamController.disqualify(teamId, (err) => {
+          if (err) {
+            logger.error(err)
+            process.exit(1)
+          } else {
+            logger.info(`Team ${teamId} has been disqualified!`)
+            process.exit(0)
+          }
+        })
       }
     })
   })

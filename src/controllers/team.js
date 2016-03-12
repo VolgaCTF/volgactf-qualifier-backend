@@ -1,11 +1,12 @@
 import Team from '../models/team'
 import TeamResetPasswordToken from '../models/team-reset-password-token'
 import TeamEmailVerificationToken from '../models/team-email-verification-token'
+import TeamScore from '../models/team-score'
 import { getPasswordHash, checkPassword } from '../utils/security'
 import queue from '../utils/queue'
 import token from '../utils/token'
 import logger from '../utils/logger'
-import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError } from '../utils/errors'
+import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError } from '../utils/errors'
 import constants from '../utils/constants'
 import moment from 'moment'
 import { transaction } from 'objection'
@@ -17,6 +18,8 @@ import UpdateTeamProfileEvent from '../events/update-team-profile'
 import QualifyTeamEvent from '../events/qualify-team'
 import LoginTeamEvent from '../events/login-team'
 import UpdateTeamPasswordEvent from '../events/update-team-password'
+import DisqualifyTeamEvent from '../events/disqualify-team'
+import UpdateTeamScoreEvent from '../events/update-team-score'
 
 class TeamController {
   static restore (email, callback) {
@@ -228,6 +231,50 @@ class TeamController {
               logger.error(err)
               callback(new InternalError())
             })
+        }
+      }
+    })
+  }
+
+  static disqualify (id, callback) {
+    TeamController.get(id, (err, team) => {
+      if (err) {
+        callback(err)
+      } else {
+        if (!team.isQualified()) {
+          callback(new TeamNotQualifiedError())
+        } else {
+          let updatedTeam = null
+
+          transaction(Team, TeamScore, (Team, TeamScore) => {
+            return Team
+              .query()
+              .patchAndFetchById(team.id, {
+                disqualified: true
+              })
+              .then((updatedTeamObject) => {
+                updatedTeam = updatedTeamObject
+                return TeamScore
+                  .query()
+                  .delete()
+                  .where('teamId', team.id)
+                  .then(() => {
+                  })
+              })
+          })
+          .then(() => {
+            EventController.push(new DisqualifyTeamEvent(updatedTeam), (err, event) => {
+              if (err) {
+                callback(err)
+              } else {
+                callback(null)
+              }
+            })
+          })
+          .catch((err) => {
+            logger.error(err)
+            callback(err)
+          })
         }
       }
     })

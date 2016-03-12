@@ -1,8 +1,4 @@
 import Contest from '../models/contest'
-import TeamScore from '../models/team-score'
-import Category from '../models/category'
-import Task from '../models/task'
-import TeamTaskHit from '../models/team-task-hit'
 
 import { InternalError, InvalidStateTransitionError } from '../utils/errors'
 import constants from '../utils/constants'

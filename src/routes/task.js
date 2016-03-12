@@ -17,7 +17,7 @@ let urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
 
 let router = express.Router()
 
-import { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError } from '../utils/errors'
+import { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError, TaskNotAvailableError } from '../utils/errors'
 import is_ from 'is_js'
 import _ from 'underscore'
 
@@ -152,6 +152,10 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
     throw new TeamNotQualifiedError()
   }
 
+  if (!request.task.isOpened()) {
+    throw new TaskNotAvailableError()
+  }
+
   let limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
     timeout: constants.TASK_SUBMIT_LIMIT_TIME,
     maxAttempts: constants.TASK_SUBMIT_LIMIT_ATTEMPTS
@@ -226,6 +230,10 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
 router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
   if (!request.scope.isGuest() && !request.scope.isTeam()) {
     throw new InternalError()
+  }
+
+  if (!request.task.isOpened()) {
+    throw new TaskNotAvailableError()
   }
 
   let checkConstraints = {
