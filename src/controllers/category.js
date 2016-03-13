@@ -7,10 +7,10 @@ import constants from '../utils/constants'
 
 import CreateCategoryEvent from '../events/create-category'
 import UpdateCategoryEvent from '../events/update-category'
-import RemoveCategoryEvent from '../events/remove-category'
+import DeleteCategoryEvent from '../events/delete-category'
 
 class CategoryController {
-  static list (callback) {
+  static index (callback) {
     Category
       .query()
       .then((categories) => {
@@ -94,17 +94,18 @@ class CategoryController {
       })
   }
 
-  static remove (id, callback) {
+  static delete (id, callback) {
     Category
       .query()
       .delete()
       .where('id', id)
-      .then((numDeleted) => {
-        if (numDeleted === 0) {
-          callback(new CategoryNotFoundError())
-        } else {
+      .returning('*')
+      .then((categories) => {
+        if (categories.length === 1) {
           callback(null)
-          EventController.push(new RemoveCategoryEvent(id))
+          EventController.push(new DeleteCategoryEvent(categories[0]))
+        } else {
+          callback(new CategoryNotFoundError())
         }
       })
       .catch((err) => {

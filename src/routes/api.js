@@ -23,6 +23,7 @@ import eventStream from '../controllers/event-stream'
 import EventController from '../controllers/event'
 import logger from '../utils/logger'
 import eventNameList from '../utils/event-name-list'
+import _ from 'underscore'
 
 let router = express.Router()
 
@@ -37,51 +38,47 @@ router.use('/supervisor', supervisorRouter)
 
 router.get('/identity', detectScope, issueToken, (request, response, next) => {
   let token = request.session.token
-  switch (request.scope) {
-    case 'supervisors':
-      SupervisorController.get(request.session.identityID, (err, supervisor) => {
-        if (err) {
-          next(err)
-        } else {
-          response.json({
-            id: request.session.identityID,
-            role: supervisor.rights,
-            name: supervisor.username,
-            token: token
-          })
-        }
-      })
-      break
-    case 'teams':
-      TeamController.get(request.session.identityID, (err, team) => {
-        if (err) {
-          next(err)
-        } else {
-          response.json({
-            id: request.session.identityID,
-            role: 'team',
-            name: team.name,
-            emailConfirmed: team.emailConfirmed,
-            token: token
-          })
-        }
-      })
-      break
-    case 'guests':
-      response.json({
-        role: 'guest',
-        token: token
-      })
-      break
-    default:
-      next(new UnknownIdentityError())
-      break
+
+  if (request.scope.isSupervisor()) {
+    SupervisorController.get(request.session.identityID, (err, supervisor) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json({
+          id: request.session.identityID,
+          role: supervisor.rights,
+          name: supervisor.username,
+          token: token
+        })
+      }
+    })
+  } else if (request.scope.isTeam()) {
+    TeamController.get(request.session.identityID, (err, team) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json({
+          id: request.session.identityID,
+          role: 'team',
+          name: team.name,
+          emailConfirmed: team.emailConfirmed,
+          token: token
+        })
+      }
+    })
+  } else if (request.scope.isGuest()) {
+    response.json({
+      role: 'guest',
+      token: token
+    })
+  } else {
+    next(new UnknownIdentityError())
   }
 })
 
 function getLatestEvents (lastEventId, callback) {
   if (lastEventId != null) {
-    EventController.list(lastEventId, (err, events) => {
+    EventController.indexNew(lastEventId, (err, events) => {
       if (err) {
         logger.error(err)
         callback(err, null)
@@ -95,10 +92,6 @@ function getLatestEvents (lastEventId, callback) {
 }
 
 router.get('/stream', detectScope, getLastEventId, (request, response, next) => {
-  if (!request.scope) {
-    throw new UnknownIdentityError()
-  }
-
   request.socket.setTimeout(0)
 
   response.writeHead(200, {
@@ -118,22 +111,42 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
       }
 
       for (let event of events) {
-        if (request.scope === 'supervisors' && event.data.supervisors) {
-          writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.supervisors))
-        } else if (request.scope === 'teams') {
+        if (request.scope.isSupervisor() && event.data.supervisors) {
+          writeFunc(eventStream.format(
+            event.id,
+            eventNameList.getName(event.type),
+            5000,
+            _.extend(event.data.supervisors, { __metadataCreatedAt: event.createdAt.getTime() })
+          ))
+        } else if (request.scope.isTeam()) {
           if (event.data.teams) {
-            writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.teams))
+            writeFunc(eventStream.format(
+              event.id,
+              eventNameList.getName(event.type),
+              5000,
+              _.extend(event.data.teams, { __metadataCreatedAt: event.createdAt.getTime() })
+            ))
           } else if (event.data.team && event.data.team.hasOwnProperty(request.session.identityID)) {
-            writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.team[request.session.identityID]))
+            writeFunc(eventStream.format(
+              event.id,
+              eventNameList.getName(event.type),
+              5000,
+              _.extend(event.data.team[request.session.identityID], { __metadataCreatedAt: event.createdAt.getTime() })
+            ))
           }
-        } else if (request.scope === 'guests') {
-          writeFunc(eventStream.format(event.id, eventNameList.getName(event.type), 5000, event.data.guests))
+        } else if (request.scope.isGuest()) {
+          writeFunc(eventStream.format(
+            event.id,
+            eventNameList.getName(event.type),
+            5000,
+            _.extend(event.data.guests, { __metadataCreatedAt: event.createdAt.getTime() })
+          ))
         }
       }
 
-      let mainChannel = `message:${request.scope}`
+      let mainChannel = `message:${request.scope.toString()}`
       let extraChannel = null
-      if (request.scope === 'teams') {
+      if (request.scope.isTeam()) {
         extraChannel = `message:team-${request.session.identityID}`
       }
 

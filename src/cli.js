@@ -1,70 +1,122 @@
-import parser from 'nomnom'
 import logger from './utils/logger'
-
+import parser from 'commander'
+import prompt from 'prompt'
 import SupervisorController from './controllers/supervisor'
 import TeamController from './controllers/team'
 
-parser.command('create_supervisor')
-  .help('Create supervisor user')
-  .option('username', {
-    required: true,
-    abbr: 'u',
-    help: 'User name'
-  })
-  .option('password', {
-    required: true,
-    abbr: 'p',
-    help: 'Password'
-  })
-  .option('rights', {
-    required: true,
-    abbr: 'r',
-    choices: [
-      'admin',
-      'manager'
-    ],
-    help: 'Supervisor rights - admin or manager'
-  })
-  .callback((opts) => {
-    let supervisorOpts = {
-      username: opts.username,
-      password: opts.password,
-      rights: opts.rights
-    }
-    SupervisorController.create(supervisorOpts, (err, supervisor) => {
+parser
+  .command('create_supervisor')
+  .description('Create supervisor')
+  .option('-u, --username <username>', 'username')
+  .option('-r, --rights <rights>', 'rights (admin, manager)')
+  .action((options) => {
+    prompt.start()
+    prompt.message = ''
+    prompt.get([{
+      name: 'password',
+      required: true,
+      hidden: true
+    }, {
+      name: 'confirmation',
+      required: true,
+      hidden: true,
+      conform: (confirmation) => {
+        if (prompt.history('password').value !== confirmation) {
+          logger.error('Verification has failed')
+          process.exit(1)
+        } else {
+          return true
+        }
+      }
+    }], (err, result) => {
       if (err) {
         logger.error(err)
         process.exit(1)
       } else {
-        logger.info(`Supervisor ${supervisor.username} has been created!`)
+        let supervisorOpts = {
+          username: options.username,
+          password: result.password,
+          rights: options.rights
+        }
+        SupervisorController.create(supervisorOpts, (err, supervisor) => {
+          if (err) {
+            logger.error(err)
+            process.exit(1)
+          } else {
+            logger.info(`Supervisor ${supervisor.username} has been created!`)
+            process.exit(0)
+          }
+        })
+      }
+    })
+  })
+
+parser
+  .command('change_supervisor_password')
+  .description("Change supervisor's password")
+  .option('-u, --username <user>', 'username')
+  .action((options) => {
+    prompt.start()
+    prompt.message = ''
+    prompt.get([{
+      name: 'new_password',
+      required: true,
+      hidden: true
+    }, {
+      name: 'confirmation',
+      required: true,
+      hidden: true,
+      conform: (confirmation) => {
+        if (prompt.history('new_password').value !== confirmation) {
+          logger.err('Verification has failed')
+          process.exit(1)
+        } else {
+          return true
+        }
+      }
+    }], (err, result) => {
+      if (err) {
+        logger.error(err)
+        process.exit(1)
+      } else {
+        let supervisorOpts = {
+          username: options.username,
+          password: result.new_password
+        }
+        SupervisorController.edit(supervisorOpts, (err, supervisor) => {
+          if (err) {
+            logger.error(err)
+            process.exit(1)
+          } else {
+            logger.info(`Password for supervisor ${options.username} has been updated!`)
+            process.exit(0)
+          }
+        })
+      }
+    })
+  })
+
+parser
+  .command('delete_supervisor')
+  .description('Delete supervisor user')
+  .option('-u, --username <username', 'username')
+  .action((options) => {
+    SupervisorController.delete(options.username, (err) => {
+      if (err) {
+        logger.error(err)
+        process.exit(1)
+      } else {
+        logger.info(`Supervisor ${options.username} has been deleted!`)
         process.exit(0)
       }
     })
   })
 
-parser.command('remove_supervisor')
-  .help('Remove supervisor user')
-  .option('username', {
-    required: true,
-    abbr: 'u',
-    help: 'User name'
-  })
-  .callback((opts) => {
-    SupervisorController.remove(opts.username, (err) => {
-      if (err) {
-        logger.error(err)
-        process.exit(1)
-      } else {
-        logger.info(`Supervisor ${opts.username} has been removed!`)
-        process.exit(0)
-      }
-    })
-  })
-
-parser.command('list_supervisors')
-  .help('List all supervisors')
-  .callback((opts) => {
-    SupervisorController.list((err, supervisors) => {
+parser
+  .command('index_supervisors')
+  .description('Index supervisors')
+  .action((opts) => {
+    SupervisorController.index((err, supervisors) => {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -77,22 +129,44 @@ parser.command('list_supervisors')
     })
   })
 
-parser.command('list_teams')
-  .help('List all teams')
-  .callback((opts) => {
-    TeamController.list((err, teams) => {
+parser
+  .command('disqualify_team')
+  .description('Disqualify team')
+  .option('-t, --team-id <team>', 'teamId')
+  .action((options) => {
+    prompt.start()
+    prompt.message = ''
+    prompt.get([{
+      name: 'confirmation',
+      required: true,
+      hidden: false,
+      conform: (confirmation) => {
+        if (confirmation !== 'yes') {
+          logger.err('You should have typed yes')
+          process.exit(1)
+        } else {
+          return true
+        }
+      }
+    }], (err, result) => {
       if (err) {
         logger.error(err)
         process.exit(1)
       } else {
-        for (let team of teams) {
-          logger.info(`Team ${team.name} <${team.email}>`)
-        }
-        process.exit(0)
+        let teamId = parseInt(options.teamId, 10)
+        TeamController.disqualify(teamId, (err) => {
+          if (err) {
+            logger.error(err)
+            process.exit(1)
+          } else {
+            logger.info(`Team ${teamId} has been disqualified!`)
+            process.exit(0)
+          }
+        })
       }
     })
   })
 
 export default function run () {
-  parser.parse()
+  parser.parse(process.argv)
 }

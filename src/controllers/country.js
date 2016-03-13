@@ -3,7 +3,7 @@ import { InternalError } from '../utils/errors'
 import logger from '../utils/logger'
 
 class CountryController {
-  static list (callback) {
+  static index (callback) {
     Country
       .query()
       .then((countries) => {

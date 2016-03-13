@@ -3,7 +3,7 @@ import logger from './utils/logger'
 import gm from 'gm'
 import path from 'path'
 import token from './utils/token'
-import ContestController from './controllers/contest'
+import TeamScoreController from './controllers/team-score'
 import MandrillController from './controllers/mail/mandrill'
 import MailgunController from './controllers/mail/mailgun'
 import SendGridController from './controllers/mail/sendgrid'
@@ -16,7 +16,7 @@ let customizer = new Customizer()
 let emailGenerator = customizer.getEmailGenerator()
 
 queue('updateScoresQueue').process((job, done) => {
-  ContestController.updateScores((err) => {
+  TeamScoreController.updateScores((err) => {
     if (err) {
       logger.error(err)
       throw err

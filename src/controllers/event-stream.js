@@ -15,23 +15,45 @@ class EventStream extends EventEmitter {
   }
 
   emitMessage (message) {
+    let id = message.id
     let name = eventNameList.getName(message.type)
+    let createdAt = message.createdAt
 
     if (message.data.supervisors) {
-      this.emit('message:supervisors', this.format(message.id, name, 5000, message.data.supervisors))
+      this.emit('message:supervisors', this.format(
+        id,
+        name,
+        5000,
+        _.extend(message.data.supervisors, { __metadataCreatedAt: createdAt })
+      ))
     }
 
     if (message.data.teams) {
-      this.emit('message:teams', this.format(message.id, name, 5000, message.data.teams))
+      this.emit('message:teams', this.format(
+        id,
+        name,
+        5000,
+        _.extend(message.data.teams, { __metadataCreatedAt: createdAt })
+      ))
     }
 
     if (message.data.guests) {
-      this.emit('message:guests', this.format(message.id, name, 5000, message.data.guests))
+      this.emit('message:guests', this.format(
+        id,
+        name,
+        5000,
+        _.extend(message.data.guests, { __metadataCreatedAt: createdAt })
+      ))
     }
 
     if (message.data.team) {
       _.each(message.data.team, (teamData, teamId, list) => {
-        this.emit(`message:team-${teamId}`, this.format(message.id, name, 5000, teamData))
+        this.emit(`message:team-${teamId}`, this.format(
+          id,
+          name,
+          5000,
+          _.extend(teamData, { __metadataCreatedAt: createdAt })
+        ))
       })
     }
   }

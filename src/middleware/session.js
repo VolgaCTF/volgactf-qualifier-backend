@@ -4,6 +4,7 @@ import session from 'express-session'
 import connectRedis from 'connect-redis'
 let RedisStore = connectRedis(session)
 import redis from '../utils/redis'
+import constants from '../utils/constants'
 
 export function needsToBeUnauthorized (request, response, next) {
   if (request.session.authenticated) {
@@ -22,7 +23,7 @@ export function needsToBeAuthorized (request, response, next) {
 }
 
 export function needsToBeAuthorizedTeam (request, response, next) {
-  if (request.session.authenticated && request.session.role === 'team') {
+  if (request.session.authenticated && request.session.scopeID === constants.SCOPE_TEAM) {
     next()
   } else {
     throw new NotAuthenticatedError()
@@ -30,7 +31,7 @@ export function needsToBeAuthorizedTeam (request, response, next) {
 }
 
 export function needsToBeAuthorizedSupervisor (request, response, next) {
-  if (request.session.authenticated && _.contains(['admin', 'manager'], request.session.role)) {
+  if (request.session.authenticated && _.contains([constants.SCOPE_MANAGER, constants.SCOPE_ADMIN], request.session.scopeID)) {
     next()
   } else {
     throw new NotAuthenticatedError()
@@ -38,24 +39,56 @@ export function needsToBeAuthorizedSupervisor (request, response, next) {
 }
 
 export function needsToBeAuthorizedAdmin (request, response, next) {
-  if (request.session.authenticated && request.session.role === 'admin') {
+  if (request.session.authenticated && request.session.scopeID === constants.SCOPE_ADMIN) {
     next()
   } else {
     throw new NotAuthenticatedError()
   }
 }
 
+class UserScope {
+  constructor (scope) {
+    this.scope = scope
+  }
+
+  toString () {
+    if (this.isGuest()) {
+      return 'guests'
+    } else if (this.isTeam()) {
+      return 'teams'
+    } else if (this.isSupervisor()) {
+      return 'supervisors'
+    } else {
+      return 'null'
+    }
+  }
+
+  isGuest () {
+    return this.scope === constants.SCOPE_GUEST
+  }
+
+  isTeam () {
+    return this.scope === constants.SCOPE_TEAM
+  }
+
+  isManager () {
+    return this.scope === constants.SCOPE_MANAGER
+  }
+
+  isAdmin () {
+    return this.scope === constants.SCOPE_ADMIN
+  }
+
+  isSupervisor () {
+    return this.isManager() || this.isAdmin()
+  }
+}
+
 export function detectScope (request, response, next) {
   if (request.session.authenticated) {
-    if (request.session.role === 'team') {
-      request.scope = 'teams'
-    } else if (_.contains(['admin', 'manager'], request.session.role)) {
-      request.scope = 'supervisors'
-    } else {
-      request.scope = null
-    }
+    request.scope = new UserScope(request.session.scopeID)
   } else {
-    request.scope = 'guests'
+    request.scope = new UserScope(constants.SCOPE_GUEST)
   }
   next()
 }

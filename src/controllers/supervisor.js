@@ -6,7 +6,8 @@ import logger from '../utils/logger'
 import EventController from './event'
 import LoginSupervisorEvent from '../events/login-supervisor'
 import CreateSupervisorEvent from '../events/create-supervisor'
-import RemoveSupervisorEvent from '../events/remove-supervisor'
+import DeleteSupervisorEvent from '../events/delete-supervisor'
+import UpdateSupervisorPasswordEvent from '../events/update-supervisor-password'
 
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
@@ -47,27 +48,69 @@ class SupervisorController {
     })
   }
 
-  static remove (username, callback) {
-    Supervisor
-      .query()
-      .delete()
-      .where('username', username)
-      .then((numDeleted) => {
-        if (numDeleted === 0) {
-          callback("Supervisor doesn't exist!")
-        } else {
-          EventController.push(new RemoveSupervisorEvent(username), (err, event) => {
-            if (err) {
-              callback(err)
+  static edit (options, callback) {
+    getPasswordHash(options.password, (err, hash) => {
+      if (err) {
+        logger.error(err)
+        callback(new InternalError(), null)
+      } else {
+        this.getByUsername(options.username, (err, supervisor) => {
+          if (err) {
+            logger.error(err)
+            callback(err)
+          } else {
+            Supervisor
+              .query()
+              .patchAndFetchById(supervisor.id, {
+                passwordHash: hash
+              })
+              .then((supervisor) => {
+                EventController.push(new UpdateSupervisorPasswordEvent(supervisor), (err, event) => {
+                  if (err) {
+                    callback(err, null)
+                  } else {
+                    callback(null, supervisor)
+                  }
+                })
+              })
+              .catch((err) => {
+                logger.error(err)
+                callback(new InternalError(), null)
+              })
+          }
+        })
+      }
+    })
+  }
+
+  static delete (username, callback) {
+    this.getByUsername(username, (err, supervisor) => {
+      if (err) {
+        logger.error(err)
+        callback(err)
+      } else {
+        Supervisor
+          .query()
+          .delete()
+          .where('id', supervisor.id)
+          .then((numDeleted) => {
+            if (numDeleted === 0) {
+              callback("Supervisor doesn't exist!")
             } else {
-              callback(null)
+              EventController.push(new DeleteSupervisorEvent(supervisor), (err, event) => {
+                if (err) {
+                  callback(err)
+                } else {
+                  callback(null)
+                }
+              })
             }
           })
-        }
-      })
-      .catch((err) => {
-        callback(err)
-      })
+          .catch((err) => {
+            callback(err)
+          })
+      }
+    })
   }
 
   static login (username, password, callback) {
@@ -98,11 +141,28 @@ class SupervisorController {
       })
   }
 
-  static list (callback) {
+  static index (callback) {
     Supervisor
       .query()
       .then((supervisors) => {
         callback(null, supervisors)
+      })
+      .catch((err) => {
+        callback(err, null)
+      })
+  }
+
+  static getByUsername (username, callback) {
+    Supervisor
+      .query()
+      .where('username', username)
+      .first()
+      .then((supervisor) => {
+        if (supervisor) {
+          callback(null, supervisor)
+        } else {
+          callback('Supervisor not found!', null)
+        }
       })
       .catch((err) => {
         callback(err, null)

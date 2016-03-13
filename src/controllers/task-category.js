@@ -3,19 +3,7 @@ import { InternalError } from '../utils/errors'
 import logger from '../utils/logger'
 
 class TaskCategoryController {
-  static list (callback) {
-    TaskCategory
-      .query()
-      .then((taskCategories) => {
-        callback(null, taskCategories)
-      })
-      .catch((err) => {
-        logger.error(err)
-        callback(new InternalError(), null)
-      })
-  }
-
-  static listByTasks (taskIds, callback) {
+  static indexByTasks (taskIds, callback) {
     TaskCategory
       .query()
       .whereIn('taskId', taskIds)
@@ -28,7 +16,7 @@ class TaskCategoryController {
       })
   }
 
-  static listByTask (taskId, callback) {
+  static indexByTask (taskId, callback) {
     TaskCategory
       .query()
       .where('taskId', taskId)

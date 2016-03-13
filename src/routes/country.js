@@ -5,8 +5,8 @@ let router = express.Router()
 import CountryController from '../controllers/country'
 import countrySerializer from '../serializers/country'
 
-router.get('/all', (request, response, next) => {
-  CountryController.list((err, countries) => {
+router.get('/index', (request, response, next) => {
+  CountryController.index((err, countries) => {
     if (err) {
       next(err)
     } else {

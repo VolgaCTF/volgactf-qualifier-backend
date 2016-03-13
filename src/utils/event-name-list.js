@@ -10,17 +10,18 @@ class EventNameList {
     this.eventNames[constants.EVENT_UPDATE_CONTEST] = 'updateContest'
 
     this.eventNames[constants.EVENT_CREATE_SUPERVISOR] = 'createSupervisor'
-    this.eventNames[constants.EVENT_REMOVE_SUPERVISOR] = 'removeSupervisor'
+    this.eventNames[constants.EVENT_DELETE_SUPERVISOR] = 'deleteSupervisor'
     this.eventNames[constants.EVENT_LOGIN_SUPERVISOR] = 'loginSupervisor'
     this.eventNames[constants.EVENT_LOGOUT_SUPERVISOR] = 'logoutSupervisor'
+    this.eventNames[constants.EVENT_UPDATE_SUPERVISOR_PASSWORD] = 'updateSupervisorPassword'
 
     this.eventNames[constants.EVENT_CREATE_CATEGORY] = 'createCategory'
     this.eventNames[constants.EVENT_UPDATE_CATEGORY] = 'updateCategory'
-    this.eventNames[constants.EVENT_REMOVE_CATEGORY] = 'removeCategory'
+    this.eventNames[constants.EVENT_DELETE_CATEGORY] = 'deleteCategory'
 
     this.eventNames[constants.EVENT_CREATE_POST] = 'createPost'
     this.eventNames[constants.EVENT_UPDATE_POST] = 'updatePost'
-    this.eventNames[constants.EVENT_REMOVE_POST] = 'removePost'
+    this.eventNames[constants.EVENT_DELETE_POST] = 'deletePost'
 
     this.eventNames[constants.EVENT_CREATE_TASK] = 'createTask'
     this.eventNames[constants.EVENT_UPDATE_TASK] = 'updateTask'
@@ -39,7 +40,7 @@ class EventNameList {
     this.eventNames[constants.EVENT_LOGOUT_TEAM] = 'logoutTeam'
 
     this.eventNames[constants.EVENT_CREATE_TASK_CATEGORY] = 'createTaskCategory'
-    this.eventNames[constants.EVENT_REMOVE_TASK_CATEGORY] = 'removeTaskCategory'
+    this.eventNames[constants.EVENT_DELETE_TASK_CATEGORY] = 'deleteTaskCategory'
     this.eventNames[constants.EVENT_REVEAL_TASK_CATEGORY] = 'revealTaskCategory'
 
     this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT] = 'createTeamTaskHit'

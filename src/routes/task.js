@@ -17,7 +17,7 @@ let urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
 
 let router = express.Router()
 
-import { InternalError, NotAuthenticatedError, EmailNotConfirmedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError } from '../utils/errors'
+import { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError, TaskNotAvailableError } from '../utils/errors'
 import is_ from 'is_js'
 import _ from 'underscore'
 
@@ -36,13 +36,12 @@ import TeamTaskHitAttemptController from '../controllers/team-task-hit-attempt'
 
 import LimitController from '../controllers/limit'
 import when_ from 'when'
+import teamTaskHitSerializer from '../serializers/team-task-hit'
 
 router.param('taskId', taskParam.id)
 
-router.get('/all', detectScope, (request, response, next) => {
-  let isSupervisor = request.scope === 'supervisors'
-
-  TaskController.list((err, tasks) => {
+router.get('/index', detectScope, (request, response, next) => {
+  TaskController.index((err, tasks) => {
     if (err) {
       logger.error(err)
       next(new InternalError())
@@ -50,13 +49,11 @@ router.get('/all', detectScope, (request, response, next) => {
       let serializer = _.partial(taskSerializer, _, { preview: true })
       response.json(_.map(tasks, serializer))
     }
-  }, !isSupervisor)
+  }, !request.scope.isSupervisor())
 })
 
-router.get('/category/all', detectScope, (request, response, next) => {
-  let isSupervisor = request.scope === 'supervisors'
-
-  TaskController.list((err, tasks) => {
+router.get('/category/index', detectScope, (request, response, next) => {
+  TaskController.index((err, tasks) => {
     if (err) {
       logger.error(err)
       next(new InternalError())
@@ -65,7 +62,7 @@ router.get('/category/all', detectScope, (request, response, next) => {
         return task.id
       })
 
-      TaskCategoryController.listByTasks(taskIds, (err, taskCategories) => {
+      TaskCategoryController.indexByTasks(taskIds, (err, taskCategories) => {
         if (err) {
           next(err)
         } else {
@@ -73,38 +70,24 @@ router.get('/category/all', detectScope, (request, response, next) => {
         }
       })
     }
-  }, !isSupervisor)
+  }, !request.scope.isSupervisor())
 })
 
-router.get('/:taskId/category', detectScope, getState, (request, response, next) => {
-  let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
-  let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
-  let supervisorsEligible = (request.scope === 'supervisors')
-
-  if (!guestsEligible && !teamsEligible && !supervisorsEligible) {
+router.get('/:taskId/category', detectScope, getTask, (request, response, next) => {
+  if (request.task.isInitial() && (request.scope.isGuest() || request.scope.isTeam())) {
     throw new NotAuthenticatedError()
-  }
-
-  TaskController.get(request.taskId, (err, task) => {
-    if (err) {
-      next(err)
-    } else {
-      if (request.scope === 'teams' && task.isInitial()) {
-        throw new NotAuthenticatedError()
+  } else {
+    TaskCategoryController.indexByTask(request.task.id, (err, taskCategories) => {
+      if (err) {
+        next(err)
       } else {
-        TaskCategoryController.listByTask(task.id, (err, taskCategories) => {
-          if (err) {
-            next(err)
-          } else {
-            response.json(_.map(taskCategories, taskCategorySerializer))
-          }
-        })
+        response.json(_.map(taskCategories, taskCategorySerializer))
       }
-    }
-  })
+    })
+  }
 })
 
-router.get('/:taskId/answer', needsToBeAuthorizedSupervisor, (request, response, next) => {
+router.get('/:taskId/answer', needsToBeAuthorizedAdmin, (request, response, next) => {
   TaskAnswerController.listByTask(request.taskId, (err, taskAnswers) => {
     if (err) {
       next(err)
@@ -114,59 +97,63 @@ router.get('/:taskId/answer', needsToBeAuthorizedSupervisor, (request, response,
   })
 })
 
-router.get('/:taskId/hint', detectScope, getState, (request, response, next) => {
-  let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
-  let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
-  let supervisorsEligible = (request.scope === 'supervisors')
+router.get('/:taskId/hint', detectScope, getTask, getState, (request, response, next) => {
+  let guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
+  let teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
+  let supervisorsEligible = request.scope.isSupervisor()
 
   if (!guestsEligible && !teamsEligible && !supervisorsEligible) {
     throw new NotAuthenticatedError()
   }
 
-  TaskController.get(request.taskId, (err, task) => {
+  TaskHintController.listByTask(request.task.id, (err, taskHints) => {
     if (err) {
       next(err)
     } else {
-      if (request.scope === 'teams' && task.isInitial()) {
-        throw new NotAuthenticatedError()
-      } else {
-        TaskHintController.listByTask(task.id, (err, taskHints) => {
-          if (err) {
-            next(err)
-          } else {
-            response.json(_.map(taskHints, taskHintSerializer))
-          }
-        })
-      }
+      response.json(_.map(taskHints, taskHintSerializer))
     }
   })
 })
 
-router.get('/:taskId', detectScope, getState, (request, response, next) => {
-  let guestsEligible = (request.scope === 'guests' && request.contest && request.contest.isFinished())
-  let teamsEligible = (request.scope === 'teams' && request.contest && !request.contest.isInitial())
-  let supervisorsEligible = (request.scope === 'supervisors')
+router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TeamTaskHitController.list((err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(_.map(teamTaskHits, teamTaskHitSerializer))
+    }
+  })
+})
+
+router.get('/:taskId/hits', needsToBeAuthorizedTeam, (request, response, next) => {
+  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskHits.length)
+    }
+  })
+})
+
+router.get('/:taskId', detectScope, getState, getTask, (request, response, next) => {
+  let guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
+  let teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
+  let supervisorsEligible = request.scope.isSupervisor()
 
   if (!(guestsEligible || teamsEligible || supervisorsEligible)) {
     throw new NotAuthenticatedError()
   }
 
-  TaskController.get(request.taskId, (err, task) => {
-    if (err) {
-      next(err)
-    } else {
-      if (request.scope === 'teams' && !task.isOpened()) {
-        next(new NotAuthenticatedError())
-      } else {
-        response.json(taskSerializer(task))
-      }
-    }
-  })
+  response.json(taskSerializer(request.task))
 })
 
 router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
-  if (!request.team.emailConfirmed) {
-    throw new EmailNotConfirmedError()
+  if (!request.team.isQualified()) {
+    throw new TeamNotQualifiedError()
+  }
+
+  if (!request.task.isOpened()) {
+    throw new TaskNotAvailableError()
   }
 
   let limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
@@ -240,9 +227,13 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
   })
 })
 
-router.post('/:taskId/check', checkToken, detectScope, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
-  if (!_.contains(['guests', 'teams'], request.scope)) {
+router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
+  if (!request.scope.isGuest() && !request.scope.isTeam()) {
     throw new InternalError()
+  }
+
+  if (!request.task.isOpened()) {
+    throw new TaskNotAvailableError()
   }
 
   let checkConstraints = {

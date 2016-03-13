@@ -228,6 +228,12 @@ export class EmailNotConfirmedError extends BaseError {
   }
 }
 
+export class TeamNotQualifiedError extends BaseError {
+  constructor () {
+    super('Team has not qualified for the event!', 'TeamNotQualifiedError', 400)
+  }
+}
+
 export class InvalidResetPasswordURLError extends BaseError {
   constructor () {
     super('Reset password URL is invalid or has expired!', 'InvalidResetPasswordURLError', 400)
@@ -243,5 +249,17 @@ export class ResetPasswordAttemptsLimitError extends BaseError {
 export class EmailVerificationAttemptsLimitError extends BaseError {
   constructor () {
     super('Too many email verification attempts! Please wait some time before requesting a confirmation email again.', 'EmailVerificationAttemptsLimitError', 400)
+  }
+}
+
+export class InvalidStateTransitionError extends BaseError {
+  constructor () {
+    super('Invalid state transition!', 'InvalidStateTransitionError', 400)
+  }
+}
+
+export class TaskNotAvailableError extends BaseError {
+  constructor () {
+    super('Task is not available!', 'TaskNotAvailableError', 400)
   }
 }

@@ -5,7 +5,7 @@ import constants from '../utils/constants'
 import EventController from './event'
 import CreatePostEvent from '../events/create-post'
 import UpdatePostEvent from '../events/update-post'
-import RemovePostEvent from '../events/remove-post'
+import DeletePostEvent from '../events/delete-post'
 
 class PostController {
   static isPostTitleUniqueConstraintViolation (err) {
@@ -59,17 +59,18 @@ class PostController {
       })
   }
 
-  static remove (id, callback) {
+  static delete (id, callback) {
     Post
       .query()
       .delete()
       .where('id', id)
-      .then((numDeleted) => {
-        if (numDeleted === 0) {
-          callback(new PostNotFoundError())
-        } else {
+      .returning('*')
+      .then((posts) => {
+        if (posts.length === 1) {
           callback(null)
-          EventController.push(new RemovePostEvent(id))
+          EventController.push(new DeletePostEvent(posts[0]))
+        } else {
+          callback(new PostNotFoundError())
         }
       })
       .catch((err) => {
@@ -78,7 +79,7 @@ class PostController {
       })
   }
 
-  static list (callback) {
+  static index (callback) {
     Post
       .query()
       .then((posts) => {

@@ -19,7 +19,7 @@ import UpdateTaskEvent from '../events/update-task'
 import OpenTaskEvent from '../events/open-task'
 import CloseTaskEvent from '../events/close-task'
 import CreateTaskCategoryEvent from '../events/create-task-category'
-import RemoveTaskCategoryEvent from '../events/remove-task-category'
+import DeleteTaskCategoryEvent from '../events/delete-task-category'
 import RevealTaskCategoryEvent from '../events/reveal-task-category'
 
 class TaskController {
@@ -101,7 +101,7 @@ class TaskController {
 
   static update (task, options, callback) {
     let updatedTask = null
-    let deletedTaskCategoryIds = null
+    let deletedTaskCategories = null
     let createdTaskCategories = null
 
     transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
@@ -119,9 +119,9 @@ class TaskController {
             .delete()
             .whereNotIn('categoryId', options.categories)
             .andWhere('taskId', task.id)
-            .returning('id')
-            .then((deletedTaskCategoryIdObjects) => {
-              deletedTaskCategoryIds = deletedTaskCategoryIdObjects
+            .returning('*')
+            .then((deletedTaskCategoryObjects) => {
+              deletedTaskCategories = deletedTaskCategoryObjects
 
               let valuePlaceholderExpressions = _.times(options.categories.length, () => {
                 return '(?, ?, ?)'
@@ -176,8 +176,8 @@ class TaskController {
       callback(null, updatedTask)
       EventController.push(new UpdateTaskEvent(updatedTask))
 
-      for (let taskCategoryId of deletedTaskCategoryIds) {
-        EventController.push(new RemoveTaskCategoryEvent(updatedTask, taskCategoryId))
+      for (let taskCategory of deletedTaskCategories) {
+        EventController.push(new DeleteTaskCategoryEvent(updatedTask, taskCategory))
       }
 
       for (let taskCategory of createdTaskCategories) {
@@ -190,7 +190,7 @@ class TaskController {
     })
   }
 
-  static list (callback, filterNew = false) {
+  static index (callback, filterNew = false) {
     let taskPromise = Task.query()
     if (filterNew) {
       taskPromise = taskPromise
@@ -241,7 +241,7 @@ class TaskController {
         .then((updatedTask) => {
           callback(null)
           EventController.push(new OpenTaskEvent(updatedTask))
-          TaskCategoryController.listByTask(updatedTask.id, (err, taskCategories) => {
+          TaskCategoryController.indexByTask(updatedTask.id, (err, taskCategories) => {
             if (err) {
               logger.error(err)
               callback(new InternalError())
