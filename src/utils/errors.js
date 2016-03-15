@@ -263,3 +263,9 @@ export class TaskNotAvailableError extends BaseError {
     super('Task is not available!', 'TaskNotAvailableError', 400)
   }
 }
+
+export class TaskReviewAlreadyGivenError extends BaseError {
+  constructor () {
+    super('You team has already given a review!', 'TaskReviewAlreadyGivenError', 400)
+  }
+}
