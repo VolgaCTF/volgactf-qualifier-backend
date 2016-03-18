@@ -127,6 +127,15 @@ let constraints = {
       ]
     }),
     new Assert().Length({ min: 0, max: constants.TASK_MAX_ANSWERS })
+  ],
+  reviewRating: [
+    new Assert().Required(),
+    new Assert().Range(1, 5)
+  ],
+  reviewComment: [
+    new Assert().Required(),
+    new Assert().Callback(is_.string),
+    new Assert().Length({ min: 2, max: 300 })
   ]
 }
 

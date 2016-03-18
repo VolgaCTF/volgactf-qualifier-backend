@@ -264,8 +264,14 @@ export class TaskNotAvailableError extends BaseError {
   }
 }
 
+export class TaskReviewNotEligibleError extends BaseError {
+  constructor () {
+    super("Your team hasn't solved the task so you can't submit the review!", 'TaskReviewNotEligibleError', 400)
+  }
+}
+
 export class TaskReviewAlreadyGivenError extends BaseError {
   constructor () {
-    super('You team has already given a review!', 'TaskReviewAlreadyGivenError', 400)
+    super('Your team has already given a review!', 'TaskReviewAlreadyGivenError', 400)
   }
 }

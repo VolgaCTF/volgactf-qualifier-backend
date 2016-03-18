@@ -4,7 +4,7 @@ export default function (teamTaskReview) {
     teamId: teamTaskReview.teamId,
     taskId: teamTaskReview.taskId,
     rating: teamTaskReview.rating,
-    review: teamTaskReview.review,
+    comment: teamTaskReview.comment,
     createdAt: teamTaskReview.createdAt.getTime()
   }
 }
