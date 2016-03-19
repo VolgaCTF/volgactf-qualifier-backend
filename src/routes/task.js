@@ -127,12 +127,18 @@ router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next
   })
 })
 
-router.get('/:taskId/hits', needsToBeAuthorizedTeam, (request, response, next) => {
+router.get('/:taskId/hit/statistics', detectScope, (request, response, next) => {
+  if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
   TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      response.json(teamTaskHits.length)
+      response.json({
+        count: teamTaskHits.length
+      })
     }
   })
 })
