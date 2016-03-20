@@ -143,6 +143,16 @@ router.get('/:taskId/hit/statistics', detectScope, (request, response, next) => 
   })
 })
 
+router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskHits.map(teamTaskHitSerializer))
+    }
+  })
+})
+
 router.get('/:taskId', detectScope, getState, getTask, (request, response, next) => {
   let guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
   let teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
