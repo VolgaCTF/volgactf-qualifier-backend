@@ -191,22 +191,22 @@ router.get('/:taskId/review/index', detectScope, getTask, (request, response, ne
   }
 })
 
-router.get('/:taskId/review/statistics', needsToBeAuthorizedTeam, getTask, (request, response, next) => {
-  TeamTaskReviewController.indexByTask(request.task.id, (err, teamTaskReviews) => {
+router.get('/:taskId/review/statistics', detectScope, (request, response, next) => {
+  if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
+  TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
     if (err) {
       next(err)
     } else {
-      let ratingList = _.map(teamTaskReviews, (teamTaskReview) => {
-        return teamTaskReview.rating
-      })
-
-      let averageRating = _.reduce(ratingList, (memo, rating) => {
-        return memo + rating
-      }, 0) / (ratingList.length === 0 ? 1 : ratingList.length)
+      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+        return sum + review.rating
+      }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
 
       response.json({
-        reviewCount: teamTaskReviews.length,
-        reviewAverageRating: averageRating
+        count: teamTaskReviews.length,
+        averageRating: averageRating
       })
     }
   })
