@@ -13,7 +13,7 @@ import Validator from 'validator.js'
 let validator = new Validator.Validator()
 let router = express.Router()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
-import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError } from '../utils/errors'
+import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError, NotAuthenticatedError } from '../utils/errors'
 import _ from 'underscore'
 import is_ from 'is_js'
 
@@ -57,16 +57,28 @@ router.get('/score/index', (request, response, next) => {
 
 router.param('teamId', teamParam.id)
 
-router.get('/:teamId/hits', detectScope, (request, response, next) => {
+router.get('/:teamId/hit/index', detectScope, (request, response, next) => {
+  if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
   TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      if (request.scope.isSupervisor() || (request.scope.isTeam() && request.teamId === request.session.identityID)) {
-        response.json(_.map(teamTaskHits, teamTaskHitSerializer))
-      } else {
-        response.json(teamTaskHits.length)
-      }
+      response.json(teamTaskHits.map(teamTaskHitSerializer))
+    }
+  })
+})
+
+router.get('/:teamId/hit/statistics', (request, response, next) => {
+  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json({
+        count: teamTaskHits.length
+      })
     }
   })
 })
