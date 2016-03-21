@@ -165,13 +165,13 @@ router.get('/:taskId', detectScope, getState, getTask, (request, response, next)
   response.json(taskSerializer(request.task))
 })
 
-router.get('/:taskId/review/index', detectScope, getTask, (request, response, next) => {
+router.get('/:taskId/review/index', detectScope, (request, response, next) => {
   if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
   if (request.scope.isTeam()) {
-    TeamTaskReviewController.indexByTeamAndTask(request.session.identityID, request.task.id, (err, teamTaskReviews) => {
+    TeamTaskReviewController.indexByTeamAndTask(request.session.identityID, request.taskId, (err, teamTaskReviews) => {
       if (err) {
         next(err)
       } else {
@@ -179,7 +179,7 @@ router.get('/:taskId/review/index', detectScope, getTask, (request, response, ne
       }
     })
   } else if (request.scope.isSupervisor()) {
-    TeamTaskReviewController.indexByTask(request.task.id, (err, teamTaskReviews) => {
+    TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
       if (err) {
         next(err)
       } else {

@@ -32,6 +32,8 @@ import TeamScoreController from '../controllers/team-score'
 import teamScoreSerializer from '../serializers/team-score'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import teamTaskHitSerializer from '../serializers/team-task-hit'
+import TeamTaskReviewController from '../controllers/team-task-review'
+import teamTaskReviewSerializer from '../serializers/team-task-review'
 
 router.get('/index', detectScope, (request, response, next) => {
   TeamController.index((err, teams) => {
@@ -78,6 +80,37 @@ router.get('/:teamId/hit/statistics', (request, response, next) => {
     } else {
       response.json({
         count: teamTaskHits.length
+      })
+    }
+  })
+})
+
+router.get('/:teamId/review/index', detectScope, (request, response, next) => {
+  if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
+  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskReviews.map(teamTaskReviewSerializer))
+    }
+  })
+})
+
+router.get('/:teamId/review/statistics', (request, response, next) => {
+  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+    if (err) {
+      next(err)
+    } else {
+      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+        return sum + review.rating
+      }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
+
+      response.json({
+        count: teamTaskReviews.length,
+        averageRating: averageRating
       })
     }
   })
