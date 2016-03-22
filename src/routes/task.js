@@ -8,6 +8,7 @@ import { getTeam } from '../middleware/team'
 
 import constraints from '../utils/constraints'
 import logger from '../utils/logger'
+import queue from '../utils/queue'
 
 import bodyParser from 'body-parser'
 import Validator from 'validator.js'
@@ -311,6 +312,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
                   if (err) {
                     next(err)
                   } else {
+                    queue('updateTeamScore').add({ teamId: request.team.id })
                     response.json({ success: true })
                   }
                 })
