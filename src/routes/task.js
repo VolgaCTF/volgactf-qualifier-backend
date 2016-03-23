@@ -8,6 +8,7 @@ import { getTeam } from '../middleware/team'
 
 import constraints from '../utils/constraints'
 import logger from '../utils/logger'
+import queue from '../utils/queue'
 
 import bodyParser from 'body-parser'
 import Validator from 'validator.js'
@@ -33,6 +34,8 @@ import taskHintSerializer from '../serializers/task-hint'
 import constants from '../utils/constants'
 import taskParam from '../params/task'
 import TeamTaskHitAttemptController from '../controllers/team-task-hit-attempt'
+import TeamTaskReviewController from '../controllers/team-task-review'
+import teamTaskReviewSerializer from '../serializers/team-task-review'
 
 import LimitController from '../controllers/limit'
 import when_ from 'when'
@@ -125,12 +128,28 @@ router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next
   })
 })
 
-router.get('/:taskId/hits', needsToBeAuthorizedTeam, (request, response, next) => {
+router.get('/:taskId/hit/statistics', detectScope, (request, response, next) => {
+  if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
   TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      response.json(teamTaskHits.length)
+      response.json({
+        count: teamTaskHits.length
+      })
+    }
+  })
+})
+
+router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
+  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskHits.map(teamTaskHitSerializer))
     }
   })
 })
@@ -145,6 +164,116 @@ router.get('/:taskId', detectScope, getState, getTask, (request, response, next)
   }
 
   response.json(taskSerializer(request.task))
+})
+
+router.get('/:taskId/review/index', detectScope, (request, response, next) => {
+  if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
+  if (request.scope.isTeam()) {
+    TeamTaskReviewController.indexByTeamAndTask(request.session.identityID, request.taskId, (err, teamTaskReviews) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json(_.map(teamTaskReviews, teamTaskReviewSerializer))
+      }
+    })
+  } else if (request.scope.isSupervisor()) {
+    TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
+      if (err) {
+        next(err)
+      } else {
+        response.json(_.map(teamTaskReviews, teamTaskReviewSerializer))
+      }
+    })
+  } else {
+    response.json([])
+  }
+})
+
+router.get('/:taskId/review/statistics', detectScope, (request, response, next) => {
+  if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
+  TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
+    if (err) {
+      next(err)
+    } else {
+      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+        return sum + review.rating
+      }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
+
+      response.json({
+        count: teamTaskReviews.length,
+        averageRating: averageRating
+      })
+    }
+  })
+})
+
+function sanitizeReviewTaskParams (params, callback) {
+  let sanitizeRating = function () {
+    let deferred = when_.defer()
+    let value = parseInt(params.rating, 10)
+    if (is_.number(value)) {
+      deferred.resolve(value)
+    } else {
+      deferred.reject(new ValidationError())
+    }
+
+    return deferred.promise
+  }
+
+  let sanitizeComment = function () {
+    let deferred = when_.defer()
+    deferred.resolve(params.comment)
+    return deferred.promise
+  }
+
+  when_
+    .all([sanitizeRating(), sanitizeComment()])
+    .then((res) => {
+      callback(null, {
+        rating: res[0],
+        comment: res[1]
+      })
+    })
+    .catch((err) => {
+      logger.error(err)
+      callback(err, null)
+    })
+}
+
+router.post('/:taskId/review', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
+  if (!request.team.isQualified()) {
+    throw new TeamNotQualifiedError()
+  }
+
+  sanitizeReviewTaskParams(request.body, (err, reviewParams) => {
+    if (err) {
+      next(err)
+    } else {
+      let createConstraints = {
+        rating: constraints.reviewRating,
+        comment: constraints.reviewComment
+      }
+
+      let validationResult = validator.validate(reviewParams, createConstraints)
+      if (validationResult === true) {
+        TeamTaskReviewController.create(request.team.id, request.task.id, reviewParams.rating, reviewParams.comment, (err, teamTaskReview) => {
+          if (err) {
+            next(err)
+          } else {
+            response.json({ success: true })
+          }
+        })
+      } else {
+        next(new ValidationError())
+      }
+    }
+  })
 })
 
 router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
@@ -183,6 +312,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
                   if (err) {
                     next(err)
                   } else {
+                    queue('updateTeamScore').add({ teamId: request.team.id })
                     response.json({ success: true })
                   }
                 })

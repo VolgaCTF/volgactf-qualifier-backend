@@ -39,84 +39,138 @@ class TeamScoreController {
     }, true)
   }
 
+  static updateTeamScore (teamId, callback) {
+    TeamController.get(teamId, (err, team) => {
+      if (err) {
+        callback(err)
+      } else {
+        TaskController.index((err, tasks) => {
+          if (err) {
+            callback(err)
+          } else {
+            TeamTaskHitController.listForTeam(teamId, (err, teamTaskHits) => {
+              if (err) {
+                callback(err)
+              } else {
+                let totalScore = 0
+                let lastUpdatedAt = null
+
+                for (let taskHit of teamTaskHits) {
+                  let task = _.findWhere(tasks, { id: taskHit.taskId })
+                  if (task) {
+                    totalScore += task.value
+                    if (lastUpdatedAt) {
+                      if (lastUpdatedAt.getTime() < taskHit.createdAt.getTime()) {
+                        lastUpdatedAt = taskHit.createdAt
+                      }
+                    } else {
+                      lastUpdatedAt = taskHit.createdAt
+                    }
+                  }
+                }
+
+                if (totalScore > 0 && lastUpdatedAt) {
+                  TeamScore
+                    .raw(
+                      `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
+                      VALUES (?, ?, ?)
+                      ON CONFLICT ("teamId") DO
+                      UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
+                      WHERE t."score" != EXCLUDED."score"
+                      RETURNING *`,
+                      [team.id, totalScore, lastUpdatedAt]
+                    )
+                    .then((response) => {
+                      callback(null)
+                      if (response.rowCount === 1) {
+                        EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
+                      }
+                    })
+                    .catch((err) => {
+                      logger.error(err)
+                      callback(err)
+                    })
+                } else {
+                  callback(null)
+                }
+              }
+            })
+          }
+        })
+      }
+    }, true)
+  }
+
   static updateScores (callback) {
     TeamController.index((err, teams) => {
       if (err) {
         callback(err)
       } else {
-        TeamScore
-          .query()
-          .then((teamScores) => {
-            TaskController.index((err, tasks) => {
+        TaskController.index((err, tasks) => {
+          if (err) {
+            callback(err)
+          } else {
+            TeamTaskHitController.list((err, teamTaskHits) => {
               if (err) {
                 callback(err)
               } else {
-                TeamTaskHitController.list((err, teamTaskHits) => {
-                  if (err) {
-                    callback(err)
-                  } else {
-                    let recalculateTeamScore = function (team, next) {
-                      let taskHitEntries = _.where(teamTaskHits, { teamId: team.id })
-                      let totalScore = 0
-                      let lastUpdatedAt = null
+                let recalculateTeamScore = function (team, next) {
+                  let taskHitEntries = _.where(teamTaskHits, { teamId: team.id })
+                  let totalScore = 0
+                  let lastUpdatedAt = null
 
-                      for (let taskHit of taskHitEntries) {
-                        let task = _.findWhere(tasks, { id: taskHit.taskId })
-                        if (task) {
-                          totalScore += task.value
-                          if (lastUpdatedAt) {
-                            if (lastUpdatedAt.getTime() < taskHit.createdAt.getTime()) {
-                              lastUpdatedAt = taskHit.createdAt
-                            }
-                          } else {
-                            lastUpdatedAt = taskHit.createdAt
-                          }
+                  for (let taskHit of taskHitEntries) {
+                    let task = _.findWhere(tasks, { id: taskHit.taskId })
+                    if (task) {
+                      totalScore += task.value
+                      if (lastUpdatedAt) {
+                        if (lastUpdatedAt.getTime() < taskHit.createdAt.getTime()) {
+                          lastUpdatedAt = taskHit.createdAt
                         }
-                      }
-
-                      if (totalScore > 0 && lastUpdatedAt) {
-                        TeamScore
-                          .raw(
-                            `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
-                            VALUES (?, ?, ?)
-                            ON CONFLICT ("teamId") DO
-                            UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
-                            WHERE t."score" != EXCLUDED."score"
-                            RETURNING *`,
-                            [team.id, totalScore, lastUpdatedAt]
-                          )
-                          .then((response) => {
-                            next(null, null)
-                            if (response.rowCount === 1) {
-                              EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
-                            }
-                          })
-                          .catch((err) => {
-                            logger.error(err)
-                            next(err, null)
-                          })
                       } else {
-                        next(null, null)
+                        lastUpdatedAt = taskHit.createdAt
                       }
                     }
+                  }
 
-                    async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {
-                      if (err) {
+                  if (totalScore > 0 && lastUpdatedAt) {
+                    TeamScore
+                      .raw(
+                        `INSERT INTO team_scores AS t ("teamId", "score", "updatedAt")
+                        VALUES (?, ?, ?)
+                        ON CONFLICT ("teamId") DO
+                        UPDATE SET "score" = EXCLUDED."score", "updatedAt" = EXCLUDED."updatedAt"
+                        WHERE t."score" != EXCLUDED."score"
+                        RETURNING *`,
+                        [team.id, totalScore, lastUpdatedAt]
+                      )
+                      .then((response) => {
+                        next(null, null)
+                        if (response.rowCount === 1) {
+                          EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
+                        }
+                      })
+                      .catch((err) => {
                         logger.error(err)
-                        callback(new InternalError())
-                      } else {
-                        callback(null)
-                      }
-                    })
+                        next(err, null)
+                      })
+                  } else {
+                    next(null, null)
+                  }
+                }
+
+                async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {
+                  if (err) {
+                    logger.error(err)
+                    callback(new InternalError())
+                  } else {
+                    callback(null)
                   }
                 })
               }
             })
-          })
-          .catch((err) => {
-            logger.error(err)
-            callback(err)
-          })
+          }
+        })
       }
     }, true)
   }

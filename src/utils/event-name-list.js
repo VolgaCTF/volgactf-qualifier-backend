@@ -45,6 +45,8 @@ class EventNameList {
 
     this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT] = 'createTeamTaskHit'
     this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT] = 'createTeamTaskHitAttempt'
+
+    this.eventNames[constants.EVENT_CREATE_TEAM_TASK_REVIEW] = 'createTeamTaskReview'
   }
 
   getName (type) {

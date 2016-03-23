@@ -3,7 +3,7 @@ import logger from '../utils/logger'
 import eventStream from '../controllers/event-stream'
 
 function getServerPort () {
-  return parseInt(process.env.THEMIS_PORT, 10) || 3000
+  return 3000 + (parseInt(process.env.NODE_APP_INSTANCE, 10) || 0)
 }
 
 let hostname = process.env.THEMIS_HOSTNAME || '127.0.0.1'

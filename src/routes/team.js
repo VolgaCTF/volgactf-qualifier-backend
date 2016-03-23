@@ -13,7 +13,7 @@ import Validator from 'validator.js'
 let validator = new Validator.Validator()
 let router = express.Router()
 let urlencodedParser = bodyParser.urlencoded({ extended: false })
-import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError } from '../utils/errors'
+import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError, NotAuthenticatedError } from '../utils/errors'
 import _ from 'underscore'
 import is_ from 'is_js'
 
@@ -32,6 +32,8 @@ import TeamScoreController from '../controllers/team-score'
 import teamScoreSerializer from '../serializers/team-score'
 import TeamTaskHitController from '../controllers/team-task-hit'
 import teamTaskHitSerializer from '../serializers/team-task-hit'
+import TeamTaskReviewController from '../controllers/team-task-review'
+import teamTaskReviewSerializer from '../serializers/team-task-review'
 
 router.get('/index', detectScope, (request, response, next) => {
   TeamController.index((err, teams) => {
@@ -57,16 +59,59 @@ router.get('/score/index', (request, response, next) => {
 
 router.param('teamId', teamParam.id)
 
-router.get('/:teamId/hits', detectScope, (request, response, next) => {
+router.get('/:teamId/hit/index', detectScope, (request, response, next) => {
+  if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
   TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
     if (err) {
       next(err)
     } else {
-      if (request.scope.isSupervisor() || (request.scope.isTeam() && request.teamId === request.session.identityID)) {
-        response.json(_.map(teamTaskHits, teamTaskHitSerializer))
-      } else {
-        response.json(teamTaskHits.length)
-      }
+      response.json(teamTaskHits.map(teamTaskHitSerializer))
+    }
+  })
+})
+
+router.get('/:teamId/hit/statistics', (request, response, next) => {
+  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json({
+        count: teamTaskHits.length
+      })
+    }
+  })
+})
+
+router.get('/:teamId/review/index', detectScope, (request, response, next) => {
+  if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
+    throw new NotAuthenticatedError()
+  }
+
+  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+    if (err) {
+      next(err)
+    } else {
+      response.json(teamTaskReviews.map(teamTaskReviewSerializer))
+    }
+  })
+})
+
+router.get('/:teamId/review/statistics', (request, response, next) => {
+  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+    if (err) {
+      next(err)
+    } else {
+      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+        return sum + review.rating
+      }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
+
+      response.json({
+        count: teamTaskReviews.length,
+        averageRating: averageRating
+      })
     }
   })
 })

@@ -26,6 +26,17 @@ queue('updateScoresQueue').process((job, done) => {
   })
 })
 
+queue('updateTeamScore').process((job, done) => {
+  TeamScoreController.updateTeamScore(job.data.teamId, (err) => {
+    if (err) {
+      logger.error(err)
+      throw err
+    } else {
+      done()
+    }
+  })
+})
+
 queue('createLogoQueue').process((job, done) => {
   let newFilename = path.join(process.env.THEMIS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
   gm(job.data.filename)

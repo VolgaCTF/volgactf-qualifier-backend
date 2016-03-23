@@ -19,7 +19,6 @@ import QualifyTeamEvent from '../events/qualify-team'
 import LoginTeamEvent from '../events/login-team'
 import UpdateTeamPasswordEvent from '../events/update-team-password'
 import DisqualifyTeamEvent from '../events/disqualify-team'
-import UpdateTeamScoreEvent from '../events/update-team-score'
 
 class TeamController {
   static restore (email, callback) {
