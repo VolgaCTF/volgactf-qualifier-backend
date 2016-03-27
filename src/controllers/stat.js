@@ -5,6 +5,7 @@ import _ from 'underscore'
 import constants from '../utils/constants'
 import TeamTaskHitAttemptController from './team-task-hit-attempt'
 import TeamTaskHitController from './team-task-hit'
+import TeamTaskReviewController from './team-task-review'
 
 class StatController {
   static getStats (callback) {
@@ -15,7 +16,8 @@ class StatController {
         disqualified: 0,
         signedInDuringContest: 0,
         attemptedToSolveTasks: 0,
-        solvedAtLeastOneTask: 0
+        solvedAtLeastOneTask: 0,
+        reviewedAtLeastOneTask: 0
       }
     }
 
@@ -39,6 +41,7 @@ class StatController {
               const setSignedIn = new Set()
               const setHitAttempt = new Set()
               const setHit = new Set()
+              const setReview = new Set()
 
               const contestStartTimestamp = contest.startsAt.getTime()
               const contestFinishTimestamp = contest.finishesAt.getTime()
@@ -72,11 +75,22 @@ class StatController {
                             setHit.add(teamTaskHit.teamId)
                           }
 
-                          result.teams.signedInDuringContest = setSignedIn.size
-                          result.teams.attemptedToSolveTasks = setHitAttempt.size
-                          result.teams.solvedAtLeastOneTask = setHit.size
+                          TeamTaskReviewController.index((err, teamTaskReviews) => {
+                            if (err) {
+                              callback(err, null)
+                            } else {
+                              for (const teamTaskReview of teamTaskReviews) {
+                                setReview.add(teamTaskReview.teamId)
+                              }
 
-                          callback(null, result)
+                              result.teams.signedInDuringContest = setSignedIn.size
+                              result.teams.attemptedToSolveTasks = setHitAttempt.size
+                              result.teams.solvedAtLeastOneTask = setHit.size
+                              result.teams.reviewedAtLeastOneTask = setReview.size
+
+                              callback(null, result)
+                            }
+                          })
                         }
                       })
                     }
