@@ -23,6 +23,18 @@ class TeamTaskHitAttemptController {
         callback(new InternalError(), null)
       })
   }
+
+  static index (callback) {
+    TeamTaskHitAttempt
+      .query()
+      .then((teamTaskHitAttempts) => {
+        callback(null, teamTaskHitAttempts)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
+  }
 }
 
 export default TeamTaskHitAttemptController

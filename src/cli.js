@@ -3,6 +3,7 @@ import parser from 'commander'
 import prompt from 'prompt'
 import SupervisorController from './controllers/supervisor'
 import TeamController from './controllers/team'
+import StatController from './controllers/stat'
 
 parser
   .command('create_supervisor')
@@ -163,6 +164,28 @@ parser
             process.exit(0)
           }
         })
+      }
+    })
+  })
+
+parser
+  .command('display_stats')
+  .description('Display stats')
+  .action((opts) => {
+    StatController.getStats((err, stats) => {
+      if (err) {
+        logger.error(err)
+        process.exit(1)
+      } else {
+        logger.info('===== Teams =====')
+        logger.info(`Total count: ${stats.teams.total}`)
+        logger.info(`Qualified count: ${stats.teams.qualified}`)
+        logger.info(`Disqualified count: ${stats.teams.disqualified}`)
+        logger.info(`Number of teams signed in during the contest: ${stats.teams.signedInDuringContest}`)
+        logger.info(`Number of teams attempted to solve tasks: ${stats.teams.attemptedToSolveTasks}`)
+        logger.info(`Number of teams solved at least one task: ${stats.teams.solvedAtLeastOneTask}`)
+        logger.info('=================')
+        process.exit(0)
       }
     })
   })
