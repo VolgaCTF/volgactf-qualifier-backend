@@ -11,6 +11,18 @@ class TeamTaskReviewController {
     return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_reviews_ndx_team_task_unique')
   }
 
+  static index (callback) {
+    TeamTaskReview
+      .query()
+      .then((teamTaskReviews) => {
+        callback(null, teamTaskReviews)
+      })
+      .catch((err) => {
+        logger.error(err)
+        callback(new InternalError(), null)
+      })
+  }
+
   static indexByTask (taskId, callback) {
     TeamTaskReview
       .query()
