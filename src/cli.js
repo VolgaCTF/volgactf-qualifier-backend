@@ -4,6 +4,8 @@ import prompt from 'prompt'
 import SupervisorController from './controllers/supervisor'
 import TeamController from './controllers/team'
 import StatController from './controllers/stat'
+import Table from 'cli-table'
+import _ from 'underscore'
 
 parser
   .command('create_supervisor')
@@ -177,15 +179,44 @@ parser
         logger.error(err)
         process.exit(1)
       } else {
-        logger.info('===== Teams =====')
-        logger.info(`Total number of teams: ${stats.teams.total}`)
-        logger.info(`Number of qualified teams: ${stats.teams.qualified}`)
-        logger.info(`Number of disqualified teams: ${stats.teams.disqualified}`)
-        logger.info(`Number of teams which signed in during the competition: ${stats.teams.signedInDuringContest}`)
-        logger.info(`Number of teams which attempted to solve tasks: ${stats.teams.attemptedToSolveTasks}`)
-        logger.info(`Number of teams which solved at least one task: ${stats.teams.solvedAtLeastOneTask}`)
-        logger.info(`Number of teams which reviewed at least one task: ${stats.teams.reviewedAtLeastOneTask}`)
-        logger.info('=================')
+        const table1 = new Table({
+          head: [
+            'Metric',
+            'Number of teams'
+          ]
+        })
+
+        table1.push(
+          ['Total', stats.teams.total],
+          ['Qualified', stats.teams.qualified],
+          ['Disqualified', stats.teams.disqualified],
+          ['Signed in during the competition', stats.teams.signedInDuringContest],
+          ['Attempted to solve tasks', stats.teams.attemptedToSolveTasks],
+          ['Solved at least one task', stats.teams.solvedAtLeastOneTask],
+          ['Reviewed at least one task', stats.teams.reviewedAtLeastOneTask]
+        )
+
+        console.log(`Key metrics\n${table1.toString()}\n\n`)
+
+        const table2 = new Table({
+          head: [
+            '#',
+            'Country',
+            'Number of teams'
+          ]
+        })
+
+        table2.push.apply(table2, _.map(_.sortBy(_.pairs(stats.countries), (entry) => {
+          return entry[1]
+        }).reverse(), (entry, ndx) => {
+          return [
+            ndx + 1,
+            entry[0],
+            entry[1]
+          ]
+        }))
+        console.log(`Country distribution\n${table2.toString()}\n\n`)
+
         process.exit(0)
       }
     })

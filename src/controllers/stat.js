@@ -6,6 +6,7 @@ import constants from '../utils/constants'
 import TeamTaskHitAttemptController from './team-task-hit-attempt'
 import TeamTaskHitController from './team-task-hit'
 import TeamTaskReviewController from './team-task-review'
+import CountryProvider from './country'
 
 class StatController {
   static getStats (callback) {
@@ -18,6 +19,8 @@ class StatController {
         attemptedToSolveTasks: 0,
         solvedAtLeastOneTask: 0,
         reviewedAtLeastOneTask: 0
+      },
+      countries: {
       }
     }
 
@@ -88,7 +91,20 @@ class StatController {
                               result.teams.solvedAtLeastOneTask = setHit.size
                               result.teams.reviewedAtLeastOneTask = setReview.size
 
-                              callback(null, result)
+                              CountryProvider.index((err, countries) => {
+                                if (err) {
+                                  callback(err, null)
+                                } else {
+                                  const qualifiedTeams = _.filter(teams, (team) => {
+                                    return team.isQualified()
+                                  })
+                                  result.countries = _.countBy(qualifiedTeams, (team) => {
+                                    return _.findWhere(countries, { id: team.countryId }).name
+                                  })
+
+                                  callback(null, result)
+                                }
+                              })
                             }
                           })
                         }
