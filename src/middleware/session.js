@@ -93,6 +93,11 @@ export function detectScope (request, response, next) {
   next()
 }
 
+let secureConnection = false
+if (process.env.THEMIS_QUALS_SECURE) {
+  secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+}
+
 export default session({
   store: new RedisStore({
     client: redis.createClient()
@@ -105,7 +110,7 @@ export default session({
     domain: process.env.THEMIS_DOMAIN,
     path: '/api',
     httpOnly: true,
-    secure: true,
+    secure: secureConnection,
     expires: false
   }
 })
