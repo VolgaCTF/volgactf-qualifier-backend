@@ -4,7 +4,6 @@ import gm from 'gm'
 import path from 'path'
 import token from './utils/token'
 import TeamScoreController from './controllers/team-score'
-import MandrillController from './controllers/mail/mandrill'
 import MailgunController from './controllers/mail/mailgun'
 import SendGridController from './controllers/mail/sendgrid'
 import TeamController from './controllers/team'
@@ -58,12 +57,18 @@ queue('createLogoQueue').process((job, done) => {
     })
 })
 
+let secureConnection = false
+if (process.env.THEMIS_QUALS_SECURE) {
+  secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+}
+
 queue('sendEmailQueue').process((job, done) => {
   let message = null
   if (job.data.message === 'welcome') {
     message = emailGenerator.getWelcomeEmail({
       name: job.data.name,
       domain: process.env.THEMIS_DOMAIN,
+      secure: secureConnection,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
@@ -71,6 +76,7 @@ queue('sendEmailQueue').process((job, done) => {
     message = emailGenerator.getRestoreEmail({
       name: job.data.name,
       domain: process.env.THEMIS_DOMAIN,
+      secure: secureConnection,
       team: token.encode(job.data.email),
       code: token.encode(job.data.token)
     })
@@ -84,9 +90,7 @@ queue('sendEmailQueue').process((job, done) => {
   let senderController = null
   let emailTransport = process.env.THEMIS_EMAIL_TRANSPORT
 
-  if (emailTransport === 'mandrill') {
-    senderController = MandrillController
-  } else if (emailTransport === 'mailgun') {
+  if (emailTransport === 'mailgun') {
     senderController = MailgunController
   } else if (emailTransport === 'sendgrid') {
     senderController = SendGridController
