@@ -6,6 +6,7 @@ import { InternalError } from '../utils/errors'
 import TeamController from '../controllers/team'
 import TeamScore from '../models/team-score'
 import _ from 'underscore'
+import jsesc from 'jsesc'
 
 function rankFunc (a, b) {
   if (a.score > b.score) {
@@ -61,7 +62,7 @@ router.get('/ctftime', (request, response, next) => {
           })
 
           entries.sort(rankFunc)
-          response.json({
+          const data = {
             standings: _.map(entries, (entry, ndx) => {
               return {
                 pos: ndx + 1,
@@ -69,7 +70,12 @@ router.get('/ctftime', (request, response, next) => {
                 score: entry.score
               }
             })
-          })
+          }
+          response
+            .type('json')
+            .send(jsesc(data, {
+              json: true
+            }))
         })
         .catch((err) => {
           logger.error(err)
