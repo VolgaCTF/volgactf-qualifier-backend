@@ -1,6 +1,6 @@
 {
   "name": "themis-quals-backend",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "description": "Themis Quals platform backend",
   "main": "index.js",
   "scripts": {
