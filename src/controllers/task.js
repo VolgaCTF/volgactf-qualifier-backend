@@ -21,6 +21,8 @@ import CloseTaskEvent from '../events/close-task'
 import CreateTaskCategoryEvent from '../events/create-task-category'
 import DeleteTaskCategoryEvent from '../events/delete-task-category'
 import RevealTaskCategoryEvent from '../events/reveal-task-category'
+import PostController from './post'
+import TwitterController from './twitter'
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
@@ -230,6 +232,12 @@ class TaskController {
     })
   }
 
+  static getTaskLink(taskId) {
+    const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
+    const fqdn = process.env.THEMIS_DOMAIN
+    return `${prefix}://${fqdn}/tasks?action=show&taskId=${taskId}`
+  }
+
   static open (task, callback) {
     if (task.isInitial()) {
       Task
@@ -251,6 +259,23 @@ class TaskController {
               }
             }
           })
+
+          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+            PostController.create(
+              `New task — ${updatedTask.title}`,
+              `:tada: Check out the new task — [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
+              (err, post) => {
+              }
+            )
+          }
+
+          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+            TwitterController.post(
+              `🎉 New task — ${updatedTask.title} — worth ${updatedTask.value} pts! ${TaskController.getTaskLink(updatedTask.id)}`,
+              (err) => {
+              }
+            )
+          }
         })
         .catch((err) => {
           logger.error(err)
