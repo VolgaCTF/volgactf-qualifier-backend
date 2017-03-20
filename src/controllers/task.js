@@ -23,6 +23,7 @@ import DeleteTaskCategoryEvent from '../events/delete-task-category'
 import RevealTaskCategoryEvent from '../events/reveal-task-category'
 import PostController from './post'
 import TwitterController from './twitter'
+import TelegramController from './telegram'
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
@@ -263,7 +264,7 @@ class TaskController {
           if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
             PostController.create(
               `New task — ${updatedTask.title}`,
-              `:tada: Check out the new task — [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
+              `:triangular_flag_on_post: Check out the new task — [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
               (err, post) => {
               }
             )
@@ -271,7 +272,15 @@ class TaskController {
 
           if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
             TwitterController.post(
-              `🎉 New task — ${updatedTask.title} — worth ${updatedTask.value} pts! ${TaskController.getTaskLink(updatedTask.id)}`,
+              `🚩 New task — ${updatedTask.title} — worth ${updatedTask.value} pts! ${TaskController.getTaskLink(updatedTask.id)}`,
+              (err) => {
+              }
+            )
+          }
+
+          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+            TelegramController.post(
+              `🚩 Check out the new task - [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
               (err) => {
               }
             )
