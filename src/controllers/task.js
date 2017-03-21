@@ -21,9 +21,8 @@ import CloseTaskEvent from '../events/close-task'
 import CreateTaskCategoryEvent from '../events/create-task-category'
 import DeleteTaskCategoryEvent from '../events/delete-task-category'
 import RevealTaskCategoryEvent from '../events/reveal-task-category'
-import PostController from './post'
-import TwitterController from './twitter'
-import TelegramController from './telegram'
+
+import queue from '../utils/queue'
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
@@ -169,6 +168,9 @@ class TaskController {
                           }
                         }))
                         .then((newTaskHints) => {
+                          if (newTaskHints.length > 0) {
+                            queue('notifyTaskHint').add({ taskId: task.id })
+                          }
                         })
                     })
                 })
@@ -261,30 +263,9 @@ class TaskController {
             }
           })
 
-          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
-            PostController.create(
-              `New task — ${updatedTask.title}`,
-              `:triangular_flag_on_post: Check out the new task — [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
-              (err, post) => {
-              }
-            )
-          }
-
-          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
-            TwitterController.post(
-              `🚩 New task — ${updatedTask.title} — worth ${updatedTask.value} pts! ${TaskController.getTaskLink(updatedTask.id)}`,
-              (err) => {
-              }
-            )
-          }
-
-          if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-            TelegramController.post(
-              `🚩 Check out the new task - [${updatedTask.title}](${TaskController.getTaskLink(updatedTask.id)}), which is worth ${updatedTask.value} points!`,
-              (err) => {
-              }
-            )
-          }
+          queue('notifyOpenTask').add({
+            taskId: updatedTask.id
+          })
         })
         .catch((err) => {
           logger.error(err)

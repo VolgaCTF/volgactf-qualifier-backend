@@ -7,6 +7,8 @@ import logger from '../utils/logger'
 import EventController from './event'
 import UpdateContestEvent from '../events/update-contest'
 
+import queue from '../utils/queue'
+
 class ContestController {
   static get (callback) {
     Contest
@@ -59,6 +61,11 @@ class ContestController {
               .then((updatedContest) => {
                 callback(null, updatedContest)
                 EventController.push(new UpdateContestEvent(updatedContest))
+                if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
+                  queue('notifyStartCompetition').add({})
+                } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
+                  queue('notifyFinishCompetition').add({})
+                }
               })
               .catch((err) => {
                 logger.error(err)
@@ -75,6 +82,11 @@ class ContestController {
               .then((contest) => {
                 callback(null, contest)
                 EventController.push(new UpdateContestEvent(contest))
+                if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
+                  queue('notifyStartCompetition').add({})
+                } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
+                  queue('notifyFinishCompetition').add({})
+                }
               })
               .catch((err) => {
                 logger.error(err)
