@@ -6,6 +6,8 @@ import TeamController from './controllers/team'
 import StatController from './controllers/stat'
 import Table from 'cli-table'
 import _ from 'underscore'
+import numeral from 'numeral'
+import moment from 'moment'
 
 parser
   .command('create_supervisor')
@@ -182,7 +184,7 @@ parser
         const table1 = new Table({
           head: [
             'Metric',
-            'Number of teams'
+            'Value'
           ]
         })
 
@@ -191,12 +193,12 @@ parser
           ['Qualified', stats.teams.qualified],
           ['Disqualified', stats.teams.disqualified],
           ['Signed in during the competition', stats.teams.signedInDuringContest],
-          ['Attempted to solve tasks', stats.teams.attemptedToSolveTasks],
+          ['Submitted at least one flag', stats.teams.attemptedToSolveTasks],
           ['Solved at least one task', stats.teams.solvedAtLeastOneTask],
           ['Reviewed at least one task', stats.teams.reviewedAtLeastOneTask]
         )
 
-        console.log(`Key metrics\n${table1.toString()}\n\n`)
+        console.log(`Number of teams\n${table1.toString()}\n\n`)
 
         const table2 = new Table({
           head: [
@@ -215,8 +217,31 @@ parser
             entry[1]
           ]
         }))
-        console.log(`Country distribution\n${table2.toString()}\n\n`)
+        console.log(`Team/country distribution\n${table2.toString()}\n\n`)
 
+        for (const task in stats.tasks) {
+          const table3 = new Table({
+            head: [
+              'Metric',
+              'Value'
+            ]
+          })
+          const taskData = stats.tasks[task]
+          table3.push(
+            ['Value', taskData.value],
+            ['Categories', taskData.categories.join(', ')],
+            ['Opened', (taskData.opened === null) ? 'n/a' : moment(taskData.opened).format('lll')],
+            ['Flags submitted for this task', taskData.flagsSubmitted],
+            ['First flag submitted', (taskData.firstSubmit === null) ? 'n/a' : moment(taskData.firstSubmit).format('lll')],
+            ['Last flag submitted', (taskData.lastSubmit === null) ? 'n/a' : moment(taskData.lastSubmit).format('lll')],
+            ['Teams solved this task', taskData.teamsSolved],
+            ['First solved', (taskData.firstSolved === null) ? 'n/a' : moment(taskData.firstSolved).format('lll')],
+            ['Last solved', (taskData.lastSolved === null) ? 'n/a' : moment(taskData.lastSolved).format('lll')],
+            ['Reviews', taskData.reviews],
+            ['Average rating', (taskData.averageRating === null) ? 'n/a' : numeral(taskData.averageRating).format('0.00')]
+          )
+          console.log(`Task ${task}\n${table3.toString()}\n\n`)
+        }
         process.exit(0)
       }
     })
