@@ -118,8 +118,6 @@ class StatController {
       if (err) {
         callback(err, null)
       } else {
-        console.log(data.categories)
-        console.log(data.taskCategories)
         result.teams.total = data.teams.length
         result.teams.qualified = _.filter(data.teams, (team) => {
           return team.isQualified()
@@ -146,13 +144,13 @@ class StatController {
         for (const teamTaskHitAttempt of data.teamTaskHitAttempts) {
           setHitAttempt.add(teamTaskHitAttempt.teamId)
         }
-        result.teams.attemptedToSolveTasks = setHitAttempt.size
 
         const setHit = new Set()
         for (const teamTaskHit of data.teamTaskHits) {
           setHitAttempt.add(teamTaskHit.teamId)
           setHit.add(teamTaskHit.teamId)
         }
+        result.teams.attemptedToSolveTasks = setHitAttempt.size
         result.teams.solvedAtLeastOneTask = setHit.size
 
         const setReview = new Set()
