@@ -51,7 +51,6 @@ export default class EmailGenerator {
             }
           }
           this.loaded = true
-          console.log('Initialized')
           resolve(true)
         })
       }
