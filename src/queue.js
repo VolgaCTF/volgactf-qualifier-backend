@@ -15,9 +15,9 @@ import PostController from './controllers/post'
 import TwitterController from './controllers/twitter'
 import TelegramController from './controllers/telegram'
 
-let Customizer = require(process.env.THEMIS_CUSTOMIZER_PACKAGE || 'themis-quals-customizer-default').default
-let customizer = new Customizer()
-let emailGenerator = customizer.getEmailGenerator()
+import EmailGenerator from './utils/email-generator'
+
+const emailGenerator = new EmailGenerator()
 
 queue('updateScoresQueue').process((job, done) => {
   TeamScoreController.updateScores((err) => {
@@ -63,53 +63,60 @@ queue('createLogoQueue').process((job, done) => {
 })
 
 queue('sendEmailQueue').process((job, done) => {
-  let secureConnection = false
-  if (process.env.THEMIS_QUALS_SECURE) {
-    secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
-  }
-
-  let message = null
-  if (job.data.message === 'welcome') {
-    message = emailGenerator.getWelcomeEmail({
-      name: job.data.name,
-      domain: process.env.THEMIS_DOMAIN,
-      secure: secureConnection,
-      team: token.encode(job.data.email),
-      code: token.encode(job.data.token)
-    })
-  } else if (job.data.message === 'restore') {
-    message = emailGenerator.getRestoreEmail({
-      name: job.data.name,
-      domain: process.env.THEMIS_DOMAIN,
-      secure: secureConnection,
-      team: token.encode(job.data.email),
-      code: token.encode(job.data.token)
-    })
-  }
-
-  if (!message) {
-    done()
-    return
-  }
-
-  let senderController = null
-  let emailTransport = process.env.THEMIS_EMAIL_TRANSPORT
-
-  if (emailTransport === 'mailgun') {
-    senderController = MailgunController
-  } else if (emailTransport === 'sendgrid') {
-    senderController = SendGridController
-  }
-
-  if (!senderController) {
-    done()
-    return
-  }
-
-  senderController
-    .sendEmail(message, job.data.email, job.data.name)
+  emailGenerator
+    .init()
     .then(() => {
-      done()
+      let secureConnection = false
+      if (process.env.THEMIS_QUALS_SECURE) {
+        secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+      }
+
+      let message = null
+      if (job.data.message === 'welcome') {
+        message = emailGenerator.getWelcomeEmail({
+          name: job.data.name,
+          domain: process.env.THEMIS_DOMAIN,
+          secure: secureConnection,
+          team: token.encode(job.data.email),
+          code: token.encode(job.data.token)
+        })
+      } else if (job.data.message === 'restore') {
+        message = emailGenerator.getRestoreEmail({
+          name: job.data.name,
+          domain: process.env.THEMIS_DOMAIN,
+          secure: secureConnection,
+          team: token.encode(job.data.email),
+          code: token.encode(job.data.token)
+        })
+      }
+
+      if (!message) {
+        done()
+        return
+      }
+
+      let senderController = null
+      let emailTransport = process.env.THEMIS_EMAIL_TRANSPORT
+
+      if (emailTransport === 'mailgun') {
+        senderController = MailgunController
+      } else if (emailTransport === 'sendgrid') {
+        senderController = SendGridController
+      }
+
+      if (!senderController) {
+        done()
+        return
+      }
+
+      senderController
+        .sendEmail(message, job.data.email, job.data.name)
+        .then(() => {
+          done()
+        })
+        .catch((err) => {
+          done(err)
+        })
     })
     .catch((err) => {
       done(err)
