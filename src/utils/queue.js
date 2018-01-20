@@ -12,7 +12,7 @@ if (process.env.REDIS_DB) {
   database = parseInt(process.env.REDIS_DB, 10)
 }
 
-let prefix = process.env.THEMIS_QUEUE_PREFIX || 'themis-quals'
+let prefix = process.env.THEMIS_QUALS_QUEUE_PREFIX || 'themis-quals'
 
 export default function (name) {
   return Queue(`${prefix}:${name}`, port, host, { db: database })

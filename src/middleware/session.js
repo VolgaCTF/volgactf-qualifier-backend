@@ -102,12 +102,12 @@ export default session({
   store: new RedisStore({
     client: redis.createClient()
   }),
-  secret: process.env.THEMIS_SESSION_SECRET,
+  secret: process.env.THEMIS_QUALS_SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  name: 'themis-session-id',
+  name: 'themis-quals-session',
   cookie: {
-    domain: process.env.THEMIS_DOMAIN,
+    domain: process.env.THEMIS_QUALS_FQDN,
     path: '/api',
     httpOnly: true,
     secure: secureConnection,

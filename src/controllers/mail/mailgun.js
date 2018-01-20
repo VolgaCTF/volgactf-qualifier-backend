@@ -5,7 +5,7 @@ export default class MailgunController {
   static sendEmail (message, recipientEmail, recipientName) {
     return new Promise((resolve, reject) => {
       let data = {
-        from: `${process.env.THEMIS_EMAIL_SENDER_NAME} <${process.env.THEMIS_EMAIL_SENDER_ADDRESS}>`,
+        from: `${process.env.THEMIS_QUALS_EMAIL_SENDER_NAME} <${process.env.THEMIS_QUALS_EMAIL_SENDER_ADDRESS}>`,
         to: `${recipientName} <${recipientEmail}>`,
         subject: message.subject,
         text: message.plain,

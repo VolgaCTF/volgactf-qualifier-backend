@@ -42,7 +42,7 @@ queue('updateTeamScore').process((job, done) => {
 })
 
 queue('createLogoQueue').process((job, done) => {
-  let newFilename = path.join(process.env.THEMIS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
+  let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
     .write(newFilename, (err) => {
@@ -75,7 +75,7 @@ queue('sendEmailQueue').process((job, done) => {
       if (job.data.message === 'welcome') {
         message = emailGenerator.getWelcomeEmail({
           name: job.data.name,
-          domain: process.env.THEMIS_DOMAIN,
+          domain: process.env.THEMIS_QUALS_FQDN,
           secure: secureConnection,
           team: token.encode(job.data.email),
           code: token.encode(job.data.token)
@@ -83,7 +83,7 @@ queue('sendEmailQueue').process((job, done) => {
       } else if (job.data.message === 'restore') {
         message = emailGenerator.getRestoreEmail({
           name: job.data.name,
-          domain: process.env.THEMIS_DOMAIN,
+          domain: process.env.THEMIS_QUALS_FQDN,
           secure: secureConnection,
           team: token.encode(job.data.email),
           code: token.encode(job.data.token)
@@ -96,7 +96,7 @@ queue('sendEmailQueue').process((job, done) => {
       }
 
       let senderController = null
-      let emailTransport = process.env.THEMIS_EMAIL_TRANSPORT
+      let emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
 
       if (emailTransport === 'mailgun') {
         senderController = MailgunController
@@ -125,7 +125,7 @@ queue('sendEmailQueue').process((job, done) => {
 
 function getTasksLink () {
   const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_DOMAIN
+  const fqdn = process.env.THEMIS_QUALS_FQDN
   return `${prefix}://${fqdn}/tasks`
 }
 
@@ -160,7 +160,7 @@ queue('notifyStartCompetition').process((job, done) => {
 
 function getScoreboardLink () {
   const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_DOMAIN
+  const fqdn = process.env.THEMIS_QUALS_FQDN
   return `${prefix}://${fqdn}/scoreboard`
 }
 

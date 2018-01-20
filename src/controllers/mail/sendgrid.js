@@ -7,8 +7,8 @@ export default class SendGridController {
       let payload = {
         to: recipientEmail,
         toname: recipientName,
-        from: process.env.THEMIS_EMAIL_SENDER_ADDRESS,
-        fromname: process.env.THEMIS_EMAIL_SENDER_NAME,
+        from: process.env.THEMIS_QUALS_EMAIL_SENDER_ADDRESS,
+        fromname: process.env.THEMIS_QUALS_EMAIL_SENDER_NAME,
         subject: message.subject,
         text: message.plain,
         html: message.html

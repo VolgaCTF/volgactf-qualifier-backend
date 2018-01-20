@@ -17,6 +17,6 @@ class EventPublisher {
   }
 }
 
-let redisChannel = process.env.THEMIS_STREAM_REDIS_CHANNEL || 'themis_realtime'
+let redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
 
 export default new EventPublisher(redisChannel)

@@ -237,7 +237,7 @@ class TaskController {
 
   static getTaskLink(taskId) {
     const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-    const fqdn = process.env.THEMIS_DOMAIN
+    const fqdn = process.env.THEMIS_QUALS_FQDN
     return `${prefix}://${fqdn}/tasks?action=show&taskId=${taskId}`
   }
 
