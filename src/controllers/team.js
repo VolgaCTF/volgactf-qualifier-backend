@@ -103,7 +103,7 @@ class TeamController {
               passwordHash: hash,
               countryId: options.countryId,
               locality: options.locality,
-              institution: options.institution,
+              institution: '',
               disqualified: false
             })
             .then((newTeam) => {

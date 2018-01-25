@@ -398,8 +398,7 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
       email: constraints.email,
       password: constraints.password,
       countryId: constraints.countryId,
-      locality: constraints.locality,
-      institution: constraints.institution
+      locality: constraints.locality
     }
 
     let validationResult = validator.validate(teamInfo, signupConstraints)
