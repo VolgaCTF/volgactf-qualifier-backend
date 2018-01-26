@@ -15,12 +15,25 @@ import PostController from './controllers/post'
 import TwitterController from './controllers/twitter'
 import TelegramController from './controllers/telegram'
 
+import ContestController from './controllers/contest'
+
 import EmailGenerator from './utils/email-generator'
 
 const emailGenerator = new EmailGenerator()
 
 queue('updateScoresQueue').process((job, done) => {
   TeamScoreController.updateScores((err) => {
+    if (err) {
+      logger.error(err)
+      throw err
+    } else {
+      done()
+    }
+  })
+})
+
+queue('checkContestQueue').process(function (job, done) {
+  ContestController.checkUpdate(function (err, contest) {
     if (err) {
       logger.error(err)
       throw err

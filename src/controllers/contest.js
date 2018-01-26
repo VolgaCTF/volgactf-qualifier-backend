@@ -14,10 +14,10 @@ class ContestController {
     Contest
       .query()
       .first()
-      .then((contest) => {
+      .then(function (contest) {
         callback(null, contest)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -37,8 +37,33 @@ class ContestController {
     return initialToStarted || startedToPaused || pausedToStarted || startedToFinished || pausedToFinished
   }
 
-  static update (newState, startsAt, finishesAt, callback) {
-    ContestController.get((err, contest) => {
+  static manualUpdate (newState, startsAt, finishesAt, callback) {
+    ContestController.internalUpdate(newState, startsAt, finishesAt, callback)
+  }
+
+  static checkUpdate (callback) {
+    ContestController.get(function (err, contest) {
+      if (err) {
+        callback(err, null)
+      } else {
+        if (contest) {
+          const now = new Date()
+          if (contest.state === constants.CONTEST_INITIAL && contest.startsAt != null && now.getTime() >= contest.startsAt.getTime()) {
+            ContestController.internalUpdate(constants.CONTEST_STARTED, contest.startsAt, contest.finishesAt, callback)
+          } else if ((contest.state === constants.CONTEST_STARTED || contest.state === constants.CONTEST_PAUSED) && contest.finishesAt != null && now.getTime() >= contest.finishesAt.getTime()) {
+            ContestController.internalUpdate(constants.CONTEST_FINISHED, contest.startsAt, contest.finishesAt, callback)
+          } else {
+            callback(null, null)
+          }
+        } else {
+          callback(null, null)
+        }
+      }
+    })
+  }
+
+  static internalUpdate (newState, startsAt, finishesAt, callback) {
+    ContestController.get(function (err, contest) {
       if (err) {
         callback(err, null)
       } else {
@@ -47,7 +72,7 @@ class ContestController {
           curState = contest.state
         }
 
-        if (!this.isValidTransition(curState, newState)) {
+        if (!ContestController.isValidTransition(curState, newState)) {
           callback(new InvalidStateTransitionError(), null)
         } else {
           if (contest) {
@@ -58,16 +83,16 @@ class ContestController {
                 startsAt: startsAt,
                 finishesAt: finishesAt
               })
-              .then((updatedContest) => {
-                callback(null, updatedContest)
+              .then(function (updatedContest) {
                 EventController.push(new UpdateContestEvent(updatedContest))
                 if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
                   queue('notifyStartCompetition').add({})
                 } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
                   queue('notifyFinishCompetition').add({})
                 }
+                callback(null, updatedContest)
               })
-              .catch((err) => {
+              .catch(function (err) {
                 logger.error(err)
                 callback(new InternalError(), null)
               })
@@ -79,16 +104,16 @@ class ContestController {
                 startsAt: startsAt,
                 finishesAt: finishesAt
               })
-              .then((contest) => {
-                callback(null, contest)
+              .then(function (contest) {
                 EventController.push(new UpdateContestEvent(contest))
                 if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
                   queue('notifyStartCompetition').add({})
                 } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
                   queue('notifyFinishCompetition').add({})
                 }
+                callback(null, contest)
               })
-              .catch((err) => {
+              .catch(function (err) {
                 logger.error(err)
                 callback(new InternalError(), null)
               })

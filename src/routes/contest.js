@@ -63,7 +63,7 @@ router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (
     throw new ValidationError()
   }
 
-  ContestController.update(request.body.state, request.body.startsAt, request.body.finishesAt, (err, contest) => {
+  ContestController.manualUpdate(request.body.state, request.body.startsAt, request.body.finishesAt, (err, contest) => {
     if (err) {
       next(err)
     } else {
