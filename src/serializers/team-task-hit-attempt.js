@@ -1,4 +1,4 @@
-export default function (teamTaskHitAttempt) {
+module.exports = function (teamTaskHitAttempt) {
   return {
     teamId: teamTaskHitAttempt.teamId,
     taskId: teamTaskHitAttempt.taskId,

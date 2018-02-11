@@ -1,12 +1,12 @@
-import redis from '../utils/redis'
-let redisClient = redis.createClient()
-import { InternalError } from '../utils/errors'
-import logger from '../utils/logger'
-import _ from 'underscore'
+const redis = require('../utils/redis')
+const { InternalError } = require('../utils/errors')
+const logger = require('../utils/logger')
+const _ = require('underscore')
+const redisClient = redis.createClient()
 
 class LimitController {
   constructor (key, options = {}) {
-    let defaultOptions = {
+    const defaultOptions = {
       timeout: 10,
       maxAttempts: 3
     }
@@ -28,7 +28,7 @@ class LimitController {
             logger.error(err)
             callback(new InternalError(), null)
           } else {
-            let returnValue = (attempts > this.maxAttempts)
+            const returnValue = (attempts > this.maxAttempts)
             if (ttl < 0) {
               redisClient.expire(this.key, this.timeout, (err) => {
                 if (err) {
@@ -48,4 +48,4 @@ class LimitController {
   }
 }
 
-export default LimitController
+module.exports = LimitController

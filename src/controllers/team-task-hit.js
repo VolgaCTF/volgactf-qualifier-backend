@@ -1,13 +1,13 @@
-import TeamTaskHit from '../models/team-task-hit'
-import logger from '../utils/logger'
-import { InternalError, TaskAlreadySolvedError } from '../utils/errors'
-import constants from '../utils/constants'
-import EventController from './event'
-import CreateTeamTaskHitEvent from '../events/create-team-task-hit'
+const TeamTaskHit = require('../models/team-task-hit')
+const logger = require('../utils/logger')
+const { InternalError, TaskAlreadySolvedError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
+const EventController = require('./event')
+const CreateTeamTaskHitEvent = require('../events/create-team-task-hit')
 
 class TeamTaskHitController {
   static isTeamTaskUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_hits_ndx_team_task_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_hits_ndx_team_task_unique')
   }
 
   static create (teamId, task, callback) {
@@ -18,12 +18,12 @@ class TeamTaskHitController {
         taskId: task.id,
         createdAt: new Date()
       })
-      .then((teamTaskHit) => {
+      .then(function (teamTaskHit) {
         callback(null, teamTaskHit)
         EventController.push(new CreateTeamTaskHitEvent(teamTaskHit))
       })
-      .catch((err) => {
-        if (this.isTeamTaskUniqueConstraintViolation(err)) {
+      .catch(function (err) {
+        if (TeamTaskHitController.isTeamTaskUniqueConstraintViolation(err)) {
           callback(new TaskAlreadySolvedError(), null)
         } else {
           logger.error(err)
@@ -35,10 +35,10 @@ class TeamTaskHitController {
   static list (callback) {
     TeamTaskHit
       .query()
-      .then((teamTaskHits) => {
+      .then(function (teamTaskHits) {
         callback(null, teamTaskHits)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -48,10 +48,10 @@ class TeamTaskHitController {
     TeamTaskHit
       .query()
       .where('teamId', teamId)
-      .then((teamTaskHits) => {
+      .then(function (teamTaskHits) {
         callback(null, teamTaskHits)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -61,14 +61,14 @@ class TeamTaskHitController {
     TeamTaskHit
       .query()
       .where('taskId', taskId)
-      .then((teamTaskHits) => {
+      .then(function (teamTaskHits) {
         callback(null, teamTaskHits)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TeamTaskHitController
+module.exports = TeamTaskHitController

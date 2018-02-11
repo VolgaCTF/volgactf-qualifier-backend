@@ -1,23 +1,23 @@
-import express from 'express'
-import logger from './utils/logger'
-import cookieParser from 'cookie-parser'
+const express = require('express')
+const logger = require('./utils/logger')
+const cookieParser = require('cookie-parser')
 
-import apiRouter from './routes/api'
+const apiRouter = require('./routes/api')
 
-import { BaseError } from './utils/errors'
+const { BaseError } = require('./utils/errors')
 
-import sessionMiddleware from './middleware/session'
+const { session } = require('./middleware/session')
 
-let app = express()
+const app = express()
 app.set('x-powered-by', false)
 app.set('trust proxy', 'loopback')
 
 app.use(cookieParser())
-app.use(sessionMiddleware)
+app.use(session)
 
 app.use('/api', apiRouter)
 
-app.use((err, request, response, next) => {
+app.use(function (err, request, response, next) {
   if (err instanceof BaseError) {
     response.status(err.getHttpStatus())
     response.json(err.message)
@@ -28,4 +28,4 @@ app.use((err, request, response, next) => {
   }
 })
 
-export default app
+module.exports = app

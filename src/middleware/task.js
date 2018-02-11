@@ -1,7 +1,7 @@
-import TaskController from '../controllers/task'
+const TaskController = require('../controllers/task')
 
-export function getTask (request, response, next) {
-  TaskController.get(request.taskId, (err, task) => {
+function getTask (request, response, next) {
+  TaskController.get(request.taskId, function (err, task) {
     if (err) {
       next(err)
     } else {
@@ -10,3 +10,5 @@ export function getTask (request, response, next) {
     }
   })
 }
+
+module.exports.getTask = getTask

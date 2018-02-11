@@ -1,14 +1,16 @@
-import BaseEvent from './base'
-import constants from '../utils/constants'
-import taskCategorySerializer from '../serializers/task-category'
+const BaseEvent = require('./base')
+const { EVENT_DELETE_TASK_CATEGORY } = require('../utils/constants')
+const taskCategorySerializer = require('../serializers/task-category')
 
-export default class DeleteTaskCategoryEvent extends BaseEvent {
+class DeleteTaskCategoryEvent extends BaseEvent {
   constructor (task, taskCategory) {
-    let data = taskCategorySerializer(taskCategory)
+    const data = taskCategorySerializer(taskCategory)
     if (task.isInitial()) {
-      super(constants.EVENT_DELETE_TASK_CATEGORY, data, null, null, {})
+      super(EVENT_DELETE_TASK_CATEGORY, data, null, null, {})
     } else {
-      super(constants.EVENT_DELETE_TASK_CATEGORY, data, data, data, {})
+      super(EVENT_DELETE_TASK_CATEGORY, data, data, data, {})
     }
   }
 }
+
+module.exports = DeleteTaskCategoryEvent

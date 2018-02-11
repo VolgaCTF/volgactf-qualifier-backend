@@ -1,22 +1,22 @@
-import Category from '../models/category'
-import { InternalError, CategoryNotFoundError, DuplicateCategoryTitleError, CategoryAttachedError } from '../utils/errors'
-import EventController from './event'
+const Category = require('../models/category')
+const { InternalError, CategoryNotFoundError, DuplicateCategoryTitleError, CategoryAttachedError } = require('../utils/errors')
+const EventController = require('./event')
 
-import logger from '../utils/logger'
-import constants from '../utils/constants'
+const logger = require('../utils/logger')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION, POSTGRES_FOREIGN_KEY_CONSTRAINT_VIOLATION } = require('../utils/constants')
 
-import CreateCategoryEvent from '../events/create-category'
-import UpdateCategoryEvent from '../events/update-category'
-import DeleteCategoryEvent from '../events/delete-category'
+const CreateCategoryEvent = require('../events/create-category')
+const UpdateCategoryEvent = require('../events/update-category')
+const DeleteCategoryEvent = require('../events/delete-category')
 
 class CategoryController {
   static index (callback) {
     Category
       .query()
-      .then((categories) => {
+      .then(function (categories) {
         callback(null, categories)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -27,29 +27,29 @@ class CategoryController {
       .query()
       .where('id', id)
       .first()
-      .then((category) => {
+      .then(function (category) {
         if (category) {
           callback(null, category)
         } else {
           callback(new CategoryNotFoundError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new CategoryNotFoundError(), null)
       })
   }
 
   static isCategoryTitleUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'categories_ndx_title_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'categories_ndx_title_unique')
   }
 
   static isTaskCategoryForeignKeyConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_FOREIGN_KEY_CONSTRAINT_VIOLATION && err.table && err.table === 'task_categories')
+    return (err.code && err.code === POSTGRES_FOREIGN_KEY_CONSTRAINT_VIOLATION && err.table && err.table === 'task_categories')
   }
 
   static create (title, description, callback) {
-    let now = new Date()
+    const now = new Date()
     Category
       .query()
       .insert({
@@ -58,12 +58,12 @@ class CategoryController {
         createdAt: now,
         updatedAt: now
       })
-      .then((category) => {
+      .then(function (category) {
         callback(null, category)
         EventController.push(new CreateCategoryEvent(category))
       })
-      .catch((err) => {
-        if (this.isCategoryTitleUniqueConstraintViolation(err)) {
+      .catch(function (err) {
+        if (CategoryController.isCategoryTitleUniqueConstraintViolation(err)) {
           callback(new DuplicateCategoryTitleError(), null)
         } else {
           logger.error(err)
@@ -80,12 +80,12 @@ class CategoryController {
         description: description,
         updatedAt: new Date()
       })
-      .then((category) => {
+      .then(function (category) {
         callback(null, category)
         EventController.push(new UpdateCategoryEvent(category))
       })
-      .catch((err) => {
-        if (this.isCategoryTitleUniqueConstraintViolation(err)) {
+      .catch(function (err) {
+        if (CategoryController.isCategoryTitleUniqueConstraintViolation(err)) {
           callback(new DuplicateCategoryTitleError(), null)
         } else {
           logger.error(err)
@@ -100,7 +100,7 @@ class CategoryController {
       .delete()
       .where('id', id)
       .returning('*')
-      .then((categories) => {
+      .then(function (categories) {
         if (categories.length === 1) {
           callback(null)
           EventController.push(new DeleteCategoryEvent(categories[0]))
@@ -108,8 +108,8 @@ class CategoryController {
           callback(new CategoryNotFoundError())
         }
       })
-      .catch((err) => {
-        if (this.isTaskCategoryForeignKeyConstraintViolation(err)) {
+      .catch(function (err) {
+        if (CategoryController.isTaskCategoryForeignKeyConstraintViolation(err)) {
           callback(new CategoryAttachedError())
         } else {
           logger.error(err)
@@ -119,4 +119,4 @@ class CategoryController {
   }
 }
 
-export default CategoryController
+module.exports = CategoryController

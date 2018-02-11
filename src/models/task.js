@@ -1,18 +1,22 @@
-import constants from '../utils/constants'
-import Model from '../utils/model'
+const { TASK_INITIAL, TASK_OPENED, TASK_CLOSED } = require('../utils/constants')
+const Model = require('../utils/model')
 
-export default class Task extends Model {
-  static tableName = 'tasks'
+class Task extends Model {
+  static get tableName () {
+    return 'tasks'
+  }
 
   isInitial () {
-    return this.state === constants.TASK_INITIAL
+    return this.state === TASK_INITIAL
   }
 
   isOpened () {
-    return this.state === constants.TASK_OPENED
+    return this.state === TASK_OPENED
   }
 
   isClosed () {
-    return this.state === constants.TASK_CLOSED
+    return this.state === TASK_CLOSED
   }
 }
+
+module.exports = Task

@@ -1,4 +1,10 @@
-import constants from './constants'
+const { EVENT_UPDATE_CONTEST, EVENT_CREATE_SUPERVISOR, EVENT_DELETE_SUPERVISOR, EVENT_LOGIN_SUPERVISOR,
+  EVENT_LOGOUT_SUPERVISOR, EVENT_UPDATE_SUPERVISOR_PASSWORD, EVENT_CREATE_CATEGORY, EVENT_UPDATE_CATEGORY,
+  EVENT_DELETE_CATEGORY, EVENT_CREATE_POST, EVENT_UPDATE_POST, EVENT_DELETE_POST, EVENT_CREATE_TASK, EVENT_UPDATE_TASK,
+  EVENT_OPEN_TASK, EVENT_CLOSE_TASK, EVENT_CREATE_TEAM, EVENT_UPDATE_TEAM_EMAIL, EVENT_UPDATE_TEAM_PROFILE,
+  EVENT_UPDATE_TEAM_PASSWORD, EVENT_UPDATE_TEAM_LOGO, EVENT_UPDATE_TEAM_SCORE, EVENT_QUALIFY_TEAM, EVENT_DISQUALIFY_TEAM,
+  EVENT_LOGIN_TEAM, EVENT_LOGOUT_TEAM, EVENT_CREATE_TASK_CATEGORY, EVENT_DELETE_TASK_CATEGORY, EVENT_REVEAL_TASK_CATEGORY,
+  EVENT_CREATE_TEAM_TASK_HIT, EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT, EVENT_CREATE_TEAM_TASK_REVIEW } = require('./constants')
 
 class EventNameList {
   constructor () {
@@ -7,46 +13,46 @@ class EventNameList {
   }
 
   fillList () {
-    this.eventNames[constants.EVENT_UPDATE_CONTEST] = 'updateContest'
+    this.eventNames[EVENT_UPDATE_CONTEST] = 'updateContest'
 
-    this.eventNames[constants.EVENT_CREATE_SUPERVISOR] = 'createSupervisor'
-    this.eventNames[constants.EVENT_DELETE_SUPERVISOR] = 'deleteSupervisor'
-    this.eventNames[constants.EVENT_LOGIN_SUPERVISOR] = 'loginSupervisor'
-    this.eventNames[constants.EVENT_LOGOUT_SUPERVISOR] = 'logoutSupervisor'
-    this.eventNames[constants.EVENT_UPDATE_SUPERVISOR_PASSWORD] = 'updateSupervisorPassword'
+    this.eventNames[EVENT_CREATE_SUPERVISOR] = 'createSupervisor'
+    this.eventNames[EVENT_DELETE_SUPERVISOR] = 'deleteSupervisor'
+    this.eventNames[EVENT_LOGIN_SUPERVISOR] = 'loginSupervisor'
+    this.eventNames[EVENT_LOGOUT_SUPERVISOR] = 'logoutSupervisor'
+    this.eventNames[EVENT_UPDATE_SUPERVISOR_PASSWORD] = 'updateSupervisorPassword'
 
-    this.eventNames[constants.EVENT_CREATE_CATEGORY] = 'createCategory'
-    this.eventNames[constants.EVENT_UPDATE_CATEGORY] = 'updateCategory'
-    this.eventNames[constants.EVENT_DELETE_CATEGORY] = 'deleteCategory'
+    this.eventNames[EVENT_CREATE_CATEGORY] = 'createCategory'
+    this.eventNames[EVENT_UPDATE_CATEGORY] = 'updateCategory'
+    this.eventNames[EVENT_DELETE_CATEGORY] = 'deleteCategory'
 
-    this.eventNames[constants.EVENT_CREATE_POST] = 'createPost'
-    this.eventNames[constants.EVENT_UPDATE_POST] = 'updatePost'
-    this.eventNames[constants.EVENT_DELETE_POST] = 'deletePost'
+    this.eventNames[EVENT_CREATE_POST] = 'createPost'
+    this.eventNames[EVENT_UPDATE_POST] = 'updatePost'
+    this.eventNames[EVENT_DELETE_POST] = 'deletePost'
 
-    this.eventNames[constants.EVENT_CREATE_TASK] = 'createTask'
-    this.eventNames[constants.EVENT_UPDATE_TASK] = 'updateTask'
-    this.eventNames[constants.EVENT_OPEN_TASK] = 'openTask'
-    this.eventNames[constants.EVENT_CLOSE_TASK] = 'closeTask'
+    this.eventNames[EVENT_CREATE_TASK] = 'createTask'
+    this.eventNames[EVENT_UPDATE_TASK] = 'updateTask'
+    this.eventNames[EVENT_OPEN_TASK] = 'openTask'
+    this.eventNames[EVENT_CLOSE_TASK] = 'closeTask'
 
-    this.eventNames[constants.EVENT_CREATE_TEAM] = 'createTeam'
-    this.eventNames[constants.EVENT_UPDATE_TEAM_EMAIL] = 'updateTeamEmail'
-    this.eventNames[constants.EVENT_UPDATE_TEAM_PROFILE] = 'updateTeamProfile'
-    this.eventNames[constants.EVENT_UPDATE_TEAM_PASSWORD] = 'updateTeamPassword'
-    this.eventNames[constants.EVENT_UPDATE_TEAM_LOGO] = 'updateTeamLogo'
-    this.eventNames[constants.EVENT_UPDATE_TEAM_SCORE] = 'updateTeamScore'
-    this.eventNames[constants.EVENT_QUALIFY_TEAM] = 'qualifyTeam'
-    this.eventNames[constants.EVENT_DISQUALIFY_TEAM] = 'disqualifyTeam'
-    this.eventNames[constants.EVENT_LOGIN_TEAM] = 'loginTeam'
-    this.eventNames[constants.EVENT_LOGOUT_TEAM] = 'logoutTeam'
+    this.eventNames[EVENT_CREATE_TEAM] = 'createTeam'
+    this.eventNames[EVENT_UPDATE_TEAM_EMAIL] = 'updateTeamEmail'
+    this.eventNames[EVENT_UPDATE_TEAM_PROFILE] = 'updateTeamProfile'
+    this.eventNames[EVENT_UPDATE_TEAM_PASSWORD] = 'updateTeamPassword'
+    this.eventNames[EVENT_UPDATE_TEAM_LOGO] = 'updateTeamLogo'
+    this.eventNames[EVENT_UPDATE_TEAM_SCORE] = 'updateTeamScore'
+    this.eventNames[EVENT_QUALIFY_TEAM] = 'qualifyTeam'
+    this.eventNames[EVENT_DISQUALIFY_TEAM] = 'disqualifyTeam'
+    this.eventNames[EVENT_LOGIN_TEAM] = 'loginTeam'
+    this.eventNames[EVENT_LOGOUT_TEAM] = 'logoutTeam'
 
-    this.eventNames[constants.EVENT_CREATE_TASK_CATEGORY] = 'createTaskCategory'
-    this.eventNames[constants.EVENT_DELETE_TASK_CATEGORY] = 'deleteTaskCategory'
-    this.eventNames[constants.EVENT_REVEAL_TASK_CATEGORY] = 'revealTaskCategory'
+    this.eventNames[EVENT_CREATE_TASK_CATEGORY] = 'createTaskCategory'
+    this.eventNames[EVENT_DELETE_TASK_CATEGORY] = 'deleteTaskCategory'
+    this.eventNames[EVENT_REVEAL_TASK_CATEGORY] = 'revealTaskCategory'
 
-    this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT] = 'createTeamTaskHit'
-    this.eventNames[constants.EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT] = 'createTeamTaskHitAttempt'
+    this.eventNames[EVENT_CREATE_TEAM_TASK_HIT] = 'createTeamTaskHit'
+    this.eventNames[EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT] = 'createTeamTaskHitAttempt'
 
-    this.eventNames[constants.EVENT_CREATE_TEAM_TASK_REVIEW] = 'createTeamTaskReview'
+    this.eventNames[EVENT_CREATE_TEAM_TASK_REVIEW] = 'createTeamTaskReview'
   }
 
   getName (type) {
@@ -54,4 +60,4 @@ class EventNameList {
   }
 }
 
-export default new EventNameList()
+module.exports = new EventNameList()

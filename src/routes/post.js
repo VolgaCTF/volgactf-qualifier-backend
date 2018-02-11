@@ -1,25 +1,25 @@
-import express from 'express'
-import _ from 'underscore'
-import bodyParser from 'body-parser'
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
+const express = require('express')
+const _ = require('underscore')
+const bodyParser = require('body-parser')
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
 
-import PostController from '../controllers/post'
-import { ValidationError } from '../utils/errors'
-import constraints from '../utils/constraints'
+const PostController = require('../controllers/post')
+const { ValidationError } = require('../utils/errors')
+const constraints = require('../utils/constraints')
 
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
-let router = express.Router()
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
+const router = express.Router()
 
-import { needsToBeAuthorizedSupervisor } from '../middleware/session'
-import { checkToken } from '../middleware/security'
+const { needsToBeAuthorizedSupervisor } = require('../middleware/session')
+const { checkToken } = require('../middleware/security')
 
-import postParam from '../params/post'
+const postParam = require('../params/post')
 
-import postSerializer from '../serializers/post'
+const postSerializer = require('../serializers/post')
 
-router.get('/index', (request, response, next) => {
-  PostController.index((err, posts) => {
+router.get('/index', function (request, response, next) {
+  PostController.index(function (err, posts) {
     if (err) {
       next(err)
     } else {
@@ -28,18 +28,18 @@ router.get('/index', (request, response, next) => {
   })
 })
 
-router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
-  let createConstraints = {
+router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, function (request, response, next) {
+  const createConstraints = {
     title: constraints.postTitle,
     description: constraints.postDescription
   }
 
-  let validationResult = validator.validate(request.body, createConstraints)
+  const validationResult = validator.validate(request.body, createConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  PostController.create(request.body.title, request.body.description, (err, post) => {
+  PostController.create(request.body.title, request.body.description, function (err, post) {
     if (err) {
       next(err)
     } else {
@@ -50,8 +50,8 @@ router.post('/create', checkToken, needsToBeAuthorizedSupervisor, urlencodedPars
 
 router.param('postId', postParam.id)
 
-router.post('/:postId/delete', checkToken, needsToBeAuthorizedSupervisor, (request, response, next) => {
-  PostController.delete(request.postId, (err) => {
+router.post('/:postId/delete', checkToken, needsToBeAuthorizedSupervisor, function (request, response, next) {
+  PostController.delete(request.postId, function (err) {
     if (err) {
       next(err)
     } else {
@@ -60,18 +60,18 @@ router.post('/:postId/delete', checkToken, needsToBeAuthorizedSupervisor, (reque
   })
 })
 
-router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, (request, response, next) => {
-  let updateConstraints = {
+router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlencodedParser, function (request, response, next) {
+  const updateConstraints = {
     title: constraints.postTitle,
     description: constraints.postDescription
   }
 
-  let validationResult = validator.validate(request.body, updateConstraints)
+  const validationResult = validator.validate(request.body, updateConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  PostController.update(request.postId, request.body.title, request.body.description, (err, post) => {
+  PostController.update(request.postId, request.body.title, request.body.description, function (err, post) {
     if (err) {
       next(err)
     } else {
@@ -80,4 +80,4 @@ router.post('/:postId/update', checkToken, needsToBeAuthorizedSupervisor, urlenc
   })
 })
 
-export default router
+module.exports = router

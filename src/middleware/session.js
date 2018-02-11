@@ -1,50 +1,55 @@
-import { AlreadyAuthenticatedError, NotAuthenticatedError } from '../utils/errors'
-import _ from 'underscore'
-import session from 'express-session'
-import connectRedis from 'connect-redis'
-let RedisStore = connectRedis(session)
-import redis from '../utils/redis'
-import constants from '../utils/constants'
+const { AlreadyAuthenticatedError, NotAuthenticatedError } = require('../utils/errors')
+const _ = require('underscore')
+const session = require('express-session')
+const connectRedis = require('connect-redis')
+const RedisStore = connectRedis(session)
+const redis = require('../utils/redis')
+const { SCOPE_TEAM, SCOPE_MANAGER, SCOPE_ADMIN, SCOPE_GUEST } = require('../utils/constants')
 
-export function needsToBeUnauthorized (request, response, next) {
+function needsToBeUnauthorized (request, response, next) {
   if (request.session.authenticated) {
     throw new AlreadyAuthenticatedError()
   } else {
     next()
   }
 }
+module.exports.needsToBeUnauthorized = needsToBeUnauthorized
 
-export function needsToBeAuthorized (request, response, next) {
+function needsToBeAuthorized (request, response, next) {
   if (request.session.authenticated) {
     next()
   } else {
     throw new NotAuthenticatedError()
   }
 }
+module.exports.needsToBeAuthorized = needsToBeAuthorized
 
-export function needsToBeAuthorizedTeam (request, response, next) {
-  if (request.session.authenticated && request.session.scopeID === constants.SCOPE_TEAM) {
+function needsToBeAuthorizedTeam (request, response, next) {
+  if (request.session.authenticated && request.session.scopeID === SCOPE_TEAM) {
     next()
   } else {
     throw new NotAuthenticatedError()
   }
 }
+module.exports.needsToBeAuthorizedTeam = needsToBeAuthorizedTeam
 
-export function needsToBeAuthorizedSupervisor (request, response, next) {
-  if (request.session.authenticated && _.contains([constants.SCOPE_MANAGER, constants.SCOPE_ADMIN], request.session.scopeID)) {
+function needsToBeAuthorizedSupervisor (request, response, next) {
+  if (request.session.authenticated && _.contains([SCOPE_MANAGER, SCOPE_ADMIN], request.session.scopeID)) {
     next()
   } else {
     throw new NotAuthenticatedError()
   }
 }
+module.exports.needsToBeAuthorizedSupervisor = needsToBeAuthorizedSupervisor
 
-export function needsToBeAuthorizedAdmin (request, response, next) {
-  if (request.session.authenticated && request.session.scopeID === constants.SCOPE_ADMIN) {
+function needsToBeAuthorizedAdmin (request, response, next) {
+  if (request.session.authenticated && request.session.scopeID === SCOPE_ADMIN) {
     next()
   } else {
     throw new NotAuthenticatedError()
   }
 }
+module.exports.needsToBeAuthorizedAdmin = needsToBeAuthorizedAdmin
 
 class UserScope {
   constructor (scope) {
@@ -64,19 +69,19 @@ class UserScope {
   }
 
   isGuest () {
-    return this.scope === constants.SCOPE_GUEST
+    return this.scope === SCOPE_GUEST
   }
 
   isTeam () {
-    return this.scope === constants.SCOPE_TEAM
+    return this.scope === SCOPE_TEAM
   }
 
   isManager () {
-    return this.scope === constants.SCOPE_MANAGER
+    return this.scope === SCOPE_MANAGER
   }
 
   isAdmin () {
-    return this.scope === constants.SCOPE_ADMIN
+    return this.scope === SCOPE_ADMIN
   }
 
   isSupervisor () {
@@ -84,21 +89,22 @@ class UserScope {
   }
 }
 
-export function detectScope (request, response, next) {
+function detectScope (request, response, next) {
   if (request.session.authenticated) {
     request.scope = new UserScope(request.session.scopeID)
   } else {
-    request.scope = new UserScope(constants.SCOPE_GUEST)
+    request.scope = new UserScope(SCOPE_GUEST)
   }
   next()
 }
+module.exports.detectScope = detectScope
 
 let secureConnection = false
 if (process.env.THEMIS_QUALS_SECURE) {
   secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
 }
 
-export default session({
+module.exports.session = session({
   store: new RedisStore({
     client: redis.createClient()
   }),

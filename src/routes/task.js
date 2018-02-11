@@ -1,71 +1,72 @@
-import express from 'express'
+const express = require('express')
 
-import { checkToken } from '../middleware/security'
-import { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin } from '../middleware/session'
-import { getState, contestIsStarted, contestIsFinished, contestNotFinished } from '../middleware/contest'
-import { getTask } from '../middleware/task'
-import { getTeam } from '../middleware/team'
+const { checkToken } = require('../middleware/security')
+const { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin } = require('../middleware/session')
+const { getState, contestIsStarted, contestIsFinished, contestNotFinished } = require('../middleware/contest')
+const { getTask } = require('../middleware/task')
+const { getTeam } = require('../middleware/team')
 
-import constraints from '../utils/constraints'
-import logger from '../utils/logger'
-import queue from '../utils/queue'
+const constraints = require('../utils/constraints')
+const logger = require('../utils/logger')
+const queue = require('../utils/queue')
 
-import bodyParser from 'body-parser'
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
-let urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
+const bodyParser = require('body-parser')
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
+const urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
 
-let router = express.Router()
+const router = express.Router()
 
-import { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError, ValidationError, TaskNotAvailableError } from '../utils/errors'
-import is_ from 'is_js'
-import _ from 'underscore'
+const { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError,
+  ValidationError, TaskNotAvailableError } = require('../utils/errors')
+const is_ = require('is_js')
+const _ = require('underscore')
 
-import TaskController from '../controllers/task'
-import TaskCategoryController from '../controllers/task-category'
-import TaskAnswerController from '../controllers/task-answer'
-import TaskHintController from '../controllers/task-hint'
-import TeamTaskHitController from '../controllers/team-task-hit'
-import taskSerializer from '../serializers/task'
-import taskCategorySerializer from '../serializers/task-category'
-import taskAnswerSerializer from '../serializers/task-answer'
-import taskHintSerializer from '../serializers/task-hint'
-import constants from '../utils/constants'
-import taskParam from '../params/task'
-import TeamTaskHitAttemptController from '../controllers/team-task-hit-attempt'
-import TeamTaskReviewController from '../controllers/team-task-review'
-import teamTaskReviewSerializer from '../serializers/team-task-review'
+const TaskController = require('../controllers/task')
+const TaskCategoryController = require('../controllers/task-category')
+const TaskAnswerController = require('../controllers/task-answer')
+const TaskHintController = require('../controllers/task-hint')
+const TeamTaskHitController = require('../controllers/team-task-hit')
+const taskSerializer = require('../serializers/task')
+const taskCategorySerializer = require('../serializers/task-category')
+const taskAnswerSerializer = require('../serializers/task-answer')
+const taskHintSerializer = require('../serializers/task-hint')
+const { TASK_SUBMIT_LIMIT_TIME, TASK_SUBMIT_LIMIT_ATTEMPTS } = require('../utils/constants')
+const taskParam = require('../params/task')
+const TeamTaskHitAttemptController = require('../controllers/team-task-hit-attempt')
+const TeamTaskReviewController = require('../controllers/team-task-review')
+const teamTaskReviewSerializer = require('../serializers/team-task-review')
 
-import LimitController from '../controllers/limit'
-import when_ from 'when'
-import teamTaskHitSerializer from '../serializers/team-task-hit'
+const LimitController = require('../controllers/limit')
+const when_ = require('when')
+const teamTaskHitSerializer = require('../serializers/team-task-hit')
 
 router.param('taskId', taskParam.id)
 
-router.get('/index', detectScope, (request, response, next) => {
-  TaskController.index((err, tasks) => {
+router.get('/index', detectScope, function (request, response, next) {
+  TaskController.index(function (err, tasks) {
     if (err) {
       logger.error(err)
       next(new InternalError())
     } else {
-      let serializer = _.partial(taskSerializer, _, { preview: true })
+      const serializer = _.partial(taskSerializer, _, { preview: true })
       response.json(_.map(tasks, serializer))
     }
   }, !request.scope.isSupervisor())
 })
 
-router.get('/category/index', detectScope, (request, response, next) => {
-  TaskController.index((err, tasks) => {
+router.get('/category/index', detectScope, function (request, response, next) {
+  TaskController.index(function (err, tasks) {
     if (err) {
       logger.error(err)
       next(new InternalError())
     } else {
-      let taskIds = _.map(tasks, (task) => {
+      const taskIds = _.map(tasks, function (task) {
         return task.id
       })
 
-      TaskCategoryController.indexByTasks(taskIds, (err, taskCategories) => {
+      TaskCategoryController.indexByTasks(taskIds, function (err, taskCategories) {
         if (err) {
           next(err)
         } else {
@@ -76,11 +77,11 @@ router.get('/category/index', detectScope, (request, response, next) => {
   }, !request.scope.isSupervisor())
 })
 
-router.get('/:taskId/category', detectScope, getTask, (request, response, next) => {
+router.get('/:taskId/category', detectScope, getTask, function (request, response, next) {
   if (request.task.isInitial() && (request.scope.isGuest() || request.scope.isTeam())) {
     throw new NotAuthenticatedError()
   } else {
-    TaskCategoryController.indexByTask(request.task.id, (err, taskCategories) => {
+    TaskCategoryController.indexByTask(request.task.id, function (err, taskCategories) {
       if (err) {
         next(err)
       } else {
@@ -90,8 +91,8 @@ router.get('/:taskId/category', detectScope, getTask, (request, response, next) 
   }
 })
 
-router.get('/:taskId/answer', needsToBeAuthorizedAdmin, (request, response, next) => {
-  TaskAnswerController.listByTask(request.taskId, (err, taskAnswers) => {
+router.get('/:taskId/answer', needsToBeAuthorizedAdmin, function (request, response, next) {
+  TaskAnswerController.listByTask(request.taskId, function (err, taskAnswers) {
     if (err) {
       next(err)
     } else {
@@ -100,16 +101,16 @@ router.get('/:taskId/answer', needsToBeAuthorizedAdmin, (request, response, next
   })
 })
 
-router.get('/:taskId/hint', detectScope, getTask, getState, (request, response, next) => {
-  let guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
-  let teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
-  let supervisorsEligible = request.scope.isSupervisor()
+router.get('/:taskId/hint', detectScope, getTask, getState, function (request, response, next) {
+  const guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
+  const teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
+  const supervisorsEligible = request.scope.isSupervisor()
 
   if (!guestsEligible && !teamsEligible && !supervisorsEligible) {
     throw new NotAuthenticatedError()
   }
 
-  TaskHintController.listByTask(request.task.id, (err, taskHints) => {
+  TaskHintController.listByTask(request.task.id, function (err, taskHints) {
     if (err) {
       next(err)
     } else {
@@ -118,8 +119,8 @@ router.get('/:taskId/hint', detectScope, getTask, getState, (request, response, 
   })
 })
 
-router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
-  TeamTaskHitController.list((err, teamTaskHits) => {
+router.get('/hit/index', needsToBeAuthorizedSupervisor, function (request, response, next) {
+  TeamTaskHitController.list(function (err, teamTaskHits) {
     if (err) {
       next(err)
     } else {
@@ -128,12 +129,12 @@ router.get('/hit/index', needsToBeAuthorizedSupervisor, (request, response, next
   })
 })
 
-router.get('/:taskId/hit/statistics', detectScope, (request, response, next) => {
+router.get('/:taskId/hit/statistics', detectScope, function (request, response, next) {
   if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
-  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+  TeamTaskHitController.listForTask(request.taskId, function (err, teamTaskHits) {
     if (err) {
       next(err)
     } else {
@@ -144,8 +145,8 @@ router.get('/:taskId/hit/statistics', detectScope, (request, response, next) => 
   })
 })
 
-router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, (request, response, next) => {
-  TeamTaskHitController.listForTask(request.taskId, (err, teamTaskHits) => {
+router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, function (request, response, next) {
+  TeamTaskHitController.listForTask(request.taskId, function (err, teamTaskHits) {
     if (err) {
       next(err)
     } else {
@@ -154,10 +155,10 @@ router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, (request, respon
   })
 })
 
-router.get('/:taskId', detectScope, getState, getTask, (request, response, next) => {
-  let guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
-  let teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
-  let supervisorsEligible = request.scope.isSupervisor()
+router.get('/:taskId', detectScope, getState, getTask, function (request, response, next) {
+  const guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
+  const teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
+  const supervisorsEligible = request.scope.isSupervisor()
 
   if (!(guestsEligible || teamsEligible || supervisorsEligible)) {
     throw new NotAuthenticatedError()
@@ -166,13 +167,13 @@ router.get('/:taskId', detectScope, getState, getTask, (request, response, next)
   response.json(taskSerializer(request.task))
 })
 
-router.get('/:taskId/review/index', detectScope, (request, response, next) => {
+router.get('/:taskId/review/index', detectScope, function (request, response, next) {
   if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
   if (request.scope.isTeam()) {
-    TeamTaskReviewController.indexByTeamAndTask(request.session.identityID, request.taskId, (err, teamTaskReviews) => {
+    TeamTaskReviewController.indexByTeamAndTask(request.session.identityID, request.taskId, function (err, teamTaskReviews) {
       if (err) {
         next(err)
       } else {
@@ -180,7 +181,7 @@ router.get('/:taskId/review/index', detectScope, (request, response, next) => {
       }
     })
   } else if (request.scope.isSupervisor()) {
-    TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
+    TeamTaskReviewController.indexByTask(request.taskId, function (err, teamTaskReviews) {
       if (err) {
         next(err)
       } else {
@@ -192,16 +193,16 @@ router.get('/:taskId/review/index', detectScope, (request, response, next) => {
   }
 })
 
-router.get('/:taskId/review/statistics', detectScope, (request, response, next) => {
+router.get('/:taskId/review/statistics', detectScope, function (request, response, next) {
   if (!request.scope.isTeam() && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
-  TeamTaskReviewController.indexByTask(request.taskId, (err, teamTaskReviews) => {
+  TeamTaskReviewController.indexByTask(request.taskId, function (err, teamTaskReviews) {
     if (err) {
       next(err)
     } else {
-      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+      const averageRating = _.reduce(teamTaskReviews, function (sum, review) {
         return sum + review.rating
       }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
 
@@ -214,9 +215,9 @@ router.get('/:taskId/review/statistics', detectScope, (request, response, next) 
 })
 
 function sanitizeReviewTaskParams (params, callback) {
-  let sanitizeRating = function () {
-    let deferred = when_.defer()
-    let value = parseInt(params.rating, 10)
+  const sanitizeRating = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.rating, 10)
     if (is_.number(value)) {
       deferred.resolve(value)
     } else {
@@ -226,43 +227,43 @@ function sanitizeReviewTaskParams (params, callback) {
     return deferred.promise
   }
 
-  let sanitizeComment = function () {
-    let deferred = when_.defer()
+  const sanitizeComment = function () {
+    const deferred = when_.defer()
     deferred.resolve(params.comment)
     return deferred.promise
   }
 
   when_
     .all([sanitizeRating(), sanitizeComment()])
-    .then((res) => {
+    .then(function (res) {
       callback(null, {
         rating: res[0],
         comment: res[1]
       })
     })
-    .catch((err) => {
+    .catch(function (err) {
       logger.error(err)
       callback(err, null)
     })
 }
 
-router.post('/:taskId/review', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/review', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, function (request, response, next) {
   if (!request.team.isQualified()) {
     throw new TeamNotQualifiedError()
   }
 
-  sanitizeReviewTaskParams(request.body, (err, reviewParams) => {
+  sanitizeReviewTaskParams(request.body, function (err, reviewParams) {
     if (err) {
       next(err)
     } else {
-      let createConstraints = {
+      const createConstraints = {
         rating: constraints.reviewRating,
         comment: constraints.reviewComment
       }
 
-      let validationResult = validator.validate(reviewParams, createConstraints)
+      const validationResult = validator.validate(reviewParams, createConstraints)
       if (validationResult === true) {
-        TeamTaskReviewController.create(request.team.id, request.task.id, reviewParams.rating, reviewParams.comment, (err, teamTaskReview) => {
+        TeamTaskReviewController.create(request.team.id, request.task.id, reviewParams.rating, reviewParams.comment, function (err, teamTaskReview) {
           if (err) {
             next(err)
           } else {
@@ -276,7 +277,7 @@ router.post('/:taskId/review', needsToBeAuthorizedTeam, contestIsStarted, checkT
   })
 })
 
-router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkToken, getTask, getTeam, urlencodedParser, function (request, response, next) {
   if (!request.team.isQualified()) {
     throw new TeamNotQualifiedError()
   }
@@ -285,30 +286,30 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
     throw new TaskNotAvailableError()
   }
 
-  let limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
-    timeout: constants.TASK_SUBMIT_LIMIT_TIME,
-    maxAttempts: constants.TASK_SUBMIT_LIMIT_ATTEMPTS
+  const limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
+    timeout: TASK_SUBMIT_LIMIT_TIME,
+    maxAttempts: TASK_SUBMIT_LIMIT_ATTEMPTS
   })
 
-  limiter.check((err, limitExceeded) => {
+  limiter.check(function (err, limitExceeded) {
     if (err) {
       next(err)
     } else {
       if (limitExceeded) {
         next(new TaskSubmitAttemptsLimitError())
       } else {
-        let submitConstraints = {
+        const submitConstraints = {
           answer: constraints.taskAnswer
         }
 
-        let validationResult = validator.validate(request.body, submitConstraints)
+        const validationResult = validator.validate(request.body, submitConstraints)
         if (validationResult === true) {
-          TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
+          TaskController.checkAnswer(request.task, request.body.answer, function (err, checkResult) {
             if (err) {
               next(err)
             } else {
               if (checkResult) {
-                TeamTaskHitController.create(request.session.identityID, request.task, (err, teamTaskHit) => {
+                TeamTaskHitController.create(request.session.identityID, request.task, function (err, teamTaskHit) {
                   if (err) {
                     next(err)
                   } else {
@@ -318,7 +319,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
                 })
               } else {
                 next(new WrongTaskAnswerError())
-                TeamTaskHitAttemptController.create(request.session.identityID, request.task.id, request.body.answer, (err, teamTaskHitAttempt) => {
+                TeamTaskHitAttemptController.create(request.session.identityID, request.task.id, request.body.answer, function (err, teamTaskHitAttempt) {
                   if (err) {
                     logger.error(err)
                   }
@@ -334,17 +335,17 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
   })
 })
 
-router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTask, urlencodedParser, (request, response, next) => {
-  let reviseConstraints = {
+router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTask, urlencodedParser, function (request, response, next) {
+  const reviseConstraints = {
     answer: constraints.taskAnswer
   }
 
-  let validationResult = validator.validate(request.body, reviseConstraints)
+  const validationResult = validator.validate(request.body, reviseConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
+  TaskController.checkAnswer(request.task, request.body.answer, function (err, checkResult) {
     if (err) {
       next(err)
     } else {
@@ -357,7 +358,7 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
   })
 })
 
-router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTask, urlencodedParser, (request, response, next) => {
+router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTask, urlencodedParser, function (request, response, next) {
   if (!request.scope.isGuest() && !request.scope.isTeam()) {
     throw new InternalError()
   }
@@ -366,16 +367,16 @@ router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTas
     throw new TaskNotAvailableError()
   }
 
-  let checkConstraints = {
+  const checkConstraints = {
     answer: constraints.taskAnswer
   }
 
-  let validationResult = validator.validate(request.body, checkConstraints)
+  const validationResult = validator.validate(request.body, checkConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TaskController.checkAnswer(request.task, request.body.answer, (err, checkResult) => {
+  TaskController.checkAnswer(request.task, request.body.answer, function (err, checkResult) {
     if (err) {
       next(err)
     } else {
@@ -388,8 +389,8 @@ router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTas
   })
 })
 
-router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
-  TaskController.open(request.task, (err) => {
+router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, function (request, response, next) {
+  TaskController.open(request.task, function (err) {
     if (err) {
       next(err)
     } else {
@@ -398,8 +399,8 @@ router.post('/:taskId/open', contestIsStarted, checkToken, needsToBeAuthorizedAd
   })
 })
 
-router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, (request, response, next) => {
-  TaskController.close(request.task, (err) => {
+router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedAdmin, getTask, function (request, response, next) {
+  TaskController.close(request.task, function (err) {
     if (err) {
       next(err)
     } else {
@@ -409,20 +410,20 @@ router.post('/:taskId/close', contestIsStarted, checkToken, needsToBeAuthorizedA
 })
 
 function sanitizeCreateTaskParams (params, callback) {
-  let sanitizeTitle = function () {
-    let deferred = when_.defer()
+  const sanitizeTitle = function () {
+    const deferred = when_.defer()
     deferred.resolve(params.title)
     return deferred.promise
   }
 
-  let sanitizeDescription = function () {
-    let deferred = when_.defer()
+  const sanitizeDescription = function () {
+    const deferred = when_.defer()
     deferred.resolve(params.description)
     return deferred.promise
   }
 
-  let sanitizeHints = function () {
-    let deferred = when_.defer()
+  const sanitizeHints = function () {
+    const deferred = when_.defer()
     let hints = params.hints
     if (!hints) {
       hints = []
@@ -435,9 +436,9 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
-  let sanitizeValue = function () {
-    let deferred = when_.defer()
-    let value = parseInt(params.value, 10)
+  const sanitizeValue = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.value, 10)
     if (is_.number(value)) {
       deferred.resolve(value)
     } else {
@@ -447,8 +448,8 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
-  let sanitizeCategories = function () {
-    let deferred = when_.defer()
+  const sanitizeCategories = function () {
+    const deferred = when_.defer()
     let categories = params.categories
     if (!categories) {
       categories = []
@@ -458,9 +459,9 @@ function sanitizeCreateTaskParams (params, callback) {
     }
 
     if (is_.array(categories)) {
-      let valCategories = []
-      for (let valCategoryStr of categories) {
-        let valCategory = parseInt(valCategoryStr, 10)
+      const valCategories = []
+      for (const valCategoryStr of categories) {
+        const valCategory = parseInt(valCategoryStr, 10)
         if (is_.number(valCategory)) {
           valCategories.push(valCategory)
         }
@@ -473,15 +474,15 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
-  let sanitizeAnswers = function () {
-    let deferred = when_.defer()
+  const sanitizeAnswers = function () {
+    const deferred = when_.defer()
     let answers = params.answers
     if (!answers) {
       answers = []
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers, (entry) => {
+      deferred.resolve(_.map(answers, function (entry) {
         return {
           answer: entry.answer,
           caseSensitive: entry.caseSensitive === 'true'
@@ -496,7 +497,7 @@ function sanitizeCreateTaskParams (params, callback) {
 
   when_
     .all([sanitizeTitle(), sanitizeDescription(), sanitizeHints(), sanitizeValue(), sanitizeCategories(), sanitizeAnswers()])
-    .then((res) => {
+    .then(function (res) {
       callback(null, {
         title: res[0],
         description: res[1],
@@ -506,18 +507,18 @@ function sanitizeCreateTaskParams (params, callback) {
         answers: res[5]
       })
     })
-    .catch((err) => {
+    .catch(function (err) {
       logger.error(err)
       callback(err, null)
     })
 }
 
-router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, (request, response, next) => {
-  sanitizeCreateTaskParams(request.body, (err, taskParams) => {
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
+  sanitizeCreateTaskParams(request.body, function (err, taskParams) {
     if (err) {
       next(err)
     } else {
-      let createConstraints = {
+      const createConstraints = {
         title: constraints.taskTitle,
         description: constraints.taskDescription,
         hints: constraints.taskHints,
@@ -526,9 +527,9 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         answers: constraints.taskAnswers
       }
 
-      let validationResult = validator.validate(taskParams, createConstraints)
+      const validationResult = validator.validate(taskParams, createConstraints)
       if (validationResult === true) {
-        TaskController.create(taskParams, (err, task) => {
+        TaskController.create(taskParams, function (err, task) {
           if (err) {
             next(err)
           } else {
@@ -543,14 +544,14 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
 })
 
 function sanitizeUpdateTaskParams (params, task, callback) {
-  let sanitizeDescription = function () {
-    let deferred = when_.defer()
+  const sanitizeDescription = function () {
+    const deferred = when_.defer()
     deferred.resolve(params.description)
     return deferred.promise
   }
 
-  let sanitizeHints = function () {
-    let deferred = when_.defer()
+  const sanitizeHints = function () {
+    const deferred = when_.defer()
     let hints = params.hints
     if (!hints) {
       hints = []
@@ -563,8 +564,8 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     return deferred.promise
   }
 
-  let sanitizeCategories = function () {
-    let deferred = when_.defer()
+  const sanitizeCategories = function () {
+    const deferred = when_.defer()
     let categories = params.categories
     if (!categories) {
       categories = []
@@ -574,9 +575,9 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     }
 
     if (is_.array(categories)) {
-      let valCategories = []
-      for (let valCategoryStr of categories) {
-        let valCategory = parseInt(valCategoryStr, 10)
+      const valCategories = []
+      for (const valCategoryStr of categories) {
+        const valCategory = parseInt(valCategoryStr, 10)
         if (is_.number(valCategory)) {
           valCategories.push(valCategory)
         }
@@ -589,15 +590,15 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     return deferred.promise
   }
 
-  let sanitizeAnswers = function () {
-    let deferred = when_.defer()
+  const sanitizeAnswers = function () {
+    const deferred = when_.defer()
     let answers = params.answers
     if (!answers) {
       answers = []
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers, (entry) => {
+      deferred.resolve(_.map(answers, function (entry) {
         return {
           answer: entry.answer,
           caseSensitive: entry.caseSensitive === 'true'
@@ -612,7 +613,7 @@ function sanitizeUpdateTaskParams (params, task, callback) {
 
   when_
     .all([sanitizeDescription(), sanitizeHints(), sanitizeCategories(), sanitizeAnswers()])
-    .then((res) => {
+    .then(function (res) {
       callback(null, {
         description: res[0],
         hints: res[1],
@@ -620,26 +621,26 @@ function sanitizeUpdateTaskParams (params, task, callback) {
         answers: res[3]
       })
     })
-    .catch((err) => {
+    .catch(function (err) {
       callback(err, null)
     })
 }
 
-router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedExtendedParser, (request, response, next) => {
-  sanitizeUpdateTaskParams(request.body, request.task, (err, taskParams) => {
+router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedExtendedParser, function (request, response, next) {
+  sanitizeUpdateTaskParams(request.body, request.task, function (err, taskParams) {
     if (err) {
       next(err)
     } else {
-      let updateConstraints = {
+      const updateConstraints = {
         description: constraints.taskDescription,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
         answers: constraints.taskExtraAnswers
       }
 
-      let validationResult = validator.validate(taskParams, updateConstraints)
+      const validationResult = validator.validate(taskParams, updateConstraints)
       if (validationResult === true) {
-        TaskController.update(request.task, taskParams, (err, task) => {
+        TaskController.update(request.task, taskParams, function (err, task) {
           if (err) {
             next(err)
           } else {
@@ -654,4 +655,4 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
   })
 })
 
-export default router
+module.exports = router

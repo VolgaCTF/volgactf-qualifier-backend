@@ -1,16 +1,16 @@
-import TaskCategory from '../models/task-category'
-import { InternalError } from '../utils/errors'
-import logger from '../utils/logger'
+const TaskCategory = require('../models/task-category')
+const { InternalError } = require('../utils/errors')
+const logger = require('../utils/logger')
 
 class TaskCategoryController {
   static indexByTasks (taskIds, callback) {
     TaskCategory
       .query()
       .whereIn('taskId', taskIds)
-      .then((taskCategories) => {
+      .then(function (taskCategories) {
         callback(null, taskCategories)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -20,14 +20,14 @@ class TaskCategoryController {
     TaskCategory
       .query()
       .where('taskId', taskId)
-      .then((taskCategories) => {
+      .then(function (taskCategories) {
         callback(null, taskCategories)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TaskCategoryController
+module.exports = TaskCategoryController

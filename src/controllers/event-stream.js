@@ -1,7 +1,7 @@
-import { EventEmitter } from 'events'
-import EventSubscriber from '../utils/subscriber'
-import _ from 'underscore'
-import eventNameList from '../utils/event-name-list'
+const { EventEmitter } = require('events')
+const EventSubscriber = require('../utils/subscriber')
+const _ = require('underscore')
+const eventNameList = require('../utils/event-name-list')
 
 class EventStream extends EventEmitter {
   constructor (maxListeners, channel) {
@@ -15,9 +15,9 @@ class EventStream extends EventEmitter {
   }
 
   emitMessage (message) {
-    let id = message.id
-    let name = eventNameList.getName(message.type)
-    let createdAt = message.createdAt
+    const id = message.id
+    const name = eventNameList.getName(message.type)
+    const createdAt = message.createdAt
 
     if (message.data.supervisors) {
       this.emit('message:supervisors', this.format(
@@ -59,7 +59,7 @@ class EventStream extends EventEmitter {
   }
 
   run () {
-    let subscriber = new EventSubscriber(this.channel)
+    const subscriber = new EventSubscriber(this.channel)
 
     subscriber.on('message', (channel, data) => {
       this.emitMessage(JSON.parse(data))
@@ -72,6 +72,6 @@ if (process.env.THEMIS_QUALS_STREAM_MAX_CONNECTIONS) {
   streamMaxConnections = parseInt(process.env.THEMIS_QUALS_STREAM_MAX_CONNECTIONS, 10)
 }
 
-let redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
+const redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
 
-export default new EventStream(streamMaxConnections, redisChannel)
+module.exports = new EventStream(streamMaxConnections, redisChannel)

@@ -1,6 +1,6 @@
-import Queue from 'bull'
+const Queue = require('bull')
 
-let host = process.env.REDIS_HOST || '127.0.0.1'
+const host = process.env.REDIS_HOST || '127.0.0.1'
 
 let port = 6379
 if (process.env.REDIS_PORT) {
@@ -12,8 +12,8 @@ if (process.env.REDIS_DB) {
   database = parseInt(process.env.REDIS_DB, 10)
 }
 
-let prefix = process.env.THEMIS_QUALS_QUEUE_PREFIX || 'themis-quals'
+const prefix = process.env.THEMIS_QUALS_QUEUE_PREFIX || 'themis-quals'
 
-export default function (name) {
+module.exports = function (name) {
   return Queue(`${prefix}:${name}`, port, host, { db: database })
 }

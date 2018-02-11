@@ -1,9 +1,11 @@
-import BroadcastEvent from './broadcast'
-import constants from '../utils/constants'
-import categorySerializer from '../serializers/category'
+const BroadcastEvent = require('./broadcast')
+const { EVENT_DELETE_CATEGORY } = require('../utils/constants')
+const categorySerializer = require('../serializers/category')
 
-export default class DeleteCategoryEvent extends BroadcastEvent {
+class DeleteCategoryEvent extends BroadcastEvent {
   constructor (category) {
-    super(constants.EVENT_DELETE_CATEGORY, categorySerializer(category))
+    super(EVENT_DELETE_CATEGORY, categorySerializer(category))
   }
 }
+
+module.exports = DeleteCategoryEvent

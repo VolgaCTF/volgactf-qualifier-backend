@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class Event extends Model {
-  static tableName = 'events'
+class Event extends Model {
+  static get tableName () {
+    return 'events'
+  }
 }
+
+module.exports = Event

@@ -1,5 +1,5 @@
-import queue from './utils/queue'
-import logger from './utils/logger'
+const queue = require('./utils/queue')
+const logger = require('./utils/logger')
 
 class Scheduler {
   constructor () {
@@ -43,4 +43,4 @@ class Scheduler {
   }
 }
 
-export default new Scheduler()
+module.exports = new Scheduler()

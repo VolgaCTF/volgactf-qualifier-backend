@@ -1,9 +1,11 @@
-import BroadcastEvent from './broadcast'
-import constants from '../utils/constants'
-import postSerializer from '../serializers/post'
+const BroadcastEvent = require('./broadcast')
+const { EVENT_CREATE_POST } = require('../utils/constants')
+const postSerializer = require('../serializers/post')
 
-export default class CreatePostEvent extends BroadcastEvent {
+class CreatePostEvent extends BroadcastEvent {
   constructor (post) {
-    super(constants.EVENT_CREATE_POST, postSerializer(post))
+    super(EVENT_CREATE_POST, postSerializer(post))
   }
 }
+
+module.exports = CreatePostEvent

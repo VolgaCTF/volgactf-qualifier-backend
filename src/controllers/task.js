@@ -1,40 +1,41 @@
-import Task from '../models/task'
-import TaskCategory from '../models/task-category'
-import TaskAnswer from '../models/task-answer'
-import TaskHint from '../models/task-hint'
+const Task = require('../models/task')
+const TaskCategory = require('../models/task-category')
+const TaskAnswer = require('../models/task-answer')
+const TaskHint = require('../models/task-hint')
 
-import TaskAnswerController from './task-answer'
-import TaskCategoryController from './task-category'
+const TaskAnswerController = require('./task-answer')
+const TaskCategoryController = require('./task-category')
 
-import logger from '../utils/logger'
-import { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError, TaskAlreadyClosedError, TaskNotFoundError } from '../utils/errors'
-import constants from '../utils/constants'
+const logger = require('../utils/logger')
+const { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError,
+  TaskAlreadyClosedError, TaskNotFoundError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION, TASK_INITIAL, TASK_OPENED, TASK_CLOSED } = require('../utils/constants')
 
-import _ from 'underscore'
-import { transaction } from 'objection'
+const _ = require('underscore')
+const { transaction } = require('objection')
 
-import EventController from './event'
-import CreateTaskEvent from '../events/create-task'
-import UpdateTaskEvent from '../events/update-task'
-import OpenTaskEvent from '../events/open-task'
-import CloseTaskEvent from '../events/close-task'
-import CreateTaskCategoryEvent from '../events/create-task-category'
-import DeleteTaskCategoryEvent from '../events/delete-task-category'
-import RevealTaskCategoryEvent from '../events/reveal-task-category'
+const EventController = require('./event')
+const CreateTaskEvent = require('../events/create-task')
+const UpdateTaskEvent = require('../events/update-task')
+const OpenTaskEvent = require('../events/open-task')
+const CloseTaskEvent = require('../events/close-task')
+const CreateTaskCategoryEvent = require('../events/create-task-category')
+const DeleteTaskCategoryEvent = require('../events/delete-task-category')
+const RevealTaskCategoryEvent = require('../events/reveal-task-category')
 
-import queue from '../utils/queue'
+const queue = require('../utils/queue')
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'tasks_ndx_title_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'tasks_ndx_title_unique')
   }
 
   static create (options, callback) {
-    let now = new Date()
+    const now = new Date()
     let task = null
     let taskCategories = null
 
-    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskAnswer, TaskHint) {
       return Task
         .query()
         .insert({
@@ -43,24 +44,24 @@ class TaskController {
           createdAt: now,
           updatedAt: now,
           value: options.value,
-          state: constants.TASK_INITIAL
+          state: TASK_INITIAL
         })
-        .then((newTask) => {
+        .then(function (newTask) {
           task = newTask
           return TaskCategory
             .query()
-            .insert(options.categories.map((categoryId) => {
+            .insert(options.categories.map(function (categoryId) {
               return {
                 taskId: task.id,
                 categoryId: categoryId,
                 createdAt: now
               }
             }))
-            .then((newTaskCategories) => {
+            .then(function (newTaskCategories) {
               taskCategories = newTaskCategories
               return TaskAnswer
                 .query()
-                .insert(options.answers.map((entry) => {
+                .insert(options.answers.map(function (entry) {
                   return {
                     taskId: task.id,
                     answer: entry.answer,
@@ -68,31 +69,31 @@ class TaskController {
                     createdAt: now
                   }
                 }))
-                .then((newTaskAnswers) => {
+                .then(function (newTaskAnswers) {
                   return TaskHint
                     .query()
-                    .insert(options.hints.map((hint) => {
+                    .insert(options.hints.map(function (hint) {
                       return {
                         taskId: task.id,
                         hint: hint,
                         createdAt: now
                       }
                     }))
-                    .then((newTaskHints) => {
+                    .then(function (newTaskHints) {
                     })
                 })
             })
         })
     })
-    .then(() => {
+    .then(function () {
       callback(null, task)
       EventController.push(new CreateTaskEvent(task))
-      for (let taskCategory of taskCategories) {
+      for (const taskCategory of taskCategories) {
         EventController.push(new CreateTaskCategoryEvent(task, taskCategory))
       }
     })
-    .catch((err) => {
-      if (this.isTaskTitleUniqueConstraintViolation(err)) {
+    .catch(function (err) {
+      if (TaskController.isTaskTitleUniqueConstraintViolation(err)) {
         callback(new DuplicateTaskTitleError(), null)
       } else {
         logger.error(err)
@@ -106,15 +107,15 @@ class TaskController {
     let deletedTaskCategories = null
     let createdTaskCategories = null
 
-    transaction(Task, TaskCategory, TaskAnswer, TaskHint, (Task, TaskCategory, TaskAnswer, TaskHint) => {
-      let now = new Date()
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskAnswer, TaskHint) {
+      const now = new Date()
       return Task
         .query()
         .patchAndFetchById(task.id, {
           description: options.description,
           updatedAt: now
         })
-        .then((updatedTaskObject) => {
+        .then(function (updatedTaskObject) {
           updatedTask = updatedTaskObject
           return TaskCategory
             .query()
@@ -122,14 +123,14 @@ class TaskController {
             .whereNotIn('categoryId', options.categories)
             .andWhere('taskId', task.id)
             .returning('*')
-            .then((deletedTaskCategoryObjects) => {
+            .then(function (deletedTaskCategoryObjects) {
               deletedTaskCategories = deletedTaskCategoryObjects
 
-              let valuePlaceholderExpressions = _.times(options.categories.length, () => {
+              const valuePlaceholderExpressions = _.times(options.categories.length, function () {
                 return '(?, ?, ?)'
               })
 
-              let values = options.categories.map((categoryId) => {
+              const values = options.categories.map(function (categoryId) {
                 return [
                   task.id,
                   categoryId,
@@ -145,11 +146,11 @@ class TaskController {
                   RETURNING *`,
                   _.flatten(values)
                 )
-                .then((response) => {
+                .then(function (response) {
                   createdTaskCategories = response.rows
                   return TaskAnswer
                     .query()
-                    .insert(options.answers.map((entry) => {
+                    .insert(options.answers.map(function (entry) {
                       return {
                         taskId: task.id,
                         answer: entry.answer,
@@ -157,17 +158,17 @@ class TaskController {
                         createdAt: now
                       }
                     }))
-                    .then((newTaskAnswers) => {
+                    .then(function (newTaskAnswers) {
                       return TaskHint
                         .query()
-                        .insert(options.hints.map((hint) => {
+                        .insert(options.hints.map(function (hint) {
                           return {
                             taskId: task.id,
                             hint: hint,
                             createdAt: now
                           }
                         }))
-                        .then((newTaskHints) => {
+                        .then(function (newTaskHints) {
                           if (newTaskHints.length > 0) {
                             queue('notifyTaskHint').add({ taskId: task.id })
                           }
@@ -177,19 +178,19 @@ class TaskController {
             })
         })
     })
-    .then(() => {
+    .then(function () {
       callback(null, updatedTask)
       EventController.push(new UpdateTaskEvent(updatedTask))
 
-      for (let taskCategory of deletedTaskCategories) {
+      for (const taskCategory of deletedTaskCategories) {
         EventController.push(new DeleteTaskCategoryEvent(updatedTask, taskCategory))
       }
 
-      for (let taskCategory of createdTaskCategories) {
+      for (const taskCategory of createdTaskCategories) {
         EventController.push(new CreateTaskCategoryEvent(updatedTask, taskCategory))
       }
     })
-    .catch((err) => {
+    .catch(function (err) {
       logger.error(err)
       callback(new InternalError(), null)
     })
@@ -199,27 +200,27 @@ class TaskController {
     let taskPromise = Task.query()
     if (filterNew) {
       taskPromise = taskPromise
-        .where('state', constants.TASK_OPENED)
-        .orWhere('state', constants.TASK_CLOSED)
+        .where('state', TASK_OPENED)
+        .orWhere('state', TASK_CLOSED)
     }
 
     taskPromise
-      .then((tasks) => {
+      .then(function (tasks) {
         callback(null, tasks)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 
   static checkAnswer (task, proposedAnswer, callback) {
-    TaskAnswerController.listByTask(task.id, (err, taskAnswers) => {
+    TaskAnswerController.listByTask(task.id, function (err, taskAnswers) {
       if (err) {
         callback(err, null)
       } else {
         let answerCorrect = false
-        for (let entry of taskAnswers) {
+        for (const entry of taskAnswers) {
           if (entry.caseSensitive) {
             answerCorrect = (proposedAnswer === entry.answer)
           } else {
@@ -235,7 +236,7 @@ class TaskController {
     })
   }
 
-  static getTaskLink(taskId) {
+  static getTaskLink (taskId) {
     const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
     const fqdn = process.env.THEMIS_QUALS_FQDN
     return `${prefix}://${fqdn}/tasks?action=show&taskId=${taskId}`
@@ -246,18 +247,18 @@ class TaskController {
       Task
         .query()
         .patchAndFetchById(task.id, {
-          state: constants.TASK_OPENED,
+          state: TASK_OPENED,
           updatedAt: new Date()
         })
-        .then((updatedTask) => {
+        .then(function (updatedTask) {
           callback(null)
           EventController.push(new OpenTaskEvent(updatedTask))
-          TaskCategoryController.indexByTask(updatedTask.id, (err, taskCategories) => {
+          TaskCategoryController.indexByTask(updatedTask.id, function (err, taskCategories) {
             if (err) {
               logger.error(err)
               callback(new InternalError())
             } else {
-              for (let taskCategory of taskCategories) {
+              for (const taskCategory of taskCategories) {
                 EventController.push(new RevealTaskCategoryEvent(taskCategory))
               }
             }
@@ -267,7 +268,7 @@ class TaskController {
             taskId: updatedTask.id
           })
         })
-        .catch((err) => {
+        .catch(function (err) {
           logger.error(err)
           callback(new InternalError())
         })
@@ -287,14 +288,14 @@ class TaskController {
       Task
         .query()
         .patchAndFetchById(task.id, {
-          state: constants.TASK_CLOSED,
+          state: TASK_CLOSED,
           updatedAt: new Date()
         })
-        .then((updatedTask) => {
+        .then(function (updatedTask) {
           callback(null)
           EventController.push(new CloseTaskEvent(updatedTask))
         })
-        .catch((err) => {
+        .catch(function (err) {
           logger.error(err)
           callback(new InternalError())
         })
@@ -314,18 +315,18 @@ class TaskController {
       .query()
       .where('id', id)
       .first()
-      .then((task) => {
+      .then(function (task) {
         if (task) {
           callback(null, task)
         } else {
           callback(new TaskNotFoundError())
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TaskController
+module.exports = TaskController

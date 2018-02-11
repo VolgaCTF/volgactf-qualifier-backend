@@ -1,9 +1,11 @@
-import SupervisorEvent from './supervisor'
-import constants from '../utils/constants'
-import teamTaskHitAttemptSerializer from '../serializers/team-task-hit-attempt'
+const SupervisorEvent = require('./supervisor')
+const { EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT } = require('../utils/constants')
+const teamTaskHitAttemptSerializer = require('../serializers/team-task-hit-attempt')
 
-export default class CreateTeamTaskHitAttemptEvent extends SupervisorEvent {
+class CreateTeamTaskHitAttemptEvent extends SupervisorEvent {
   constructor (teamTaskHitAttempt) {
-    super(constants.EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT, teamTaskHitAttemptSerializer(teamTaskHitAttempt), null, null, {})
+    super(EVENT_CREATE_TEAM_TASK_HIT_ATTEMPT, teamTaskHitAttemptSerializer(teamTaskHitAttempt), null, null, {})
   }
 }
+
+module.exports = CreateTeamTaskHitAttemptEvent

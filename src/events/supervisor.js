@@ -1,7 +1,9 @@
-import BaseEvent from './base'
+const BaseEvent = require('./base')
 
-export default class SupervisorEvent extends BaseEvent {
+class SupervisorEvent extends BaseEvent {
   constructor (type, data) {
     super(type, data, null, null, {})
   }
 }
+
+module.exports = SupervisorEvent

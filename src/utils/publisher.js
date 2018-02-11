@@ -1,4 +1,4 @@
-import redis from './redis'
+const redis = require('./redis')
 
 class EventPublisher {
   constructor (channel) {
@@ -17,6 +17,6 @@ class EventPublisher {
   }
 }
 
-let redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
+const redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
 
-export default new EventPublisher(redisChannel)
+module.exports = new EventPublisher(redisChannel)

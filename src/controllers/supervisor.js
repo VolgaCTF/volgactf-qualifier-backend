@@ -1,21 +1,21 @@
-import Supervisor from '../models/supervisor'
-import { getPasswordHash, checkPassword } from '../utils/security'
-import { InvalidSupervisorCredentialsError, InternalError } from '../utils/errors'
-import constants from '../utils/constants'
-import logger from '../utils/logger'
-import EventController from './event'
-import LoginSupervisorEvent from '../events/login-supervisor'
-import CreateSupervisorEvent from '../events/create-supervisor'
-import DeleteSupervisorEvent from '../events/delete-supervisor'
-import UpdateSupervisorPasswordEvent from '../events/update-supervisor-password'
+const Supervisor = require('../models/supervisor')
+const { getPasswordHash, checkPassword } = require('../utils/security')
+const { InvalidSupervisorCredentialsError, InternalError, SupervisorNotFoundError, SupervisorUsernameTakenError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
+const logger = require('../utils/logger')
+const EventController = require('./event')
+const LoginSupervisorEvent = require('../events/login-supervisor')
+const CreateSupervisorEvent = require('../events/create-supervisor')
+const DeleteSupervisorEvent = require('../events/delete-supervisor')
+const UpdateSupervisorPasswordEvent = require('../events/update-supervisor-password')
 
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
   }
 
   static create (options, callback) {
-    getPasswordHash(options.password, (err, hash) => {
+    getPasswordHash(options.password, function (err, hash) {
       if (err) {
         logger.error(err)
         callback(new InternalError(), null)
@@ -27,8 +27,8 @@ class SupervisorController {
             passwordHash: hash,
             rights: options.rights
           })
-          .then((supervisor) => {
-            EventController.push(new CreateSupervisorEvent(supervisor), (err, event) => {
+          .then(function (supervisor) {
+            EventController.push(new CreateSupervisorEvent(supervisor), function (err, event) {
               if (err) {
                 callback(err, null)
               } else {
@@ -36,9 +36,9 @@ class SupervisorController {
               }
             })
           })
-          .catch((err) => {
-            if (this.isSupervisorUsernameUniqueConstraintViolation(err)) {
-              callback('Supervisor exists!', null)
+          .catch(function (err) {
+            if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
+              callback(new SupervisorUsernameTakenError(), null)
             } else {
               logger.error(err)
               callback(new InternalError(), null)
@@ -49,12 +49,12 @@ class SupervisorController {
   }
 
   static edit (options, callback) {
-    getPasswordHash(options.password, (err, hash) => {
+    getPasswordHash(options.password, function (err, hash) {
       if (err) {
         logger.error(err)
         callback(new InternalError(), null)
       } else {
-        this.getByUsername(options.username, (err, supervisor) => {
+        SupervisorController.getByUsername(options.username, function (err, supervisor) {
           if (err) {
             logger.error(err)
             callback(err)
@@ -64,8 +64,8 @@ class SupervisorController {
               .patchAndFetchById(supervisor.id, {
                 passwordHash: hash
               })
-              .then((supervisor) => {
-                EventController.push(new UpdateSupervisorPasswordEvent(supervisor), (err, event) => {
+              .then(function (supervisor) {
+                EventController.push(new UpdateSupervisorPasswordEvent(supervisor), function (err, event) {
                   if (err) {
                     callback(err, null)
                   } else {
@@ -73,7 +73,7 @@ class SupervisorController {
                   }
                 })
               })
-              .catch((err) => {
+              .catch(function (err) {
                 logger.error(err)
                 callback(new InternalError(), null)
               })
@@ -84,7 +84,7 @@ class SupervisorController {
   }
 
   static delete (username, callback) {
-    this.getByUsername(username, (err, supervisor) => {
+    SupervisorController.getByUsername(username, function (err, supervisor) {
       if (err) {
         logger.error(err)
         callback(err)
@@ -93,11 +93,11 @@ class SupervisorController {
           .query()
           .delete()
           .where('id', supervisor.id)
-          .then((numDeleted) => {
+          .then(function (numDeleted) {
             if (numDeleted === 0) {
-              callback("Supervisor doesn't exist!")
+              callback(new SupervisorNotFoundError())
             } else {
-              EventController.push(new DeleteSupervisorEvent(supervisor), (err, event) => {
+              EventController.push(new DeleteSupervisorEvent(supervisor), function (err, event) {
                 if (err) {
                   callback(err)
                 } else {
@@ -106,7 +106,7 @@ class SupervisorController {
               })
             }
           })
-          .catch((err) => {
+          .catch(function (err) {
             callback(err)
           })
       }
@@ -118,9 +118,9 @@ class SupervisorController {
       .query()
       .where('username', username)
       .first()
-      .then((supervisor) => {
+      .then(function (supervisor) {
         if (supervisor) {
-          checkPassword(password, supervisor.passwordHash, (err, res) => {
+          checkPassword(password, supervisor.passwordHash, function (err, res) {
             if (err) {
               callback(err, null)
             } else {
@@ -136,7 +136,7 @@ class SupervisorController {
           callback(new InvalidSupervisorCredentialsError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         callback(err, null)
       })
   }
@@ -144,10 +144,10 @@ class SupervisorController {
   static index (callback) {
     Supervisor
       .query()
-      .then((supervisors) => {
+      .then(function (supervisors) {
         callback(null, supervisors)
       })
-      .catch((err) => {
+      .catch(function (err) {
         callback(err, null)
       })
   }
@@ -157,14 +157,14 @@ class SupervisorController {
       .query()
       .where('username', username)
       .first()
-      .then((supervisor) => {
+      .then(function (supervisor) {
         if (supervisor) {
           callback(null, supervisor)
         } else {
-          callback('Supervisor not found!', null)
+          callback(new SupervisorNotFoundError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         callback(err, null)
       })
   }
@@ -174,17 +174,17 @@ class SupervisorController {
       .query()
       .where('id', id)
       .first()
-      .then((supervisor) => {
+      .then(function (supervisor) {
         if (supervisor) {
           callback(null, supervisor)
         } else {
-          callback('Supervisor not found!', null)
+          callback(new SupervisorNotFoundError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         callback(err, null)
       })
   }
 }
 
-export default SupervisorController
+module.exports = SupervisorController

@@ -1,12 +1,12 @@
-import express from 'express'
-let router = express.Router()
+const express = require('express')
+const router = express.Router()
 
-import logger from '../utils/logger'
-import { InternalError } from '../utils/errors'
-import TeamController from '../controllers/team'
-import TeamScore from '../models/team-score'
-import _ from 'underscore'
-import jsesc from 'jsesc'
+const logger = require('../utils/logger')
+const { InternalError } = require('../utils/errors')
+const TeamController = require('../controllers/team')
+const TeamScore = require('../models/team-score')
+const _ = require('underscore')
+const jsesc = require('jsesc')
 
 function rankFunc (a, b) {
   if (a.score > b.score) {
@@ -32,17 +32,17 @@ function rankFunc (a, b) {
   }
 }
 
-router.get('/ctftime', (request, response, next) => {
-  TeamController.index((err, teams) => {
+router.get('/ctftime', function (request, response, next) {
+  TeamController.index(function (err, teams) {
     if (err) {
       logger.error(err)
       next(new InternalError(), null)
     } else {
       TeamScore
         .query()
-        .then((teamScores) => {
-          let entries = _.map(teams, (team) => {
-            let teamScore = _.findWhere(teamScores, { teamId: team.id })
+        .then(function (teamScores) {
+          const entries = _.map(teams, function (team) {
+            const teamScore = _.findWhere(teamScores, { teamId: team.id })
             let entry = null
             if (teamScore) {
               entry = {
@@ -63,7 +63,7 @@ router.get('/ctftime', (request, response, next) => {
 
           entries.sort(rankFunc)
           const data = {
-            standings: _.map(entries, (entry, ndx) => {
+            standings: _.map(entries, function (entry, ndx) {
               return {
                 pos: ndx + 1,
                 team: entry.team,
@@ -77,7 +77,7 @@ router.get('/ctftime', (request, response, next) => {
               json: true
             }))
         })
-        .catch((err) => {
+        .catch(function (err) {
           logger.error(err)
           next(new InternalError(), null)
         })
@@ -85,4 +85,4 @@ router.get('/ctftime', (request, response, next) => {
   }, true)
 })
 
-export default router
+module.exports = router

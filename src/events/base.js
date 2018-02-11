@@ -1,4 +1,4 @@
-export default class BaseEvent {
+class BaseEvent {
   constructor (type, supervisorsData, teamsData, guestsData, teamData) {
     this.type = type
     this.data = {
@@ -9,3 +9,5 @@ export default class BaseEvent {
     }
   }
 }
+
+module.exports = BaseEvent

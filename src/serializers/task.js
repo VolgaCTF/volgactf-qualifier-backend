@@ -1,12 +1,12 @@
-import _ from 'underscore'
+const _ = require('underscore')
 
-export default function (task, options = {}) {
-  let defaultOptions = {
+module.exports = function (task, options = {}) {
+  const defaultOptions = {
     preview: false
   }
   options = _.extend(defaultOptions, options)
 
-  let result = {
+  const result = {
     id: task.id,
     title: task.title,
     value: task.value,

@@ -1,9 +1,11 @@
-import BroadcastEvent from './broadcast'
-import constants from '../utils/constants'
-import contestSerializer from '../serializers/contest'
+const BroadcastEvent = require('./broadcast')
+const { EVENT_UPDATE_CONTEST } = require('../utils/constants')
+const contestSerializer = require('../serializers/contest')
 
-export default class UpdateContestEvent extends BroadcastEvent {
+class UpdateContestEvent extends BroadcastEvent {
   constructor (contest) {
-    super(constants.EVENT_UPDATE_CONTEST, contestSerializer(contest))
+    super(EVENT_UPDATE_CONTEST, contestSerializer(contest))
   }
 }
+
+module.exports = UpdateContestEvent

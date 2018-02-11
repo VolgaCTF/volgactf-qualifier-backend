@@ -1,9 +1,11 @@
-import BroadcastEvent from './broadcast'
-import constants from '../utils/constants'
-import teamScoreSerializer from '../serializers/team-score'
+const BroadcastEvent = require('./broadcast')
+const { EVENT_UPDATE_TEAM_SCORE } = require('../utils/constants')
+const teamScoreSerializer = require('../serializers/team-score')
 
-export default class UpdateTeamScoreEvent extends BroadcastEvent {
+class UpdateTeamScoreEvent extends BroadcastEvent {
   constructor (teamScore) {
-    super(constants.EVENT_UPDATE_TEAM_SCORE, teamScoreSerializer(teamScore))
+    super(EVENT_UPDATE_TEAM_SCORE, teamScoreSerializer(teamScore))
   }
 }
+
+module.exports = UpdateTeamScoreEvent

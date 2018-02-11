@@ -1,2 +1,2 @@
-import run from '../cli'
+const run = require('../cli')
 run()

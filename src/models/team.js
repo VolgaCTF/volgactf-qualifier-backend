@@ -1,9 +1,13 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class Team extends Model {
-  static tableName = 'teams'
+class Team extends Model {
+  static get tableName () {
+    return 'teams'
+  }
 
   isQualified () {
     return this.emailConfirmed && !this.disqualified
   }
 }
+
+module.exports = Team

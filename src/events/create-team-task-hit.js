@@ -1,12 +1,14 @@
-import BaseEvent from './base'
-import constants from '../utils/constants'
-import teamTaskHitSerializer from '../serializers/team-task-hit'
+const BaseEvent = require('./base')
+const { EVENT_CREATE_TEAM_TASK_HIT } = require('../utils/constants')
+const teamTaskHitSerializer = require('../serializers/team-task-hit')
 
-export default class CreateTeamTaskHitEvent extends BaseEvent {
+class CreateTeamTaskHitEvent extends BaseEvent {
   constructor (teamTaskHit) {
-    let data = teamTaskHitSerializer(teamTaskHit)
-    let teamData = {}
+    const data = teamTaskHitSerializer(teamTaskHit)
+    const teamData = {}
     teamData[teamTaskHit.teamId] = data
-    super(constants.EVENT_CREATE_TEAM_TASK_HIT, data, null, null, teamData)
+    super(EVENT_CREATE_TEAM_TASK_HIT, data, null, null, teamData)
   }
 }
+
+module.exports = CreateTeamTaskHitEvent

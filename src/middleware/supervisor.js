@@ -1,7 +1,7 @@
-import SupervisorController from '../controllers/supervisor'
+const SupervisorController = require('../controllers/supervisor')
 
-export function getSupervisor (request, response, next) {
-  SupervisorController.get(request.session.identityID, (err, supervisor) => {
+function getSupervisor (request, response, next) {
+  SupervisorController.get(request.session.identityID, function (err, supervisor) {
     if (err) {
       next(err)
     } else {
@@ -10,3 +10,5 @@ export function getSupervisor (request, response, next) {
     }
   })
 }
+
+module.exports.getSupervisor = getSupervisor

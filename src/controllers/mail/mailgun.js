@@ -1,10 +1,10 @@
-import logger from '../../utils/logger'
-import mailgun from 'mailgun-js'
+const logger = require('../../utils/logger')
+const mailgun = require('mailgun-js')
 
-export default class MailgunController {
+class MailgunController {
   static sendEmail (message, recipientEmail, recipientName) {
-    return new Promise((resolve, reject) => {
-      let data = {
+    return new Promise(function (resolve, reject) {
+      const data = {
         from: `${process.env.THEMIS_QUALS_EMAIL_SENDER_NAME} <${process.env.THEMIS_QUALS_EMAIL_SENDER_ADDRESS}>`,
         to: `${recipientName} <${recipientEmail}>`,
         subject: message.subject,
@@ -12,12 +12,12 @@ export default class MailgunController {
         html: message.html
       }
 
-      let client = mailgun({
+      const client = mailgun({
         apiKey: process.env.MAILGUN_API_KEY,
         domain: process.env.MAILGUN_DOMAIN
       })
 
-      client.messages().send(data, (err, body) => {
+      client.messages().send(data, function (err, body) {
         if (err) {
           logger.error(err)
           reject(err)
@@ -28,3 +28,5 @@ export default class MailgunController {
     })
   }
 }
+
+module.exports = MailgunController

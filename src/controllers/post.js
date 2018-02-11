@@ -1,19 +1,19 @@
-import Post from '../models/post'
-import logger from '../utils/logger'
-import { InternalError, DuplicatePostTitleError, PostNotFoundError } from '../utils/errors'
-import constants from '../utils/constants'
-import EventController from './event'
-import CreatePostEvent from '../events/create-post'
-import UpdatePostEvent from '../events/update-post'
-import DeletePostEvent from '../events/delete-post'
+const Post = require('../models/post')
+const logger = require('../utils/logger')
+const { InternalError, DuplicatePostTitleError, PostNotFoundError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
+const EventController = require('./event')
+const CreatePostEvent = require('../events/create-post')
+const UpdatePostEvent = require('../events/update-post')
+const DeletePostEvent = require('../events/delete-post')
 
 class PostController {
   static isPostTitleUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'posts_ndx_title_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'posts_ndx_title_unique')
   }
 
   static create (title, description, callback) {
-    let now = new Date()
+    const now = new Date()
 
     Post
       .query()
@@ -23,12 +23,12 @@ class PostController {
         createdAt: now,
         updatedAt: now
       })
-      .then((post) => {
+      .then(function (post) {
         callback(null, post)
         EventController.push(new CreatePostEvent(post))
       })
-      .catch((err) => {
-        if (this.isPostTitleUniqueConstraintViolation(err)) {
+      .catch(function (err) {
+        if (PostController.isPostTitleUniqueConstraintViolation(err)) {
           callback(new DuplicatePostTitleError(), null)
         } else {
           logger.error(err)
@@ -45,12 +45,12 @@ class PostController {
         description: description,
         updatedAt: new Date()
       })
-      .then((post) => {
+      .then(function (post) {
         callback(null, post)
         EventController.push(new UpdatePostEvent(post))
       })
-      .catch((err) => {
-        if (this.isPostTitleUniqueConstraintViolation(err)) {
+      .catch(function (err) {
+        if (PostController.isPostTitleUniqueConstraintViolation(err)) {
           callback(new DuplicatePostTitleError(), null)
         } else {
           logger.error(err)
@@ -65,7 +65,7 @@ class PostController {
       .delete()
       .where('id', id)
       .returning('*')
-      .then((posts) => {
+      .then(function (posts) {
         if (posts.length === 1) {
           callback(null)
           EventController.push(new DeletePostEvent(posts[0]))
@@ -73,7 +73,7 @@ class PostController {
           callback(new PostNotFoundError())
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new PostNotFoundError())
       })
@@ -82,10 +82,10 @@ class PostController {
   static index (callback) {
     Post
       .query()
-      .then((posts) => {
+      .then(function (posts) {
         callback(null, posts)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(err, null)
       })
@@ -96,18 +96,18 @@ class PostController {
       .query()
       .where('id', id)
       .first()
-      .then((post) => {
+      .then(function (post) {
         if (post) {
           callback(null, post)
         } else {
           callback(new PostNotFoundError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new PostNotFoundError(), null)
       })
   }
 }
 
-export default PostController
+module.exports = PostController

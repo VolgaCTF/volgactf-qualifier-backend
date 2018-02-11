@@ -1,7 +1,7 @@
-import bcrypt from 'bcrypt'
+const bcrypt = require('bcrypt')
 
-export function getPasswordHash (password, callback) {
-  bcrypt.hash(password, 10, (err, hash) => {
+module.exports.getPasswordHash = function (password, callback) {
+  bcrypt.hash(password, 10, function (err, hash) {
     if (err) {
       callback(err, null)
     } else {
@@ -10,8 +10,8 @@ export function getPasswordHash (password, callback) {
   })
 }
 
-export function checkPassword (password, hash, callback) {
-  bcrypt.compare(password, hash, (err, res) => {
+module.exports.checkPassword = function (password, hash, callback) {
+  bcrypt.compare(password, hash, function (err, res) {
     if (err) {
       callback(err, null)
     } else {

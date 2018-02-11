@@ -1,24 +1,26 @@
-import Team from '../models/team'
-import TeamResetPasswordToken from '../models/team-reset-password-token'
-import TeamEmailVerificationToken from '../models/team-email-verification-token'
-import TeamScore from '../models/team-score'
-import { getPasswordHash, checkPassword } from '../utils/security'
-import queue from '../utils/queue'
-import token from '../utils/token'
-import logger from '../utils/logger'
-import { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError, EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError, ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError } from '../utils/errors'
-import constants from '../utils/constants'
-import moment from 'moment'
-import { transaction } from 'objection'
+const Team = require('../models/team')
+const TeamResetPasswordToken = require('../models/team-reset-password-token')
+const TeamEmailVerificationToken = require('../models/team-email-verification-token')
+const TeamScore = require('../models/team-score')
+const { getPasswordHash, checkPassword } = require('../utils/security')
+const queue = require('../utils/queue')
+const token = require('../utils/token')
+const logger = require('../utils/logger')
+const { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError,
+  EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError,
+  ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
+const moment = require('moment')
+const { transaction } = require('objection')
 
-import EventController from './event'
-import CreateTeamEvent from '../events/create-team'
-import UpdateTeamEmailEvent from '../events/update-team-email'
-import UpdateTeamProfileEvent from '../events/update-team-profile'
-import QualifyTeamEvent from '../events/qualify-team'
-import LoginTeamEvent from '../events/login-team'
-import UpdateTeamPasswordEvent from '../events/update-team-password'
-import DisqualifyTeamEvent from '../events/disqualify-team'
+const EventController = require('./event')
+const CreateTeamEvent = require('../events/create-team')
+const UpdateTeamEmailEvent = require('../events/update-team-email')
+const UpdateTeamProfileEvent = require('../events/update-team-profile')
+const QualifyTeamEvent = require('../events/qualify-team')
+const LoginTeamEvent = require('../events/login-team')
+const UpdateTeamPasswordEvent = require('../events/update-team-password')
+const DisqualifyTeamEvent = require('../events/disqualify-team')
 
 class TeamController {
   static restore (email, callback) {
@@ -26,14 +28,14 @@ class TeamController {
       .query()
       .where('email', email.toLowerCase())
       .first()
-      .then((team) => {
+      .then(function (team) {
         if (team) {
           TeamResetPasswordToken
             .query()
             .where('teamId', team.id)
             .andWhere('used', false)
             .andWhere('expiresAt', '>', new Date())
-            .then((teamResetPasswordTokens) => {
+            .then(function (teamResetPasswordTokens) {
               if (teamResetPasswordTokens.length >= 2) {
                 callback(new ResetPasswordAttemptsLimitError())
               } else {
@@ -46,7 +48,7 @@ class TeamController {
                     createdAt: new Date(),
                     expiresAt: moment().add(1, 'h').toDate()
                   })
-                  .then((teamResetPasswordToken) => {
+                  .then(function (teamResetPasswordToken) {
                     queue('sendEmailQueue').add({
                       message: 'restore',
                       name: team.name,
@@ -55,13 +57,13 @@ class TeamController {
                     })
                     callback(null)
                   })
-                  .catch((err) => {
+                  .catch(function (err) {
                     logger.error(err)
                     callback(new InternalError())
                   })
               }
             })
-            .catch((err) => {
+            .catch(function (err) {
               logger.error(err)
               callback(new InternalError())
             })
@@ -69,22 +71,22 @@ class TeamController {
           callback(new TeamNotFoundError())
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError())
       })
   }
 
   static isTeamNameUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_name_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_name_unique')
   }
 
   static isTeamEmailUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_email_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_email_unique')
   }
 
   static create (options, callback) {
-    getPasswordHash(options.password, (err, hash) => {
+    getPasswordHash(options.password, function (err, hash) {
       if (err) {
         logger.error(err)
         callback(new InternalError())
@@ -92,7 +94,7 @@ class TeamController {
         let team = null
         let teamEmailVerificationToken = null
 
-        transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+        transaction(Team, TeamEmailVerificationToken, function (Team, TeamEmailVerificationToken) {
           return Team
             .query()
             .insert({
@@ -106,7 +108,7 @@ class TeamController {
               institution: '',
               disqualified: false
             })
-            .then((newTeam) => {
+            .then(function (newTeam) {
               team = newTeam
               return TeamEmailVerificationToken
                 .query()
@@ -117,12 +119,12 @@ class TeamController {
                   createdAt: new Date(),
                   expiresAt: moment().add(1, 'h').toDate()
                 })
-                .then((newTeamEmailVerificationToken) => {
+                .then(function (newTeamEmailVerificationToken) {
                   teamEmailVerificationToken = newTeamEmailVerificationToken
                 })
             })
         })
-        .then(() => {
+        .then(function () {
           if (options.logoFilename) {
             queue('createLogoQueue').add({
               id: team.id,
@@ -140,10 +142,10 @@ class TeamController {
           callback(null)
           EventController.push(new CreateTeamEvent(team))
         })
-        .catch((err) => {
-          if (this.isTeamNameUniqueConstraintViolation(err)) {
+        .catch(function (err) {
+          if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
             callback(new TeamCredentialsTakenError())
-          } else if (this.isTeamEmailUniqueConstraintViolation(err)) {
+          } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
             callback(new TeamCredentialsTakenError())
           } else {
             logger.error(err)
@@ -159,9 +161,9 @@ class TeamController {
       .query()
       .where('name', name)
       .first()
-      .then((team) => {
+      .then(function (team) {
         if (team) {
-          checkPassword(password, team.passwordHash, (err, res) => {
+          checkPassword(password, team.passwordHash, function (err, res) {
             if (err) {
               logger.error(err)
               callback(new InvalidTeamCredentialsError(), null)
@@ -178,14 +180,14 @@ class TeamController {
           callback(new InvalidTeamCredentialsError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 
   static resendConfirmationEmail (id, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
@@ -197,7 +199,7 @@ class TeamController {
             .where('teamId', team.id)
             .andWhere('used', false)
             .andWhere('expiresAt', '>', new Date())
-            .then((teamEmailVerificationTokens) => {
+            .then(function (teamEmailVerificationTokens) {
               if (teamEmailVerificationTokens.length >= 2) {
                 callback(new EmailVerificationAttemptsLimitError())
               } else {
@@ -210,7 +212,7 @@ class TeamController {
                     createdAt: new Date(),
                     expiresAt: moment().add(1, 'h').toDate()
                   })
-                  .then((teamEmailVerificationToken) => {
+                  .then(function (teamEmailVerificationToken) {
                     queue('sendEmailQueue').add({
                       message: 'welcome',
                       name: team.name,
@@ -220,13 +222,13 @@ class TeamController {
 
                     callback(null)
                   })
-                  .catch((err) => {
+                  .catch(function (err) {
                     logger.error(err)
                     callback(new InternalError())
                   })
               }
             })
-            .catch((err) => {
+            .catch(function (err) {
               logger.error(err)
               callback(new InternalError())
             })
@@ -236,7 +238,7 @@ class TeamController {
   }
 
   static disqualify (id, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
@@ -245,24 +247,24 @@ class TeamController {
         } else {
           let updatedTeam = null
 
-          transaction(Team, TeamScore, (Team, TeamScore) => {
+          transaction(Team, TeamScore, function (Team, TeamScore) {
             return Team
               .query()
               .patchAndFetchById(team.id, {
                 disqualified: true
               })
-              .then((updatedTeamObject) => {
+              .then(function (updatedTeamObject) {
                 updatedTeam = updatedTeamObject
                 return TeamScore
                   .query()
                   .delete()
                   .where('teamId', team.id)
-                  .then(() => {
+                  .then(function () {
                   })
               })
           })
-          .then(() => {
-            EventController.push(new DisqualifyTeamEvent(updatedTeam), (err, event) => {
+          .then(function () {
+            EventController.push(new DisqualifyTeamEvent(updatedTeam), function (err, event) {
               if (err) {
                 callback(err)
               } else {
@@ -270,7 +272,7 @@ class TeamController {
               }
             })
           })
-          .catch((err) => {
+          .catch(function (err) {
             logger.error(err)
             callback(err)
           })
@@ -280,7 +282,7 @@ class TeamController {
   }
 
   static updateEmail (id, email, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
@@ -292,20 +294,20 @@ class TeamController {
             .where('teamId', team.id)
             .andWhere('used', false)
             .andWhere('expiresAt', '>', new Date())
-            .then((teamEmailVerificationTokens) => {
+            .then(function (teamEmailVerificationTokens) {
               if (teamEmailVerificationTokens.length >= 2) {
                 callback(new EmailVerificationAttemptsLimitError())
               } else {
                 let updatedTeam = null
                 let updatedTeamEmailVerificationToken = null
 
-                transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+                transaction(Team, TeamEmailVerificationToken, function (Team, TeamEmailVerificationToken) {
                   return Team
                     .query()
                     .patchAndFetchById(id, {
                       email: email
                     })
-                    .then((updatedTeamObject) => {
+                    .then(function (updatedTeamObject) {
                       updatedTeam = updatedTeamObject
                       return TeamEmailVerificationToken
                         .query()
@@ -313,7 +315,7 @@ class TeamController {
                         .where('teamId', team.id)
                         .andWhere('used', false)
                         .andWhere('expiresAt', '>', new Date())
-                        .then((numDeleted) => {
+                        .then(function (numDeleted) {
                           return TeamEmailVerificationToken
                             .query()
                             .insert({
@@ -323,13 +325,13 @@ class TeamController {
                               createdAt: new Date(),
                               expiresAt: moment().add(1, 'h').toDate()
                             })
-                            .then((updatedTeamEmailVerificationTokenObject) => {
+                            .then(function (updatedTeamEmailVerificationTokenObject) {
                               updatedTeamEmailVerificationToken = updatedTeamEmailVerificationTokenObject
                             })
                         })
                     })
                 })
-                .then(() => {
+                .then(function () {
                   queue('sendEmailQueue').add({
                     message: 'welcome',
                     name: updatedTeam.name,
@@ -340,8 +342,8 @@ class TeamController {
                   callback(null)
                   EventController.push(new UpdateTeamEmailEvent(updatedTeam))
                 })
-                .catch((err) => {
-                  if (this.isTeamEmailUniqueConstraintViolation(err)) {
+                .catch(function (err) {
+                  if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
                     callback(new EmailTakenError())
                   } else {
                     logger.error(err)
@@ -350,7 +352,7 @@ class TeamController {
                 })
               }
             })
-            .catch((err) => {
+            .catch(function (err) {
               logger.error(err)
               callback(new InternalError())
             })
@@ -360,7 +362,7 @@ class TeamController {
   }
 
   static updateProfile (id, countryId, locality, institution, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
@@ -371,11 +373,11 @@ class TeamController {
             locality: locality,
             institution: institution
           })
-          .then((updatedTeam) => {
+          .then(function (updatedTeam) {
             callback(null)
             EventController.push(new UpdateTeamProfileEvent(updatedTeam))
           })
-          .catch((err) => {
+          .catch(function (err) {
             logger.error(err)
             callback(new InternalError())
           })
@@ -384,7 +386,7 @@ class TeamController {
   }
 
   static updateLogo (id, logoFilename, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
@@ -398,17 +400,17 @@ class TeamController {
   }
 
   static updatePassword (id, currentPassword, newPassword, callback) {
-    TeamController.get(id, (err, team) => {
+    TeamController.get(id, function (err, team) {
       if (err) {
         callback(err)
       } else {
-        checkPassword(currentPassword, team.passwordHash, (err, res) => {
+        checkPassword(currentPassword, team.passwordHash, function (err, res) {
           if (err) {
             logger.error(err)
             callback(new InternalError())
           } else {
             if (res) {
-              getPasswordHash(newPassword, (err, hash) => {
+              getPasswordHash(newPassword, function (err, hash) {
                 if (err) {
                   logger.error(err)
                   callback(new InternalError())
@@ -418,11 +420,11 @@ class TeamController {
                     .patchAndFetchById(team.id, {
                       passwordHash: hash
                     })
-                    .then((updatedTeam) => {
+                    .then(function (updatedTeam) {
                       callback(null)
                       EventController.push(new UpdateTeamPasswordEvent(updatedTeam))
                     })
-                    .catch((err) => {
+                    .catch(function (err) {
                       logger.error(err)
                       callback(new InternalError())
                     })
@@ -446,10 +448,10 @@ class TeamController {
     }
 
     query
-      .then((teams) => {
+      .then(function (teams) {
         callback(null, teams)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -474,7 +476,7 @@ class TeamController {
       .query()
       .where('email', email)
       .first()
-      .then((team) => {
+      .then(function (team) {
         if (team) {
           TeamResetPasswordToken
             .query()
@@ -483,20 +485,20 @@ class TeamController {
             .andWhere('used', false)
             .andWhere('expiresAt', '>', new Date())
             .first()
-            .then((teamResetPasswordToken) => {
+            .then(function (teamResetPasswordToken) {
               if (teamResetPasswordToken) {
-                getPasswordHash(newPassword, (err, hash) => {
+                getPasswordHash(newPassword, function (err, hash) {
                   if (err) {
                     logger.error(err)
                     callback(new InternalError())
                   } else {
-                    transaction(Team, TeamResetPasswordToken, (Team, TeamResetPasswordToken) => {
+                    transaction(Team, TeamResetPasswordToken, function (Team, TeamResetPasswordToken) {
                       return Team
                         .query()
                         .patchAndFetchById(team.id, {
                           passwordHash: hash
                         })
-                        .then(() => {
+                        .then(function () {
                           return TeamResetPasswordToken
                             .query()
                             .patchAndFetchById(teamResetPasswordToken.id, {
@@ -504,10 +506,10 @@ class TeamController {
                             })
                         })
                     })
-                    .then(() => {
+                    .then(function () {
                       callback(null)
                     })
-                    .catch((err) => {
+                    .catch(function (err) {
                       logger.error(err)
                       callback(new InternalError())
                     })
@@ -521,7 +523,7 @@ class TeamController {
           callback(new InvalidResetPasswordURLError())
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError())
       })
@@ -543,7 +545,7 @@ class TeamController {
       .query()
       .where('email', email)
       .first()
-      .then((team) => {
+      .then(function (team) {
         if (team) {
           if (team.emailConfirmed) {
             callback(new EmailConfirmedError())
@@ -555,17 +557,17 @@ class TeamController {
               .andWhere('used', false)
               .andWhere('expiresAt', '>', new Date())
               .first()
-              .then((teamEmailVerificationToken) => {
+              .then(function (teamEmailVerificationToken) {
                 if (teamEmailVerificationToken) {
                   let updatedTeam = null
 
-                  transaction(Team, TeamEmailVerificationToken, (Team, TeamEmailVerificationToken) => {
+                  transaction(Team, TeamEmailVerificationToken, function (Team, TeamEmailVerificationToken) {
                     return Team
                       .query()
                       .patchAndFetchById(team.id, {
                         emailConfirmed: true
                       })
-                      .then((updatedTeamObject) => {
+                      .then(function (updatedTeamObject) {
                         updatedTeam = updatedTeamObject
                         return TeamEmailVerificationToken
                           .query()
@@ -574,11 +576,11 @@ class TeamController {
                           })
                       })
                   })
-                  .then(() => {
+                  .then(function () {
                     callback(null)
                     EventController.push(new QualifyTeamEvent(updatedTeam))
                   })
-                  .catch((err) => {
+                  .catch(function (err) {
                     logger.error(err)
                     callback(new InternalError())
                   })
@@ -586,7 +588,7 @@ class TeamController {
                   callback(new InvalidVerificationURLError())
                 }
               })
-              .catch((err) => {
+              .catch(function (err) {
                 logger.error(err)
                 callback(new InternalError())
               })
@@ -595,7 +597,7 @@ class TeamController {
           callback(new InvalidVerificationURLError())
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError())
       })
@@ -606,18 +608,18 @@ class TeamController {
       .query()
       .where('id', id)
       .first()
-      .then((team) => {
+      .then(function (team) {
         if (team) {
           callback(null, team)
         } else {
           callback(new TeamNotFoundError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TeamController
+module.exports = TeamController

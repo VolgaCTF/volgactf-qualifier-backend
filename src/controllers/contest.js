@@ -1,13 +1,13 @@
-import Contest from '../models/contest'
+const Contest = require('../models/contest')
 
-import { InternalError, InvalidStateTransitionError } from '../utils/errors'
-import constants from '../utils/constants'
-import logger from '../utils/logger'
+const { InternalError, InvalidStateTransitionError } = require('../utils/errors')
+const { CONTEST_INITIAL, CONTEST_STARTED, CONTEST_PAUSED, CONTEST_FINISHED } = require('../utils/constants')
+const logger = require('../utils/logger')
 
-import EventController from './event'
-import UpdateContestEvent from '../events/update-contest'
+const EventController = require('./event')
+const UpdateContestEvent = require('../events/update-contest')
 
-import queue from '../utils/queue'
+const queue = require('../utils/queue')
 
 class ContestController {
   static get (callback) {
@@ -28,11 +28,11 @@ class ContestController {
       return true
     }
 
-    let initialToStarted = curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED
-    let startedToPaused = curState === constants.CONTEST_STARTED && newState === constants.CONTEST_PAUSED
-    let pausedToStarted = curState === constants.CONTEST_PAUSED && newState === constants.CONTEST_STARTED
-    let startedToFinished = curState === constants.CONTEST_STARTED && newState === constants.CONTEST_FINISHED
-    let pausedToFinished = curState === constants.CONTEST_FINISHED && newState === constants.CONTEST_FINISHED
+    let initialToStarted = curState === CONTEST_INITIAL && newState === CONTEST_STARTED
+    let startedToPaused = curState === CONTEST_STARTED && newState === CONTEST_PAUSED
+    let pausedToStarted = curState === CONTEST_PAUSED && newState === CONTEST_STARTED
+    let startedToFinished = curState === CONTEST_STARTED && newState === CONTEST_FINISHED
+    let pausedToFinished = curState === CONTEST_FINISHED && newState === CONTEST_FINISHED
 
     return initialToStarted || startedToPaused || pausedToStarted || startedToFinished || pausedToFinished
   }
@@ -48,10 +48,10 @@ class ContestController {
       } else {
         if (contest) {
           const now = new Date()
-          if (contest.state === constants.CONTEST_INITIAL && contest.startsAt != null && now.getTime() >= contest.startsAt.getTime()) {
-            ContestController.internalUpdate(constants.CONTEST_STARTED, contest.startsAt, contest.finishesAt, callback)
-          } else if ((contest.state === constants.CONTEST_STARTED || contest.state === constants.CONTEST_PAUSED) && contest.finishesAt != null && now.getTime() >= contest.finishesAt.getTime()) {
-            ContestController.internalUpdate(constants.CONTEST_FINISHED, contest.startsAt, contest.finishesAt, callback)
+          if (contest.state === CONTEST_INITIAL && contest.startsAt != null && now.getTime() >= contest.startsAt.getTime()) {
+            ContestController.internalUpdate(CONTEST_STARTED, contest.startsAt, contest.finishesAt, callback)
+          } else if ((contest.state === CONTEST_STARTED || contest.state === CONTEST_PAUSED) && contest.finishesAt != null && now.getTime() >= contest.finishesAt.getTime()) {
+            ContestController.internalUpdate(CONTEST_FINISHED, contest.startsAt, contest.finishesAt, callback)
           } else {
             callback(null, null)
           }
@@ -67,7 +67,7 @@ class ContestController {
       if (err) {
         callback(err, null)
       } else {
-        let curState = constants.CONTEST_INITIAL
+        let curState = CONTEST_INITIAL
         if (contest) {
           curState = contest.state
         }
@@ -85,9 +85,9 @@ class ContestController {
               })
               .then(function (updatedContest) {
                 EventController.push(new UpdateContestEvent(updatedContest))
-                if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
+                if (curState === CONTEST_INITIAL && newState === CONTEST_STARTED) {
                   queue('notifyStartCompetition').add({})
-                } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
+                } else if ((curState === CONTEST_STARTED || curState === CONTEST_PAUSED) && newState === CONTEST_FINISHED) {
                   queue('notifyFinishCompetition').add({})
                 }
                 callback(null, updatedContest)
@@ -106,9 +106,9 @@ class ContestController {
               })
               .then(function (contest) {
                 EventController.push(new UpdateContestEvent(contest))
-                if (curState === constants.CONTEST_INITIAL && newState === constants.CONTEST_STARTED) {
+                if (curState === CONTEST_INITIAL && newState === CONTEST_STARTED) {
                   queue('notifyStartCompetition').add({})
-                } else if ((curState === constants.CONTEST_STARTED || curState === constants.CONTEST_PAUSED) && newState === constants.CONTEST_FINISHED) {
+                } else if ((curState === CONTEST_STARTED || curState === CONTEST_PAUSED) && newState === CONTEST_FINISHED) {
                   queue('notifyFinishCompetition').add({})
                 }
                 callback(null, contest)
@@ -124,4 +124,4 @@ class ContestController {
   }
 }
 
-export default ContestController
+module.exports = ContestController

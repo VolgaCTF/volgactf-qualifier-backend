@@ -1,4 +1,4 @@
-import '../queue'
-import eventStream from '../controllers/event-stream'
+require('../queue')
+const eventStream = require('../controllers/event-stream')
 
 eventStream.run()

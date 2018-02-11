@@ -1,7 +1,7 @@
-import crypto from 'crypto'
-import base64url from 'base64url'
+const crypto = require('crypto')
+const base64url = require('base64url')
 
-export default {
+module.exports = {
   generate: function (size = 64) {
     return crypto.randomBytes(size)
   },

@@ -1,60 +1,61 @@
-import TeamProvider from './team'
-import ContestProvider from './contest'
-import Event from '../models/event'
-import _ from 'underscore'
-import constants from '../utils/constants'
-import TeamTaskHitAttemptController from './team-task-hit-attempt'
-import TeamTaskHitController from './team-task-hit'
-import TeamTaskReviewController from './team-task-review'
-import CountryProvider from './country'
-import TaskProvider from './task'
-import CategoryController from './category'
-import TaskCategoryController from './task-category'
+const TeamProvider = require('./team')
+const ContestProvider = require('./contest')
+const Event = require('../models/event')
+const _ = require('underscore')
+const { EVENT_LOGIN_TEAM, EVENT_OPEN_TASK } = require('../utils/constants')
+const TeamTaskHitAttemptController = require('./team-task-hit-attempt')
+const TeamTaskHitController = require('./team-task-hit')
+const TeamTaskReviewController = require('./team-task-review')
+const CountryProvider = require('./country')
+const TaskProvider = require('./task')
+const CategoryController = require('./category')
+const TaskCategoryController = require('./task-category')
+const { ContestNotFoundError } = require('../utils/errors')
 
 class StatController {
   static getAllData (callback) {
-    TeamProvider.index((err, teams) => {
+    TeamProvider.index(function (err, teams) {
       if (err) {
         callback(err, null)
       } else {
-        ContestProvider.get((err2, contest) => {
+        ContestProvider.get(function (err2, contest) {
           if (err2) {
             callback(err2, null)
           } else {
             if (contest && contest.startsAt && contest.finishesAt) {
               Event
                 .query()
-                .then((events_) => {
-                  TeamTaskHitAttemptController.index((err4, teamTaskHitAttempts) => {
+                .then(function (events_) {
+                  TeamTaskHitAttemptController.index(function (err4, teamTaskHitAttempts) {
                     if (err4) {
                       callback(err4, null)
                     } else {
-                      TeamTaskHitController.list((err5, teamTaskHits) => {
+                      TeamTaskHitController.list(function (err5, teamTaskHits) {
                         if (err5) {
                           callback(err5, null)
                         } else {
-                          TeamTaskReviewController.index((err6, teamTaskReviews) => {
+                          TeamTaskReviewController.index(function (err6, teamTaskReviews) {
                             if (err6) {
                               callback(err6, null)
                             } else {
-                              CountryProvider.index((err7, countries) => {
+                              CountryProvider.index(function (err7, countries) {
                                 if (err7) {
                                   callback(err7, null)
                                 } else {
-                                  TaskProvider.index((err8, tasks) => {
+                                  TaskProvider.index(function (err8, tasks) {
                                     if (err8) {
                                       callback(err8, null)
                                     } else {
-                                      CategoryController.index((err9, categories) => {
+                                      CategoryController.index(function (err9, categories) {
                                         if (err9) {
                                           callback(err9, null)
                                         } else {
-                                          let taskIds = []
-                                          _.each(tasks, (task) => {
+                                          const taskIds = []
+                                          _.each(tasks, function (task) {
                                             taskIds.push(task.id)
                                           })
 
-                                          TaskCategoryController.indexByTasks(taskIds, (err10, taskCategories) => {
+                                          TaskCategoryController.indexByTasks(taskIds, function (err10, taskCategories) {
                                             if (err10) {
                                               callback(err10, null)
                                             } else {
@@ -85,11 +86,11 @@ class StatController {
                     }
                   })
                 })
-                .catch((err3) => {
+                .catch(function (err3) {
                   callback(err3, null)
                 })
             } else {
-              callback('Contest not found!', null)
+              callback(new ContestNotFoundError(), null)
             }
           }
         })
@@ -114,24 +115,24 @@ class StatController {
       }
     }
 
-    StatController.getAllData((err, data) => {
+    StatController.getAllData(function (err, data) {
       if (err) {
         callback(err, null)
       } else {
         result.teams.total = data.teams.length
-        result.teams.qualified = _.filter(data.teams, (team) => {
+        result.teams.qualified = _.filter(data.teams, function (team) {
           return team.isQualified()
         }).length
-        result.teams.disqualified = _.filter(data.teams, (team) => {
+        result.teams.disqualified = _.filter(data.teams, function (team) {
           return team.disqualified
         }).length
 
         const contestStartTimestamp = data.contest.startsAt.getTime()
         const contestFinishTimestamp = data.contest.finishesAt.getTime()
 
-        const signInEvents = _.filter(data.events, (event) => {
+        const signInEvents = _.filter(data.events, function (event) {
           const timestamp = event.createdAt.getTime()
-          return event.type === constants.EVENT_LOGIN_TEAM && timestamp >= contestStartTimestamp && timestamp <= contestFinishTimestamp
+          return event.type === EVENT_LOGIN_TEAM && timestamp >= contestStartTimestamp && timestamp <= contestFinishTimestamp
         })
 
         const setSignedIn = new Set()
@@ -159,39 +160,39 @@ class StatController {
         }
         result.teams.reviewedAtLeastOneTask = setReview.size
 
-        const qualifiedTeams = _.filter(data.teams, (team) => {
+        const qualifiedTeams = _.filter(data.teams, function (team) {
           return team.isQualified()
         })
-        result.countries = _.countBy(qualifiedTeams, (team) => {
+        result.countries = _.countBy(qualifiedTeams, function (team) {
           return _.findWhere(data.countries, { id: team.countryId }).name
         })
 
         for (const task of data.tasks) {
-          const taskReviews = _.filter(data.teamTaskReviews, (review) => {
+          const taskReviews = _.filter(data.teamTaskReviews, function (review) {
             return review.taskId === task.id
           })
 
           let averageRating = null
           if (taskReviews.length > 0) {
-            averageRating = _.reduce(taskReviews, (memo, review) => {
+            averageRating = _.reduce(taskReviews, function (memo, review) {
               return memo + review.rating
             }, 0.0) / taskReviews.length
           }
 
           let opened = null
           for (const event of data.events) {
-            if (event.type === constants.EVENT_OPEN_TASK && event.data.supervisors.id === task.id) {
+            if (event.type === EVENT_OPEN_TASK && event.data.supervisors.id === task.id) {
               opened = event.createdAt
             }
           }
 
           let flagsSubmitted = 0
-          const hitAttempts = _.filter(data.teamTaskHitAttempts, (hitAttempt) => {
+          const hitAttempts = _.filter(data.teamTaskHitAttempts, function (hitAttempt) {
             return hitAttempt.taskId === task.id
           })
           flagsSubmitted += hitAttempts.length
 
-          const hits = _.filter(data.teamTaskHits, (hit) => {
+          const hits = _.filter(data.teamTaskHits, function (hit) {
             return hit.taskId === task.id
           })
           const teamsSolved = hits.length
@@ -201,10 +202,10 @@ class StatController {
           let firstSubmit = null
           let lastSubmit = null
           if (hitAttempts.length > 0) {
-            firstSubmit = _.min(hitAttempts, (hitAttempt) => {
+            firstSubmit = _.min(hitAttempts, function (hitAttempt) {
               return hitAttempt.createdAt.getTime()
             }).createdAt
-            lastSubmit = _.max(hitAttempts, (hitAttempt) => {
+            lastSubmit = _.max(hitAttempts, function (hitAttempt) {
               return hitAttempt.createdAt.getTime()
             }).createdAt
           }
@@ -212,10 +213,10 @@ class StatController {
           let firstSolved = null
           let lastSolved = null
           if (hits.length > 0) {
-            firstSolved = _.min(hits, (hit) => {
+            firstSolved = _.min(hits, function (hit) {
               return hit.createdAt.getTime()
             }).createdAt
-            lastSolved = _.max(hits, (hit) => {
+            lastSolved = _.max(hits, function (hit) {
               return hit.createdAt.getTime()
             }).createdAt
 
@@ -228,11 +229,11 @@ class StatController {
             }
           }
 
-          let categories = []
-          const taskCategories = _.filter(data.taskCategories, (taskCategory) => {
+          const categories = []
+          const taskCategories = _.filter(data.taskCategories, function (taskCategory) {
             return taskCategory.taskId === task.id
           })
-          _.each(taskCategories, (taskCategory) => {
+          _.each(taskCategories, function (taskCategory) {
             const category = _.findWhere(data.categories, { id: taskCategory.categoryId })
             if (category) {
               categories.push(category.title)
@@ -259,4 +260,4 @@ class StatController {
   }
 }
 
-export default StatController
+module.exports = StatController

@@ -1,6 +1,6 @@
-import TaskHint from '../models/task-hint'
-import { InternalError } from '../utils/errors'
-import logger from '../utils/logger'
+const TaskHint = require('../models/task-hint')
+const { InternalError } = require('../utils/errors')
+const logger = require('../utils/logger')
 
 class TaskHintController {
   static listByTask (taskId, callback) {
@@ -8,14 +8,14 @@ class TaskHintController {
       .query()
       .where('taskId', taskId)
       .orderBy('id')
-      .then((taskHints) => {
+      .then(function (taskHints) {
         callback(null, taskHints)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TaskHintController
+module.exports = TaskHintController

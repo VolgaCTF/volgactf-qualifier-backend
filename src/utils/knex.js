@@ -1,6 +1,6 @@
-import Knex from 'knex'
+const Knex = require('knex')
 
-export default Knex({
+module.exports = Knex({
   client: 'postgresql',
   connection: {
     database: process.env.POSTGRES_DBNAME,

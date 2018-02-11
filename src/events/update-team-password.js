@@ -1,13 +1,15 @@
-import BaseEvent from './base'
-import constants from '../utils/constants'
-import teamSerializer from '../serializers/team'
+const BaseEvent = require('./base')
+const { EVENT_UPDATE_TEAM_PASSWORD } = require('../utils/constants')
+const teamSerializer = require('../serializers/team')
 
-export default class UpdateTeamPasswordEvent extends BaseEvent {
+class UpdateTeamPasswordEvent extends BaseEvent {
   constructor (team) {
-    let data = teamSerializer(team, { exposeEmail: true })
-    let teamData = {}
+    const data = teamSerializer(team, { exposeEmail: true })
+    const teamData = {}
     teamData[team.id] = data
 
-    super(constants.EVENT_UPDATE_TEAM_PASSWORD, data, null, null, teamData)
+    super(EVENT_UPDATE_TEAM_PASSWORD, data, null, null, teamData)
   }
 }
+
+module.exports = UpdateTeamPasswordEvent

@@ -1,10 +1,10 @@
-import logger from '../../utils/logger'
-import sendgrid from 'sendgrid'
+const logger = require('../../utils/logger')
+const sendgrid = require('sendgrid')
 
-export default class SendGridController {
+class SendGridController {
   static sendEmail (message, recipientEmail, recipientName) {
-    return new Promise((resolve, reject) => {
-      let payload = {
+    return new Promise(function (resolve, reject) {
+      const payload = {
         to: recipientEmail,
         toname: recipientName,
         from: process.env.THEMIS_QUALS_EMAIL_SENDER_ADDRESS,
@@ -14,8 +14,8 @@ export default class SendGridController {
         html: message.html
       }
 
-      let client = sendgrid(process.env.SENDGRID_API_KEY)
-      client.send(payload, (err, result) => {
+      const client = sendgrid(process.env.SENDGRID_API_KEY)
+      client.send(payload, function (err, result) {
         if (err) {
           logger.error(err)
           reject(err)
@@ -27,3 +27,5 @@ export default class SendGridController {
     })
   }
 }
+
+module.exports = SendGridController

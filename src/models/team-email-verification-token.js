@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class TeamEmailVerificationToken extends Model {
-  static tableName = 'team_email_verification_tokens'
+class TeamEmailVerificationToken extends Model {
+  static get tableName () {
+    return 'team_email_verification_tokens'
+  }
 }
+
+module.exports = TeamEmailVerificationToken

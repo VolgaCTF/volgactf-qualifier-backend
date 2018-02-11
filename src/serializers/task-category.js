@@ -1,4 +1,4 @@
-export default function (taskCategory) {
+module.exports = function (taskCategory) {
   return {
     id: taskCategory.id,
     taskId: taskCategory.taskId,

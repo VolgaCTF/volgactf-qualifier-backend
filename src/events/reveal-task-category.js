@@ -1,10 +1,12 @@
-import BaseEvent from './base'
-import constants from '../utils/constants'
-import taskCategorySerializer from '../serializers/task-category'
+const BaseEvent = require('./base')
+const { EVENT_REVEAL_TASK_CATEGORY } = require('../utils/constants')
+const taskCategorySerializer = require('../serializers/task-category')
 
-export default class RevealTaskCategoryEvent extends BaseEvent {
+class RevealTaskCategoryEvent extends BaseEvent {
   constructor (taskCategory) {
-    let data = taskCategorySerializer(taskCategory)
-    super(constants.EVENT_REVEAL_TASK_CATEGORY, null, data, data, {})
+    const data = taskCategorySerializer(taskCategory)
+    super(EVENT_REVEAL_TASK_CATEGORY, null, data, data, {})
   }
 }
+
+module.exports = RevealTaskCategoryEvent

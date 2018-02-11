@@ -1,9 +1,11 @@
-import BroadcastEvent from './broadcast'
-import constants from '../utils/constants'
-import taskSerializer from '../serializers/task'
+const BroadcastEvent = require('./broadcast')
+const { EVENT_CLOSE_TASK } = require('../utils/constants')
+const taskSerializer = require('../serializers/task')
 
-export default class CloseTaskEvent extends BroadcastEvent {
+class CloseTaskEvent extends BroadcastEvent {
   constructor (task) {
-    super(constants.EVENT_CLOSE_TASK, taskSerializer(task, { preview: true }))
+    super(EVENT_CLOSE_TASK, taskSerializer(task, { preview: true }))
   }
 }
+
+module.exports = CloseTaskEvent

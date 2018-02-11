@@ -1,6 +1,6 @@
-import _ from 'underscore'
+const _ = require('underscore')
 
-export default function (team, options = {}) {
+module.exports = function (team, options = {}) {
   let defaultOptions = {
     exposeEmail: false
   }

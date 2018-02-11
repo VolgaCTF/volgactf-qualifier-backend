@@ -1,28 +1,28 @@
-import queue from './utils/queue'
-import logger from './utils/logger'
-import gm from 'gm'
-import path from 'path'
-import token from './utils/token'
-import TeamScoreController from './controllers/team-score'
-import MailgunController from './controllers/mail/mailgun'
-import SendGridController from './controllers/mail/sendgrid'
-import TeamController from './controllers/team'
-import EventController from './controllers/event'
-import UpdateTeamLogoEvent from './events/update-team-logo'
+const queue = require('./utils/queue')
+const logger = require('./utils/logger')
+const gm = require('gm')
+const path = require('path')
+const token = require('./utils/token')
+const TeamScoreController = require('./controllers/team-score')
+const MailgunController = require('./controllers/mail/mailgun')
+const SendGridController = require('./controllers/mail/sendgrid')
+const TeamController = require('./controllers/team')
+const EventController = require('./controllers/event')
+const UpdateTeamLogoEvent = require('./events/update-team-logo')
 
-import TaskController from './controllers/task'
-import PostController from './controllers/post'
-import TwitterController from './controllers/twitter'
-import TelegramController from './controllers/telegram'
+const TaskController = require('./controllers/task')
+const PostController = require('./controllers/post')
+const TwitterController = require('./controllers/twitter')
+const TelegramController = require('./controllers/telegram')
 
-import ContestController from './controllers/contest'
+const ContestController = require('./controllers/contest')
 
-import EmailGenerator from './utils/email-generator'
+const EmailGenerator = require('./utils/email-generator')
 
 const emailGenerator = new EmailGenerator()
 
-queue('updateScoresQueue').process((job, done) => {
-  TeamScoreController.updateScores((err) => {
+queue('updateScoresQueue').process(function (job, done) {
+  TeamScoreController.updateScores(function (err) {
     if (err) {
       logger.error(err)
       throw err
@@ -43,8 +43,8 @@ queue('checkContestQueue').process(function (job, done) {
   })
 })
 
-queue('updateTeamScore').process((job, done) => {
-  TeamScoreController.updateTeamScore(job.data.teamId, (err) => {
+queue('updateTeamScore').process(function (job, done) {
+  TeamScoreController.updateTeamScore(job.data.teamId, function (err) {
     if (err) {
       logger.error(err)
       throw err
@@ -54,16 +54,16 @@ queue('updateTeamScore').process((job, done) => {
   })
 })
 
-queue('createLogoQueue').process((job, done) => {
+queue('createLogoQueue').process(function (job, done) {
   let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
-    .write(newFilename, (err) => {
+    .write(newFilename, function (err) {
       if (err) {
         logger.error(err)
         throw err
       } else {
-        TeamController.get(job.data.id, (err, team) => {
+        TeamController.get(job.data.id, function (err, team) {
           if (err) {
             logger.error(err)
           } else {
@@ -75,10 +75,10 @@ queue('createLogoQueue').process((job, done) => {
     })
 })
 
-queue('sendEmailQueue').process((job, done) => {
+queue('sendEmailQueue').process(function (job, done) {
   emailGenerator
     .init()
-    .then(() => {
+    .then(function () {
       let secureConnection = false
       if (process.env.THEMIS_QUALS_SECURE) {
         secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
@@ -124,14 +124,14 @@ queue('sendEmailQueue').process((job, done) => {
 
       senderController
         .sendEmail(message, job.data.email, job.data.name)
-        .then(() => {
+        .then(function () {
           done()
         })
-        .catch((err) => {
+        .catch(function (err) {
           done(err)
         })
     })
-    .catch((err) => {
+    .catch(function (err) {
       done(err)
     })
 })
@@ -142,12 +142,12 @@ function getTasksLink () {
   return `${prefix}://${fqdn}/tasks`
 }
 
-queue('notifyStartCompetition').process((job, done) => {
+queue('notifyStartCompetition').process(function (job, done) {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
     PostController.create(
       `Competition has begun!`,
       `:triangular_flag_on_post: Check out [tasks](${getTasksLink()}) and good luck!`,
-      (err, post) => {
+      function (err, post) {
       }
     )
   }
@@ -155,7 +155,7 @@ queue('notifyStartCompetition').process((job, done) => {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
     TwitterController.post(
       `🚩 Competition has begun! Good luck! ${getTasksLink()}`,
-      (err) => {
+      function (err) {
       }
     )
   }
@@ -163,7 +163,7 @@ queue('notifyStartCompetition').process((job, done) => {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
     TelegramController.post(
       `🚩 Competition has begun! Check out [tasks](${getTasksLink()}) and good luck!`,
-      (err) => {
+      function (err) {
       }
     )
   }
@@ -177,12 +177,12 @@ function getScoreboardLink () {
   return `${prefix}://${fqdn}/scoreboard`
 }
 
-queue('notifyFinishCompetition').process((job, done) => {
+queue('notifyFinishCompetition').process(function (job, done) {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
     PostController.create(
       `Competition has ended!`,
       `:triangular_flag_on_post: Check out the final [scoreboard](${getScoreboardLink()})!`,
-      (err, post) => {
+      function (err, post) {
       }
     )
   }
@@ -190,7 +190,7 @@ queue('notifyFinishCompetition').process((job, done) => {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
     TwitterController.post(
       `🚩 Competition has ended! Check out the final scoreboard! ${getScoreboardLink()}`,
-      (err) => {
+      function (err) {
       }
     )
   }
@@ -198,7 +198,7 @@ queue('notifyFinishCompetition').process((job, done) => {
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
     TelegramController.post(
       `🚩 Competition has ended! Check out the final [scoreboard](${getScoreboardLink()})!`,
-      (err) => {
+      function (err) {
       }
     )
   }
@@ -206,8 +206,8 @@ queue('notifyFinishCompetition').process((job, done) => {
   done()
 })
 
-queue('notifyOpenTask').process((job, done) => {
-  TaskController.get(job.data.taskId, (err, task) => {
+queue('notifyOpenTask').process(function (job, done) {
+  TaskController.get(job.data.taskId, function (err, task) {
     if (err) {
       done(err)
     } else {
@@ -215,7 +215,7 @@ queue('notifyOpenTask').process((job, done) => {
         PostController.create(
           `New task — ${task.title}`,
           `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
-          (err, post) => {
+          function (err, post) {
           }
         )
       }
@@ -223,7 +223,7 @@ queue('notifyOpenTask').process((job, done) => {
       if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
         TwitterController.post(
           `🚩 New task — ${task.title} — worth ${task.value} pts! ${TaskController.getTaskLink(task.id)}`,
-          (err) => {
+          function (err) {
           }
         )
       }
@@ -231,7 +231,7 @@ queue('notifyOpenTask').process((job, done) => {
       if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
         TelegramController.post(
           `🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
-          (err) => {
+          function (err) {
           }
         )
       }
@@ -241,8 +241,8 @@ queue('notifyOpenTask').process((job, done) => {
   })
 })
 
-queue('notifyTaskHint').process((job, done) => {
-  TaskController.get(job.data.taskId, (err, task) => {
+queue('notifyTaskHint').process(function (job, done) {
+  TaskController.get(job.data.taskId, function (err, task) {
     if (err) {
       done(err)
     } else {
@@ -250,7 +250,7 @@ queue('notifyTaskHint').process((job, done) => {
         PostController.create(
           `Task ${task.title} — new hint!`,
           `:triangular_flag_on_post: Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
-          (err, post) => {
+          function (err, post) {
           }
         )
       }
@@ -258,7 +258,7 @@ queue('notifyTaskHint').process((job, done) => {
       if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
         TwitterController.post(
           `🚩 Task ${task.title} — new hint! ${TaskController.getTaskLink(task.id)}`,
-          (err) => {
+          function (err) {
           }
         )
       }
@@ -266,7 +266,7 @@ queue('notifyTaskHint').process((job, done) => {
       if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
         TelegramController.post(
           `🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
-          (err) => {
+          function (err) {
           }
         )
       }

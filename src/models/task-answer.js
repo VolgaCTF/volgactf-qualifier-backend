@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class TaskAnswer extends Model {
-  static tableName = 'task_answers'
+class TaskAnswer extends Model {
+  static get tableName () {
+    return 'task_answers'
+  }
 }
+
+module.exports = TaskAnswer

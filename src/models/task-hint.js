@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class TaskHint extends Model {
-  static tableName = 'task_hints'
+class TaskHint extends Model {
+  static get tableName () {
+    return 'task_hints'
+  }
 }
+
+module.exports = TaskHint

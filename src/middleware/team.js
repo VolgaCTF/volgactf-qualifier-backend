@@ -1,7 +1,7 @@
-import TeamController from '../controllers/team'
+const TeamController = require('../controllers/team')
 
-export function getTeam (request, response, next) {
-  TeamController.get(request.session.identityID, (err, team) => {
+function getTeam (request, response, next) {
+  TeamController.get(request.session.identityID, function (err, team) {
     if (err) {
       next(err)
     } else {
@@ -10,3 +10,5 @@ export function getTeam (request, response, next) {
     }
   })
 }
+
+module.exports.getTeam = getTeam

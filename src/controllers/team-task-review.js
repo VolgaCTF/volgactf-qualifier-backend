@@ -1,23 +1,23 @@
-import TeamTaskReview from '../models/team-task-review'
-import TeamTaskHit from '../models/team-task-hit'
-import logger from '../utils/logger'
-import { InternalError, TaskReviewAlreadyGivenError, TaskReviewNotEligibleError } from '../utils/errors'
-import constants from '../utils/constants'
-import EventController from './event'
-import CreateTeamTaskReviewEvent from '../events/create-team-task-review'
+const TeamTaskReview = require('../models/team-task-review')
+const TeamTaskHit = require('../models/team-task-hit')
+const logger = require('../utils/logger')
+const { InternalError, TaskReviewAlreadyGivenError, TaskReviewNotEligibleError } = require('../utils/errors')
+const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
+const EventController = require('./event')
+const CreateTeamTaskReviewEvent = require('../events/create-team-task-review')
 
 class TeamTaskReviewController {
   static isTeamTaskUniqueConstraintViolation (err) {
-    return (err.code && err.code === constants.POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_reviews_ndx_team_task_unique')
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'team_task_reviews_ndx_team_task_unique')
   }
 
   static index (callback) {
     TeamTaskReview
       .query()
-      .then((teamTaskReviews) => {
+      .then(function (teamTaskReviews) {
         callback(null, teamTaskReviews)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -27,10 +27,10 @@ class TeamTaskReviewController {
     TeamTaskReview
       .query()
       .where('taskId', taskId)
-      .then((teamTaskReviews) => {
+      .then(function (teamTaskReviews) {
         callback(null, teamTaskReviews)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -40,10 +40,10 @@ class TeamTaskReviewController {
     TeamTaskReview
       .query()
       .where('teamId', teamId)
-      .then((teamTaskReviews) => {
+      .then(function (teamTaskReviews) {
         callback(null, teamTaskReviews)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -54,10 +54,10 @@ class TeamTaskReviewController {
       .query()
       .where('taskId', taskId)
       .andWhere('teamId', teamId)
-      .then((teamTaskReviews) => {
+      .then(function (teamTaskReviews) {
         callback(null, teamTaskReviews)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -68,7 +68,7 @@ class TeamTaskReviewController {
       .query()
       .where('taskId', taskId)
       .andWhere('teamId', teamId)
-      .then((teamTaskHits) => {
+      .then(function (teamTaskHits) {
         if (teamTaskHits.length === 1) {
           TeamTaskReview
             .query()
@@ -79,12 +79,12 @@ class TeamTaskReviewController {
               comment: comment,
               createdAt: new Date()
             })
-            .then((teamTaskReview) => {
+            .then(function (teamTaskReview) {
               callback(null, teamTaskReview)
               EventController.push(new CreateTeamTaskReviewEvent(teamTaskReview))
             })
-            .catch((err) => {
-              if (this.isTeamTaskUniqueConstraintViolation(err)) {
+            .catch(function (err) {
+              if (TeamTaskReviewController.isTeamTaskUniqueConstraintViolation(err)) {
                 callback(new TaskReviewAlreadyGivenError(), null)
               } else {
                 logger.error(err)
@@ -95,11 +95,11 @@ class TeamTaskReviewController {
           callback(new TaskReviewNotEligibleError(), null)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TeamTaskReviewController
+module.exports = TeamTaskReviewController

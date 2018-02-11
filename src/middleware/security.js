@@ -1,17 +1,17 @@
-import { InvalidCSRFTokenError } from '../utils/errors'
-import tokenUtil from '../utils/token'
-import moment from 'moment'
+const { InvalidCSRFTokenError } = require('../utils/errors')
+const tokenUtil = require('../utils/token')
+const moment = require('moment')
 
 let tokenExpirationDate = 1000 * 60 * 60  // 1 hour
 if (process.env.THEMIS_TOKEN_EXPIRATION_DATE) {
   tokenExpirationDate = parseInt(process.env.THEMIS_TOKEN_EXPIRATION_DATE, 10)
 }
 
-export function checkToken (request, response, next) {
+function checkToken (request, response, next) {
   let validToken = null
 
   if (request.session.token && request.session.tokenExpires && request.get('X-CSRF-Token')) {
-    let diff = moment().diff(request.session.tokenExpires)
+    const diff = moment().diff(request.session.tokenExpires)
     validToken = (diff < 0) && (request.get('X-CSRF-Token') === request.session.token)
   } else {
     validToken = false
@@ -22,8 +22,9 @@ export function checkToken (request, response, next) {
   }
   next()
 }
+module.exports.checkToken = checkToken
 
-export function issueToken (request, response, next) {
+function issueToken (request, response, next) {
   let reissueToken = null
 
   if (request.session.token && request.session.tokenExpires) {
@@ -40,3 +41,4 @@ export function issueToken (request, response, next) {
 
   next()
 }
+module.exports.issueToken = issueToken

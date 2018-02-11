@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class Category extends Model {
-  static tableName = 'categories'
+class Category extends Model {
+  static get tableName () {
+    return 'categories'
+  }
 }
+
+module.exports = Category

@@ -1,8 +1,8 @@
-import ContestController from '../controllers/contest'
-import { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } from '../utils/errors'
+const ContestController = require('../controllers/contest')
+const { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } = require('../utils/errors')
 
-export function getState (request, response, next) {
-  ContestController.get((err, contest) => {
+function getState (request, response, next) {
+  ContestController.get(function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -11,9 +11,10 @@ export function getState (request, response, next) {
     }
   })
 }
+module.exports.getState = getState
 
-export function contestNotFinished (request, response, next) {
-  ContestController.get((err, contest) => {
+function contestNotFinished (request, response, next) {
+  ContestController.get(function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -25,9 +26,10 @@ export function contestNotFinished (request, response, next) {
     }
   })
 }
+module.exports.contestNotFinished = contestNotFinished
 
-export function contestIsStarted (request, response, next) {
-  ContestController.get((err, contest) => {
+function contestIsStarted (request, response, next) {
+  ContestController.get(function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -49,9 +51,10 @@ export function contestIsStarted (request, response, next) {
     }
   })
 }
+module.exports.contestIsStarted = contestIsStarted
 
-export function contestIsFinished (request, response, next) {
-  ContestController.get((err, contest) => {
+function contestIsFinished (request, response, next) {
+  ContestController.get(function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -63,3 +66,4 @@ export function contestIsFinished (request, response, next) {
     }
   })
 }
+module.exports.contestIsFinished = contestIsFinished

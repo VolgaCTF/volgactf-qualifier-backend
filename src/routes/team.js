@@ -1,54 +1,55 @@
-import express from 'express'
-import bodyParser from 'body-parser'
-import busboy from 'connect-busboy'
-import logger from '../utils/logger'
-import constraints from '../utils/constraints'
-import tmp from 'tmp'
-import fs from 'fs'
-import gm from 'gm'
-import path from 'path'
+const express = require('express')
+const bodyParser = require('body-parser')
+const busboy = require('connect-busboy')
+const logger = require('../utils/logger')
+const constraints = require('../utils/constraints')
+const tmp = require('tmp')
+const fs = require('fs')
+const gm = require('gm')
+const path = require('path')
 
-import TeamController from '../controllers/team'
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-let router = express.Router()
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
-import { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError, NotAuthenticatedError } from '../utils/errors'
-import _ from 'underscore'
-import is_ from 'is_js'
+const TeamController = require('../controllers/team')
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
+const { InternalError, ValidationError, InvalidImageError, ImageDimensionsError, ImageAspectRatioError, NotAuthenticatedError } = require('../utils/errors')
+const _ = require('underscore')
+const is_ = require('is_js')
 
-import { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } from '../middleware/session'
-import { checkToken } from '../middleware/security'
-import { contestNotFinished } from '../middleware/contest'
+const { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } = require('../middleware/session')
+const { checkToken } = require('../middleware/security')
+const { contestNotFinished } = require('../middleware/contest')
 
-import teamSerializer from '../serializers/team'
+const teamSerializer = require('../serializers/team')
 
-import teamParam from '../params/team'
-import { getTeam } from '../middleware/team'
-import EventController from '../controllers/event'
-import LogoutTeamEvent from '../events/logout-team'
-import constants from '../utils/constants'
-import TeamScoreController from '../controllers/team-score'
-import teamScoreSerializer from '../serializers/team-score'
-import TeamTaskHitController from '../controllers/team-task-hit'
-import teamTaskHitSerializer from '../serializers/team-task-hit'
-import TeamTaskReviewController from '../controllers/team-task-review'
-import teamTaskReviewSerializer from '../serializers/team-task-review'
+const teamParam = require('../params/team')
+const { getTeam } = require('../middleware/team')
+const EventController = require('../controllers/event')
+const LogoutTeamEvent = require('../events/logout-team')
+const { SCOPE_TEAM } = require('../utils/constants')
+const TeamScoreController = require('../controllers/team-score')
+const teamScoreSerializer = require('../serializers/team-score')
+const TeamTaskHitController = require('../controllers/team-task-hit')
+const teamTaskHitSerializer = require('../serializers/team-task-hit')
+const TeamTaskReviewController = require('../controllers/team-task-review')
+const teamTaskReviewSerializer = require('../serializers/team-task-review')
 
-router.get('/index', detectScope, (request, response, next) => {
-  TeamController.index((err, teams) => {
+const router = express.Router()
+
+router.get('/index', detectScope, function (request, response, next) {
+  TeamController.index(function (err, teams) {
     if (err) {
       logger.error(err)
       next(new InternalError())
     } else {
-      let serializer = _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() })
+      const serializer = _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() })
       response.json(_.map(teams, serializer))
     }
   }, !request.scope.isSupervisor())
 })
 
-router.get('/score/index', (request, response, next) => {
-  TeamScoreController.index((err, teamScores) => {
+router.get('/score/index', function (request, response, next) {
+  TeamScoreController.index(function (err, teamScores) {
     if (err) {
       next(err)
     } else {
@@ -59,12 +60,12 @@ router.get('/score/index', (request, response, next) => {
 
 router.param('teamId', teamParam.id)
 
-router.get('/:teamId/hit/index', detectScope, (request, response, next) => {
+router.get('/:teamId/hit/index', detectScope, function (request, response, next) {
   if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
-  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
+  TeamTaskHitController.listForTeam(request.teamId, function (err, teamTaskHits) {
     if (err) {
       next(err)
     } else {
@@ -73,8 +74,8 @@ router.get('/:teamId/hit/index', detectScope, (request, response, next) => {
   })
 })
 
-router.get('/:teamId/hit/statistics', (request, response, next) => {
-  TeamTaskHitController.listForTeam(request.teamId, (err, teamTaskHits) => {
+router.get('/:teamId/hit/statistics', function (request, response, next) {
+  TeamTaskHitController.listForTeam(request.teamId, function (err, teamTaskHits) {
     if (err) {
       next(err)
     } else {
@@ -85,12 +86,12 @@ router.get('/:teamId/hit/statistics', (request, response, next) => {
   })
 })
 
-router.get('/:teamId/review/index', detectScope, (request, response, next) => {
+router.get('/:teamId/review/index', detectScope, function (request, response, next) {
   if (!(request.scope.isTeam() && request.session.identityID === request.teamId) && !request.scope.isSupervisor()) {
     throw new NotAuthenticatedError()
   }
 
-  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+  TeamTaskReviewController.indexByTeam(request.teamId, function (err, teamTaskReviews) {
     if (err) {
       next(err)
     } else {
@@ -99,12 +100,12 @@ router.get('/:teamId/review/index', detectScope, (request, response, next) => {
   })
 })
 
-router.get('/:teamId/review/statistics', (request, response, next) => {
-  TeamTaskReviewController.indexByTeam(request.teamId, (err, teamTaskReviews) => {
+router.get('/:teamId/review/statistics', function (request, response, next) {
+  TeamTaskReviewController.indexByTeam(request.teamId, function (err, teamTaskReviews) {
     if (err) {
       next(err)
     } else {
-      let averageRating = _.reduce(teamTaskReviews, (sum, review) => {
+      const averageRating = _.reduce(teamTaskReviews, function (sum, review) {
         return sum + review.rating
       }, 0) / (teamTaskReviews.length === 0 ? 1 : teamTaskReviews.length)
 
@@ -116,13 +117,13 @@ router.get('/:teamId/review/statistics', (request, response, next) => {
   })
 })
 
-router.get('/:teamId/logo', (request, response) => {
-  TeamController.get(request.teamId, (err, team) => {
+router.get('/:teamId/logo', function (request, response) {
+  TeamController.get(request.teamId, function (err, team) {
     if (team) {
-      let filename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${team.id}.png`)
-      fs.lstat(filename, (err, stats) => {
+      const filename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${team.id}.png`)
+      fs.lstat(filename, function (err, stats) {
         if (err) {
-          let nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
+          const nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
           response.sendFile(nologoFilename)
         } else {
           response.sendFile(filename)
@@ -137,10 +138,10 @@ router.get('/:teamId/logo', (request, response) => {
   })
 })
 
-router.get('/:teamId/profile', detectScope, (request, response) => {
-  TeamController.get(request.teamId, (err, team) => {
+router.get('/:teamId/profile', detectScope, function (request, response) {
+  TeamController.get(request.teamId, function (err, team) {
     if (team) {
-      let exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === team.id)
+      const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === team.id)
       response.json(teamSerializer(team, { exposeEmail: exposeEmail }))
     } else {
       if (err) {
@@ -151,18 +152,18 @@ router.get('/:teamId/profile', detectScope, (request, response) => {
   })
 })
 
-router.post('/verify-email', checkToken, contestNotFinished, urlencodedParser, (request, response, next) => {
-  let verifyConstraints = {
+router.post('/verify-email', checkToken, contestNotFinished, urlencodedParser, function (request, response, next) {
+  const verifyConstraints = {
     team: constraints.base64url,
     code: constraints.base64url
   }
 
-  let validationResult = validator.validate(request.body, verifyConstraints)
+  const validationResult = validator.validate(request.body, verifyConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.verifyEmail(request.body.team, request.body.code, (err) => {
+  TeamController.verifyEmail(request.body.team, request.body.code, function (err) {
     if (err) {
       next(err)
     } else {
@@ -171,19 +172,19 @@ router.post('/verify-email', checkToken, contestNotFinished, urlencodedParser, (
   })
 })
 
-router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
-  let resetConstraints = {
+router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+  const resetConstraints = {
     team: constraints.base64url,
     code: constraints.base64url,
     password: constraints.password
   }
 
-  let validationResult = validator.validate(request.body, resetConstraints)
+  const validationResult = validator.validate(request.body, resetConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.resetPassword(request.body.team, request.body.code, request.body.password, (err) => {
+  TeamController.resetPassword(request.body.team, request.body.code, request.body.password, function (err) {
     if (err) {
       next(err)
     } else {
@@ -192,18 +193,18 @@ router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedPars
   })
 })
 
-router.post('/update-password', checkToken, needsToBeAuthorizedTeam, urlencodedParser, (request, response, next) => {
-  let changeConstraints = {
+router.post('/update-password', checkToken, needsToBeAuthorizedTeam, urlencodedParser, function (request, response, next) {
+  const changeConstraints = {
     currentPassword: constraints.password,
     newPassword: constraints.password
   }
 
-  let validationResult = validator.validate(request.body, changeConstraints)
+  const validationResult = validator.validate(request.body, changeConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.updatePassword(request.session.identityID, request.body.currentPassword, request.body.newPassword, (err) => {
+  TeamController.updatePassword(request.session.identityID, request.body.currentPassword, request.body.newPassword, function (err) {
     if (err) {
       next(err)
     } else {
@@ -212,26 +213,26 @@ router.post('/update-password', checkToken, needsToBeAuthorizedTeam, urlencodedP
   })
 })
 
-router.post('/update-profile', checkToken, needsToBeAuthorizedTeam, contestNotFinished, urlencodedParser, (request, response, next) => {
-  let countryId = parseInt(request.body.countryId, 10)
+router.post('/update-profile', checkToken, needsToBeAuthorizedTeam, contestNotFinished, urlencodedParser, function (request, response, next) {
+  const countryId = parseInt(request.body.countryId, 10)
   if (is_.number(countryId)) {
     request.body.countryId = countryId
   } else {
     throw new ValidationError()
   }
 
-  let editConstraints = {
+  const editConstraints = {
     countryId: constraints.countryId,
     locality: constraints.locality,
     institution: constraints.institution
   }
 
-  let validationResult = validator.validate(request.body, editConstraints)
+  const validationResult = validator.validate(request.body, editConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.updateProfile(request.session.identityID, request.body.countryId, request.body.locality, request.body.institution, (err) => {
+  TeamController.updateProfile(request.session.identityID, request.body.countryId, request.body.locality, request.body.institution, function (err) {
     if (err) {
       next(err)
     } else {
@@ -240,8 +241,8 @@ router.post('/update-profile', checkToken, needsToBeAuthorizedTeam, contestNotFi
   })
 })
 
-router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, contestNotFinished, (request, response, next) => {
-  TeamController.resendConfirmationEmail(request.session.identityID, (err) => {
+router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, contestNotFinished, function (request, response, next) {
+  TeamController.resendConfirmationEmail(request.session.identityID, function (err) {
     if (err) {
       next(err)
     } else {
@@ -250,17 +251,17 @@ router.post('/resend-confirmation-email', checkToken, needsToBeAuthorizedTeam, c
   })
 })
 
-router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFinished, urlencodedParser, (request, response, next) => {
-  let changeConstraints = {
+router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFinished, urlencodedParser, function (request, response, next) {
+  const changeConstraints = {
     email: constraints.email
   }
 
-  let validationResult = validator.validate(request.body, changeConstraints)
+  const validationResult = validator.validate(request.body, changeConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.updateEmail(request.session.identityID, request.body.email, (err) => {
+  TeamController.updateEmail(request.session.identityID, request.body.email, function (err) {
     if (err) {
       next(err)
     } else {
@@ -269,17 +270,17 @@ router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFini
   })
 })
 
-router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
-  let restoreConstraints = {
+router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+  const restoreConstraints = {
     email: constraints.email
   }
 
-  let validationResult = validator.validate(request.body, restoreConstraints)
+  const validationResult = validator.validate(request.body, restoreConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.restore(request.body.email, (err) => {
+  TeamController.restore(request.body.email, function (err) {
     if (err) {
       next(err)
     } else {
@@ -288,32 +289,32 @@ router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, (re
   })
 })
 
-router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
-  let signinConstraints = {
+router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+  const signinConstraints = {
     team: constraints.team,
     password: constraints.password
   }
 
-  let validationResult = validator.validate(request.body, signinConstraints)
+  const validationResult = validator.validate(request.body, signinConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  TeamController.signin(request.body.team, request.body.password, (err, team) => {
+  TeamController.signin(request.body.team, request.body.password, function (err, team) {
     if (err) {
       next(err)
     } else {
       request.session.authenticated = true
       request.session.identityID = team.id
-      request.session.scopeID = constants.SCOPE_TEAM
+      request.session.scopeID = SCOPE_TEAM
       response.json({ success: true })
     }
   })
 })
 
-router.post('/signout', checkToken, needsToBeAuthorizedTeam, getTeam, (request, response, next) => {
+router.post('/signout', checkToken, needsToBeAuthorizedTeam, getTeam, function (request, response, next) {
   request.session.authenticated = false
-  request.session.destroy((err) => {
+  request.session.destroy(function (err) {
     if (err) {
       next(err)
     } else {
@@ -323,7 +324,7 @@ router.post('/signout', checkToken, needsToBeAuthorizedTeam, getTeam, (request, 
   })
 })
 
-let multidataParser = busboy({
+const multidataParser = busboy({
   immediate: true,
   limits: {
     fieldSize: 200,
@@ -333,19 +334,19 @@ let multidataParser = busboy({
   }
 })
 
-router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinished, multidataParser, (request, response, next) => {
-  let teamLogo = tmp.fileSync()
+router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinished, multidataParser, function (request, response, next) {
+  const teamLogo = tmp.fileSync()
 
-  request.busboy.on('file', (fieldName, file, filename, encoding, mimetype) => {
-    file.on('data', (data) => {
+  request.busboy.on('file', function (fieldName, file, filename, encoding, mimetype) {
+    file.on('data', function (data) {
       if (fieldName === 'logo') {
         fs.appendFileSync(teamLogo.name, data)
       }
     })
   })
 
-  request.busboy.on('finish', () => {
-    gm(teamLogo.name).size((err, size) => {
+  request.busboy.on('finish', function () {
+    gm(teamLogo.name).size(function (err, size) {
       if (err) {
         logger.error(err)
         next(new InvalidImageError())
@@ -355,7 +356,7 @@ router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinis
         } else if (size.width !== size.height) {
           next(new ImageAspectRatioError())
         } else {
-          TeamController.updateLogo(request.session.identityID, teamLogo.name, (err) => {
+          TeamController.updateLogo(request.session.identityID, teamLogo.name, function (err) {
             if (err) {
               next(err)
             } else {
@@ -368,12 +369,12 @@ router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinis
   })
 })
 
-router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, multidataParser, (request, response, next) => {
-  let teamInfo = {}
-  let teamLogo = tmp.fileSync()
+router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, multidataParser, function (request, response, next) {
+  const teamInfo = {}
+  const teamLogo = tmp.fileSync()
 
-  request.busboy.on('file', (fieldName, file, filename, encoding, mimetype) => {
-    file.on('data', (data) => {
+  request.busboy.on('file', function (fieldName, file, filename, encoding, mimetype) {
+    file.on('data', function (data) {
       if (fieldName === 'logo') {
         fs.appendFileSync(teamLogo.name, data)
         teamInfo['logoFilename'] = teamLogo.name
@@ -381,19 +382,19 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
     })
   })
 
-  request.busboy.on('field', (fieldName, val, fieldNameTruncated, valTruncated) => {
+  request.busboy.on('field', function (fieldName, val, fieldNameTruncated, valTruncated) {
     teamInfo[fieldName] = val
   })
 
-  request.busboy.on('finish', () => {
-    let countryId = parseInt(teamInfo.countryId, 10)
+  request.busboy.on('finish', function () {
+    const countryId = parseInt(teamInfo.countryId, 10)
     if (is_.number(countryId)) {
       teamInfo.countryId = countryId
     } else {
       throw new ValidationError()
     }
 
-    let signupConstraints = {
+    const signupConstraints = {
       team: constraints.team,
       email: constraints.email,
       password: constraints.password,
@@ -401,9 +402,9 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
       locality: constraints.locality
     }
 
-    let validationResult = validator.validate(teamInfo, signupConstraints)
+    const validationResult = validator.validate(teamInfo, signupConstraints)
     if (validationResult === true) {
-      gm(teamLogo.name).size((err, size) => {
+      gm(teamLogo.name).size(function (err, size) {
         if (err) {
           logger.error(err)
           next(new InvalidImageError())
@@ -413,7 +414,7 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
           } else if (size.width !== size.height) {
             next(new ImageAspectRatioError())
           } else {
-            TeamController.create(teamInfo, (err, team) => {
+            TeamController.create(teamInfo, function (err, team) {
               if (err) {
                 next(err)
               } else {
@@ -429,4 +430,4 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
   })
 })
 
-export default router
+module.exports = router

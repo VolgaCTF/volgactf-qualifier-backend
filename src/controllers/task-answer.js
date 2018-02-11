@@ -1,6 +1,6 @@
-import TaskAnswer from '../models/task-answer'
-import { InternalError } from '../utils/errors'
-import logger from '../utils/logger'
+const TaskAnswer = require('../models/task-answer')
+const { InternalError } = require('../utils/errors')
+const logger = require('../utils/logger')
 
 class TaskAnswerController {
   static listByTask (taskId, callback) {
@@ -8,14 +8,14 @@ class TaskAnswerController {
       .query()
       .where('taskId', taskId)
       .orderBy('id')
-      .then((taskAnswers) => {
+      .then(function (taskAnswers) {
         callback(null, taskAnswers)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TaskAnswerController
+module.exports = TaskAnswerController

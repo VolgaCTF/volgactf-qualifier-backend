@@ -4,7 +4,6 @@
   "description": "Themis Quals platform backend",
   "main": "index.js",
   "scripts": {
-    "build": "babel src -d lib",
     "cli": "node -r dotenv/config lib/bin/cli.js",
     "knex": "knex",
     "lint": "standard --verbose src/**/*.js | snazzy"
@@ -59,12 +58,9 @@
     "winston": "~0.9.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.4.5",
-    "babel-eslint": "^4.1.8",
-    "babel-preset-node5": "^10.5.0",
-    "babel-plugin-transform-class-properties": "^6.5.2",
-    "snazzy": "^2.0.1",
-    "standard": "^6.0.5"
+    "babel-eslint": "^8.2.1",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.3"
   },
   "standard": {
     "parser": "babel-eslint"

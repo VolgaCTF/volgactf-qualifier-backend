@@ -1,26 +1,26 @@
-import express from 'express'
-let router = express.Router()
+const express = require('express')
+const router = express.Router()
 
-import bodyParser from 'body-parser'
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-import { ValidationError } from '../utils/errors'
-import constraints from '../utils/constraints'
+const bodyParser = require('body-parser')
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
+const { ValidationError } = require('../utils/errors')
+const constraints = require('../utils/constraints')
 
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-import ContestController from '../controllers/contest'
+const ContestController = require('../controllers/contest')
 
-import { needsToBeAuthorizedAdmin } from '../middleware/session'
-import { checkToken } from '../middleware/security'
+const { needsToBeAuthorizedAdmin } = require('../middleware/session')
+const { checkToken } = require('../middleware/security')
 
-import logger from '../utils/logger'
-import is_ from 'is_js'
+const logger = require('../utils/logger')
+const is_ = require('is_js')
 
-import contestSerializer from '../serializers/contest'
+const contestSerializer = require('../serializers/contest')
 
-router.get('/', (request, response, next) => {
-  ContestController.get((err, contest) => {
+router.get('/', function (request, response, next) {
+  ContestController.get(function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -29,41 +29,41 @@ router.get('/', (request, response, next) => {
   })
 })
 
-router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
-  let valState = parseInt(request.body.state, 10)
+router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  const valState = parseInt(request.body.state, 10)
   if (is_.number(valState)) {
     request.body.state = valState
   } else {
     throw new ValidationError()
   }
 
-  let valStartsAt = parseInt(request.body.startsAt, 10)
+  const valStartsAt = parseInt(request.body.startsAt, 10)
   if (is_.number(valStartsAt)) {
     request.body.startsAt = new Date(valStartsAt)
   } else {
     throw new ValidationError()
   }
 
-  let valFinishesAt = parseInt(request.body.finishesAt, 10)
+  const valFinishesAt = parseInt(request.body.finishesAt, 10)
   if (is_.number(valFinishesAt)) {
     request.body.finishesAt = new Date(valFinishesAt)
   } else {
     throw new ValidationError()
   }
 
-  let updateConstraints = {
+  const updateConstraints = {
     state: constraints.contestState,
     startsAt: constraints.contestDateTime,
     finishesAt: constraints.contestDateTime
   }
 
-  let validationResult = validator.validate(request.body, updateConstraints)
+  const validationResult = validator.validate(request.body, updateConstraints)
   if (validationResult !== true) {
     logger.error(validationResult)
     throw new ValidationError()
   }
 
-  ContestController.manualUpdate(request.body.state, request.body.startsAt, request.body.finishesAt, (err, contest) => {
+  ContestController.manualUpdate(request.body.state, request.body.startsAt, request.body.finishesAt, function (err, contest) {
     if (err) {
       next(err)
     } else {
@@ -72,4 +72,4 @@ router.post('/update', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (
   })
 })
 
-export default router
+module.exports = router

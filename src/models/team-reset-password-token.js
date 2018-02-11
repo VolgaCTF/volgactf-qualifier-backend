@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class TeamResetPasswordToken extends Model {
-  static tableName = 'team_reset_password_tokens'
+class TeamResetPasswordToken extends Model {
+  static get tableName () {
+    return 'team_reset_password_tokens'
+  }
 }
+
+module.exports = TeamResetPasswordToken

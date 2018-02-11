@@ -1,4 +1,4 @@
-export default function (taskAnswer) {
+module.exports = function (taskAnswer) {
   return {
     id: taskAnswer.id,
     taskId: taskAnswer.taskId,

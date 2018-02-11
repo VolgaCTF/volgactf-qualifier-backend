@@ -1,8 +1,8 @@
-import Event from '../models/event'
-import logger from '../utils/logger'
-import eventPublisher from '../utils/publisher'
+const Event = require('../models/event')
+const logger = require('../utils/logger')
+const eventPublisher = require('../utils/publisher')
 
-export default class EventController {
+class EventController {
   static push (eventObject, callback = null) {
     Event
       .query()
@@ -11,13 +11,13 @@ export default class EventController {
         data: eventObject.data,
         createdAt: new Date()
       })
-      .then((event) => {
+      .then(function (event) {
         eventPublisher.push(event)
         if (callback) {
           callback(null, event)
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         if (callback) {
           callback(err, null)
@@ -30,12 +30,14 @@ export default class EventController {
       .query()
       .where('id', '>', lastEventId)
       .orderBy('id')
-      .then((events) => {
+      .then(function (events) {
         callback(null, events)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(err, null)
       })
   }
 }
+
+module.exports = EventController

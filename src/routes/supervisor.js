@@ -1,34 +1,34 @@
-import express from 'express'
-let router = express.Router()
+const express = require('express')
+const router = express.Router()
 
-import bodyParser from 'body-parser'
-import { checkToken } from '../middleware/security'
-import { needsToBeUnauthorized, needsToBeAuthorizedSupervisor } from '../middleware/session'
-import { ValidationError, InvalidSupervisorCredentialsError } from '../utils/errors'
+const bodyParser = require('body-parser')
+const { checkToken } = require('../middleware/security')
+const { needsToBeUnauthorized, needsToBeAuthorizedSupervisor } = require('../middleware/session')
+const { ValidationError, InvalidSupervisorCredentialsError } = require('../utils/errors')
 
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-import constraints from '../utils/constraints'
-import SupervisorController from '../controllers/supervisor'
-import EventController from '../controllers/event'
-import LogoutSupervisorEvent from '../events/logout-supervisor'
-import { getSupervisor } from '../middleware/supervisor'
-import constants from '../utils/constants'
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
+const constraints = require('../utils/constraints')
+const SupervisorController = require('../controllers/supervisor')
+const EventController = require('../controllers/event')
+const LogoutSupervisorEvent = require('../events/logout-supervisor')
+const { getSupervisor } = require('../middleware/supervisor')
+const { SCOPE_ADMIN, SCOPE_MANAGER } = require('../utils/constants')
 
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (request, response, next) => {
-  let loginConstraints = {
+router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+  const loginConstraints = {
     username: constraints.username,
     password: constraints.password
   }
 
-  let validationResult = validator.validate(request.body, loginConstraints)
+  const validationResult = validator.validate(request.body, loginConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  SupervisorController.login(request.body.username, request.body.password, (err, supervisor) => {
+  SupervisorController.login(request.body.username, request.body.password, function (err, supervisor) {
     if (err) {
       next(err)
     } else {
@@ -36,9 +36,9 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
         request.session.authenticated = true
         request.session.identityID = supervisor.id
         if (supervisor.rights === 'admin') {
-          request.session.scopeID = constants.SCOPE_ADMIN
+          request.session.scopeID = SCOPE_ADMIN
         } else if (supervisor.rights === 'manager') {
-          request.session.scopeID = constants.SCOPE_MANAGER
+          request.session.scopeID = SCOPE_MANAGER
         }
         response.json({ success: true })
       } else {
@@ -48,9 +48,9 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, (req
   })
 })
 
-router.post('/signout', checkToken, needsToBeAuthorizedSupervisor, getSupervisor, (request, response, next) => {
+router.post('/signout', checkToken, needsToBeAuthorizedSupervisor, getSupervisor, function (request, response, next) {
   request.session.authenticated = false
-  request.session.destroy((err) => {
+  request.session.destroy(function (err) {
     if (err) {
       next(err)
     } else {
@@ -60,4 +60,4 @@ router.post('/signout', checkToken, needsToBeAuthorizedSupervisor, getSupervisor
   })
 })
 
-export default router
+module.exports = router

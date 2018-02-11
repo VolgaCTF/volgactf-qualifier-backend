@@ -1,5 +1,5 @@
-import logger from '../utils/logger'
-import request from 'request'
+// const logger = require('../utils/logger')
+const request = require('request')
 
 class TelegramController {
   static post (description, callback) {
@@ -21,4 +21,4 @@ class TelegramController {
   }
 }
 
-export default TelegramController
+module.export = TelegramController

@@ -1,8 +1,8 @@
-import TeamTaskHitAttempt from '../models/team-task-hit-attempt'
-import logger from '../utils/logger'
-import { InternalError } from '../utils/errors'
-import EventController from './event'
-import CreateTeamTaskHitAttemptEvent from '../events/create-team-task-hit-attempt'
+const TeamTaskHitAttempt = require('../models/team-task-hit-attempt')
+const logger = require('../utils/logger')
+const { InternalError } = require('../utils/errors')
+const EventController = require('./event')
+const CreateTeamTaskHitAttemptEvent = require('../events/create-team-task-hit-attempt')
 
 class TeamTaskHitAttemptController {
   static create (teamId, taskId, wrongAnswer, callback) {
@@ -14,11 +14,11 @@ class TeamTaskHitAttemptController {
         wrongAnswer: wrongAnswer,
         createdAt: new Date()
       })
-      .then((teamTaskHitAttempt) => {
+      .then(function (teamTaskHitAttempt) {
         callback(null, teamTaskHitAttempt)
         EventController.push(new CreateTeamTaskHitAttemptEvent(teamTaskHitAttempt))
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
@@ -27,14 +27,14 @@ class TeamTaskHitAttemptController {
   static index (callback) {
     TeamTaskHitAttempt
       .query()
-      .then((teamTaskHitAttempts) => {
+      .then(function (teamTaskHitAttempts) {
         callback(null, teamTaskHitAttempts)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default TeamTaskHitAttemptController
+module.exports = TeamTaskHitAttemptController

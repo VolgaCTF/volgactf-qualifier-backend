@@ -1,9 +1,11 @@
-import SupervisorEvent from './supervisor'
-import constants from '../utils/constants'
-import teamSerializer from '../serializers/team'
+const SupervisorEvent = require('./supervisor')
+const { EVENT_LOGIN_TEAM } = require('../utils/constants')
+const teamSerializer = require('../serializers/team')
 
-export default class LoginTeamEvent extends SupervisorEvent {
+class LoginTeamEvent extends SupervisorEvent {
   constructor (team) {
-    super(constants.EVENT_LOGIN_TEAM, teamSerializer(team, { exposeEmail: true }))
+    super(EVENT_LOGIN_TEAM, teamSerializer(team, { exposeEmail: true }))
   }
 }
+
+module.exports = LoginTeamEvent

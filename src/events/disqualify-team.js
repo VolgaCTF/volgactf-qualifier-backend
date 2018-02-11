@@ -1,11 +1,13 @@
-import BaseEvent from './base'
-import constants from '../utils/constants'
-import teamSerializer from '../serializers/team'
+const BaseEvent = require('./base')
+const { EVENT_DISQUALIFY_TEAM } = require('../utils/constants')
+const teamSerializer = require('../serializers/team')
 
-export default class DisqualifyTeamEvent extends BaseEvent {
+class DisqualifyTeamEvent extends BaseEvent {
   constructor (team) {
-    let publicData = teamSerializer(team)
-    let data = teamSerializer(team, { exposeEmail: true })
-    super(constants.EVENT_DISQUALIFY_TEAM, data, publicData, publicData, {})
+    const publicData = teamSerializer(team)
+    const data = teamSerializer(team, { exposeEmail: true })
+    super(EVENT_DISQUALIFY_TEAM, data, publicData, publicData, {})
   }
 }
+
+module.exports = DisqualifyTeamEvent

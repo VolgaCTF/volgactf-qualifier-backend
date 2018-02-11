@@ -1,20 +1,20 @@
-import logger from './utils/logger'
-import parser from 'commander'
-import prompt from 'prompt'
-import SupervisorController from './controllers/supervisor'
-import TeamController from './controllers/team'
-import StatController from './controllers/stat'
-import Table from 'cli-table'
-import _ from 'underscore'
-import numeral from 'numeral'
-import moment from 'moment'
+const logger = require('./utils/logger')
+const parser = require('commander')
+const prompt = require('prompt')
+const SupervisorController = require('./controllers/supervisor')
+const TeamController = require('./controllers/team')
+const StatController = require('./controllers/stat')
+const Table =require('cli-table')
+const _ = require('underscore')
+const numeral = require('numeral')
+const moment = require('moment')
 
 parser
   .command('create_supervisor')
   .description('Create supervisor')
   .option('-u, --username <username>', 'username')
   .option('-r, --rights <rights>', 'rights (admin, manager)')
-  .action((options) => {
+  .action(function (options) {
     prompt.start()
     prompt.message = ''
     prompt.get([{
@@ -25,7 +25,7 @@ parser
       name: 'confirmation',
       required: true,
       hidden: true,
-      conform: (confirmation) => {
+      conform: function (confirmation) {
         if (prompt.history('password').value !== confirmation) {
           logger.error('Verification has failed')
           process.exit(1)
@@ -33,7 +33,7 @@ parser
           return true
         }
       }
-    }], (err, result) => {
+    }], function (err, result) {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -43,7 +43,7 @@ parser
           password: result.password,
           rights: options.rights
         }
-        SupervisorController.create(supervisorOpts, (err, supervisor) => {
+        SupervisorController.create(supervisorOpts, function (err, supervisor) {
           if (err) {
             logger.error(err)
             process.exit(1)
@@ -60,7 +60,7 @@ parser
   .command('change_supervisor_password')
   .description("Change supervisor's password")
   .option('-u, --username <user>', 'username')
-  .action((options) => {
+  .action(function (options) {
     prompt.start()
     prompt.message = ''
     prompt.get([{
@@ -71,7 +71,7 @@ parser
       name: 'confirmation',
       required: true,
       hidden: true,
-      conform: (confirmation) => {
+      conform: function (confirmation) {
         if (prompt.history('new_password').value !== confirmation) {
           logger.err('Verification has failed')
           process.exit(1)
@@ -79,7 +79,7 @@ parser
           return true
         }
       }
-    }], (err, result) => {
+    }], function (err, result) {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -88,7 +88,7 @@ parser
           username: options.username,
           password: result.new_password
         }
-        SupervisorController.edit(supervisorOpts, (err, supervisor) => {
+        SupervisorController.edit(supervisorOpts, function (err, supervisor) {
           if (err) {
             logger.error(err)
             process.exit(1)
@@ -105,8 +105,8 @@ parser
   .command('delete_supervisor')
   .description('Delete supervisor user')
   .option('-u, --username <username', 'username')
-  .action((options) => {
-    SupervisorController.delete(options.username, (err) => {
+  .action(function (options) {
+    SupervisorController.delete(options.username, function (err) {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -120,8 +120,8 @@ parser
 parser
   .command('index_supervisors')
   .description('Index supervisors')
-  .action((opts) => {
-    SupervisorController.index((err, supervisors) => {
+  .action(function (opts) {
+    SupervisorController.index(function (err, supervisors) {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -138,14 +138,14 @@ parser
   .command('disqualify_team')
   .description('Disqualify team')
   .option('-t, --team-id <team>', 'teamId')
-  .action((options) => {
+  .action(function (options) {
     prompt.start()
     prompt.message = ''
     prompt.get([{
       name: 'confirmation',
       required: true,
       hidden: false,
-      conform: (confirmation) => {
+      conform: function (confirmation) {
         if (confirmation !== 'yes') {
           logger.err('You should have typed yes')
           process.exit(1)
@@ -153,13 +153,13 @@ parser
           return true
         }
       }
-    }], (err, result) => {
+    }], function (err, result) {
       if (err) {
         logger.error(err)
         process.exit(1)
       } else {
         let teamId = parseInt(options.teamId, 10)
-        TeamController.disqualify(teamId, (err) => {
+        TeamController.disqualify(teamId, function (err) {
           if (err) {
             logger.error(err)
             process.exit(1)
@@ -175,8 +175,8 @@ parser
 parser
   .command('display_stats')
   .description('Display stats')
-  .action((opts) => {
-    StatController.getStats((err, stats) => {
+  .action(function (opts) {
+    StatController.getStats(function (err, stats) {
       if (err) {
         logger.error(err)
         process.exit(1)
@@ -208,9 +208,9 @@ parser
           ]
         })
 
-        table2.push.apply(table2, _.map(_.sortBy(_.pairs(stats.countries), (entry) => {
+        table2.push.apply(table2, _.map(_.sortBy(_.pairs(stats.countries), function (entry) {
           return entry[1]
-        }).reverse(), (entry, ndx) => {
+        }).reverse(), function (entry, ndx) {
           return [
             ndx + 1,
             entry[0],
@@ -247,6 +247,8 @@ parser
     })
   })
 
-export default function run () {
+function run () {
   parser.parse(process.argv)
 }
+
+module.exports = run

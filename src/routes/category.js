@@ -1,26 +1,26 @@
-import express from 'express'
-import _ from 'underscore'
-let router = express.Router()
+const express = require('express')
+const _ = require('underscore')
+const router = express.Router()
 
-import CategoryController from '../controllers/category'
-import categorySerializer from '../serializers/category'
+const CategoryController = require('../controllers/category')
+const categorySerializer = require('../serializers/category')
 
-import { checkToken } from '../middleware/security'
-import { needsToBeAuthorizedAdmin } from '../middleware/session'
-import { contestNotFinished } from '../middleware/contest'
+const { checkToken } = require('../middleware/security')
+const { needsToBeAuthorizedAdmin } = require('../middleware/session')
+const { contestNotFinished } = require('../middleware/contest')
 
-import Validator from 'validator.js'
-let validator = new Validator.Validator()
-import constraints from '../utils/constraints'
+const Validator = require('validator.js')
+const validator = new Validator.Validator()
+const constraints = require('../utils/constraints')
 
-import bodyParser from 'body-parser'
-let urlencodedParser = bodyParser.urlencoded({ extended: false })
+const bodyParser = require('body-parser')
+const urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-import categoryParam from '../params/category'
-import { ValidationError } from '../utils/errors'
+const categoryParam = require('../params/category')
+const { ValidationError } = require('../utils/errors')
 
-router.get('/index', (request, response, next) => {
-  CategoryController.index((err, categories) => {
+router.get('/index', function (request, response, next) {
+  CategoryController.index(function (err, categories) {
     if (err) {
       next(err)
     } else {
@@ -29,18 +29,18 @@ router.get('/index', (request, response, next) => {
   })
 })
 
-router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
-  let createConstraints = {
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  const createConstraints = {
     title: constraints.categoryTitle,
     description: constraints.categoryDescription
   }
 
-  let validationResult = validator.validate(request.body, createConstraints)
+  const validationResult = validator.validate(request.body, createConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  CategoryController.create(request.body.title, request.body.description, (err, category) => {
+  CategoryController.create(request.body.title, request.body.description, function (err, category) {
     if (err) {
       next(err)
     } else {
@@ -51,8 +51,8 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
 
 router.param('categoryId', categoryParam.id)
 
-router.post('/:categoryId/delete', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, (request, response, next) => {
-  CategoryController.delete(request.categoryId, (err) => {
+router.post('/:categoryId/delete', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, function (request, response, next) {
+  CategoryController.delete(request.categoryId, function (err) {
     if (err) {
       next(err)
     } else {
@@ -61,18 +61,18 @@ router.post('/:categoryId/delete', contestNotFinished, checkToken, needsToBeAuth
   })
 })
 
-router.post('/:categoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, (request, response, next) => {
-  let updateConstraints = {
+router.post('/:categoryId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  const updateConstraints = {
     title: constraints.categoryTitle,
     description: constraints.categoryDescription
   }
 
-  let validationResult = validator.validate(request.body, updateConstraints)
+  const validationResult = validator.validate(request.body, updateConstraints)
   if (validationResult !== true) {
     throw new ValidationError()
   }
 
-  CategoryController.update(request.categoryId, request.body.title, request.body.description, (err, post) => {
+  CategoryController.update(request.categoryId, request.body.title, request.body.description, function (err, post) {
     if (err) {
       next(err)
     } else {
@@ -81,4 +81,4 @@ router.post('/:categoryId/update', contestNotFinished, checkToken, needsToBeAuth
   })
 })
 
-export default router
+module.exports = router

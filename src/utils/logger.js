@@ -1,6 +1,6 @@
-import winston from 'winston'
+const winston = require('winston')
 
-let logger = new winston.Logger({
+module.exports = new winston.Logger({
   transports: [
     new winston.transports.Console({
       level: process.env.THEMIS_LOGGING_LEVEL || 'info',
@@ -10,5 +10,3 @@ let logger = new winston.Logger({
     })
   ]
 })
-
-export default logger

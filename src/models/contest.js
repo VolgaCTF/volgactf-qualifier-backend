@@ -1,22 +1,26 @@
-import constants from '../utils/constants'
-import Model from '../utils/model'
+const { CONTEST_INITIAL, CONTEST_STARTED, CONTEST_PAUSED, CONTEST_FINISHED } = require('../utils/constants')
+const Model = require('../utils/model')
 
-export default class Contest extends Model {
-  static tableName = 'contests'
+class Contest extends Model {
+  static get tableName () {
+    return 'contests'
+  }
 
   isInitial () {
-    return this.state === constants.CONTEST_INITIAL
+    return this.state === CONTEST_INITIAL
   }
 
   isStarted () {
-    return this.state === constants.CONTEST_STARTED
+    return this.state === CONTEST_STARTED
   }
 
   isPaused () {
-    return this.state === constants.CONTEST_PAUSED
+    return this.state === CONTEST_PAUSED
   }
 
   isFinished () {
-    return this.state === constants.CONTEST_FINISHED
+    return this.state === CONTEST_FINISHED
   }
 }
+
+module.exports = Contest

@@ -1,24 +1,24 @@
-import TeamController from './team'
-import TeamScore from '../models/team-score'
-import _ from 'underscore'
-import logger from '../utils/logger'
-import TeamTaskHitController from '../controllers/team-task-hit'
-import TaskController from '../controllers/task'
-import UpdateTeamScoreEvent from '../events/update-team-score'
-import async from 'async'
-import EventController from './event'
-import { InternalError } from '../utils/errors'
+const TeamController = require('./team')
+const TeamScore = require('../models/team-score')
+const _ = require('underscore')
+const logger = require('../utils/logger')
+const TeamTaskHitController = require('../controllers/team-task-hit')
+const TaskController = require('../controllers/task')
+const UpdateTeamScoreEvent = require('../events/update-team-score')
+const async = require('async')
+const EventController = require('./event')
+const { InternalError } = require('../utils/errors')
 
 class TeamScoreController {
   static index (callback) {
-    TeamController.index((err, teams) => {
+    TeamController.index(function (err, teams) {
       if (err) {
         callback(err, null)
       } else {
         TeamScore
           .query()
-          .then((teamScores) => {
-            callback(null, _.map(teams, (team) => {
+          .then(function (teamScores) {
+            callback(null, _.map(teams, function (team) {
               let teamScore = _.findWhere(teamScores, { teamId: team.id })
               if (!teamScore) {
                 teamScore = {
@@ -31,7 +31,7 @@ class TeamScoreController {
               return teamScore
             }))
           })
-          .catch((err) => {
+          .catch(function (err) {
             logger.error(err)
             callback(err, null)
           })
@@ -40,23 +40,23 @@ class TeamScoreController {
   }
 
   static updateTeamScore (teamId, callback) {
-    TeamController.get(teamId, (err, team) => {
+    TeamController.get(teamId, function (err, team) {
       if (err) {
         callback(err)
       } else {
-        TaskController.index((err, tasks) => {
+        TaskController.index(function (err, tasks) {
           if (err) {
             callback(err)
           } else {
-            TeamTaskHitController.listForTeam(teamId, (err, teamTaskHits) => {
+            TeamTaskHitController.listForTeam(teamId, function (err, teamTaskHits) {
               if (err) {
                 callback(err)
               } else {
                 let totalScore = 0
                 let lastUpdatedAt = null
 
-                for (let taskHit of teamTaskHits) {
-                  let task = _.findWhere(tasks, { id: taskHit.taskId })
+                for (const taskHit of teamTaskHits) {
+                  const task = _.findWhere(tasks, { id: taskHit.taskId })
                   if (task) {
                     totalScore += task.value
                     if (lastUpdatedAt) {
@@ -80,13 +80,13 @@ class TeamScoreController {
                       RETURNING *`,
                       [team.id, totalScore, lastUpdatedAt]
                     )
-                    .then((response) => {
+                    .then(function (response) {
                       callback(null)
                       if (response.rowCount === 1) {
                         EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
                       }
                     })
-                    .catch((err) => {
+                    .catch(function (err) {
                       logger.error(err)
                       callback(err)
                     })
@@ -102,25 +102,25 @@ class TeamScoreController {
   }
 
   static updateScores (callback) {
-    TeamController.index((err, teams) => {
+    TeamController.index(function (err, teams) {
       if (err) {
         callback(err)
       } else {
-        TaskController.index((err, tasks) => {
+        TaskController.index(function (err, tasks) {
           if (err) {
             callback(err)
           } else {
-            TeamTaskHitController.list((err, teamTaskHits) => {
+            TeamTaskHitController.list(function (err, teamTaskHits) {
               if (err) {
                 callback(err)
               } else {
-                let recalculateTeamScore = function (team, next) {
-                  let taskHitEntries = _.where(teamTaskHits, { teamId: team.id })
+                const recalculateTeamScore = function (team, next) {
+                  const taskHitEntries = _.where(teamTaskHits, { teamId: team.id })
                   let totalScore = 0
                   let lastUpdatedAt = null
 
-                  for (let taskHit of taskHitEntries) {
-                    let task = _.findWhere(tasks, { id: taskHit.taskId })
+                  for (const taskHit of taskHitEntries) {
+                    const task = _.findWhere(tasks, { id: taskHit.taskId })
                     if (task) {
                       totalScore += task.value
                       if (lastUpdatedAt) {
@@ -144,13 +144,13 @@ class TeamScoreController {
                         RETURNING *`,
                         [team.id, totalScore, lastUpdatedAt]
                       )
-                      .then((response) => {
+                      .then(function (response) {
                         next(null, null)
                         if (response.rowCount === 1) {
                           EventController.push(new UpdateTeamScoreEvent(response.rows[0]))
                         }
                       })
-                      .catch((err) => {
+                      .catch(function (err) {
                         logger.error(err)
                         next(err, null)
                       })
@@ -159,7 +159,7 @@ class TeamScoreController {
                   }
                 }
 
-                async.mapLimit(teams, 5, recalculateTeamScore, (err, results) => {
+                async.mapLimit(teams, 5, recalculateTeamScore, function (err, results) {
                   if (err) {
                     logger.error(err)
                     callback(new InternalError())
@@ -176,4 +176,4 @@ class TeamScoreController {
   }
 }
 
-export default TeamScoreController
+module.exports = TeamScoreController

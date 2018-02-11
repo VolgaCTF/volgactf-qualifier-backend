@@ -1,9 +1,11 @@
-import SupervisorEvent from './supervisor'
-import constants from '../utils/constants'
-import supervisorSerializer from '../serializers/supervisor'
+const SupervisorEvent = require('./supervisor')
+const { EVENT_LOGIN_SUPERVISOR } = require('../utils/constants')
+const supervisorSerializer = require('../serializers/supervisor')
 
-export default class LoginSupervisorEvent extends SupervisorEvent {
+class LoginSupervisorEvent extends SupervisorEvent {
   constructor (supervisor) {
-    super(constants.EVENT_LOGIN_SUPERVISOR, supervisorSerializer(supervisor))
+    super(EVENT_LOGIN_SUPERVISOR, supervisorSerializer(supervisor))
   }
 }
+
+module.exports = LoginSupervisorEvent

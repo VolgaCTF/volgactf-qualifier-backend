@@ -1,4 +1,4 @@
-import scheduler from '../scheduler'
+const scheduler = require('../scheduler')
 
 process.on('SIGINT', function () {
   scheduler.shutdown()

@@ -1,4 +1,4 @@
-export default function (taskHint) {
+module.exports = function (taskHint) {
   return {
     id: taskHint.id,
     taskId: taskHint.taskId,

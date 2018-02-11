@@ -1,19 +1,19 @@
-import Country from '../models/country'
-import { InternalError } from '../utils/errors'
-import logger from '../utils/logger'
+const Country = require('../models/country')
+const { InternalError } = require('../utils/errors')
+const logger = require('../utils/logger')
 
 class CountryController {
   static index (callback) {
     Country
       .query()
-      .then((countries) => {
+      .then(function (countries) {
         callback(null, countries)
       })
-      .catch((err) => {
+      .catch(function (err) {
         logger.error(err)
         callback(new InternalError(), null)
       })
   }
 }
 
-export default CountryController
+module.exports = CountryController

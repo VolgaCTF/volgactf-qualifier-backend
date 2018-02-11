@@ -1,5 +1,9 @@
-import Model from '../utils/model'
+const Model = require('../utils/model')
 
-export default class Supervisor extends Model {
-  static tableName = 'supervisors'
+class Supervisor extends Model {
+  static get tableName () {
+    return 'supervisors'
+  }
 }
+
+module.exports = Supervisor

@@ -1,5 +1,4 @@
-
-export default function (teamScore) {
+module.exports = function (teamScore) {
   return {
     teamId: teamScore.teamId,
     score: teamScore.score,

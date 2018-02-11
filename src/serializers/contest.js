@@ -1,6 +1,6 @@
-import constants from '../utils/constants'
+const { CONTEST_INITIAL } = require('../utils/constants')
 
-export default function (contest) {
+module.exports = function (contest) {
   if (contest) {
     return {
       state: contest.state,
@@ -9,7 +9,7 @@ export default function (contest) {
     }
   } else {
     return {
-      state: constants.CONTEST_INITIAL,
+      state: CONTEST_INITIAL,
       startsAt: null,
       finishesAt: null
     }

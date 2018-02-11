@@ -1,9 +1,9 @@
-import { ValidationError } from '../utils/errors'
-import is_ from 'is_js'
+const { ValidationError } = require('../utils/errors')
+const is_ = require('is_js')
 
-export default {
+module.exports = {
   id: function (request, response, next, postId) {
-    let id = parseInt(postId, 10)
+    const id = parseInt(postId, 10)
     if (!is_.number(id)) {
       throw new ValidationError()
     }

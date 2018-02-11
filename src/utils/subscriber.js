@@ -1,6 +1,6 @@
-import redis from './redis'
+const redis = require('./redis')
 
-export default class EventSubscriber {
+class EventSubscriber {
   constructor (channel) {
     this.client = redis.createClient()
     this.client.subscribe(channel)
@@ -10,3 +10,5 @@ export default class EventSubscriber {
     this.client.on(eventName, callback)
   }
 }
+
+module.exports = EventSubscriber

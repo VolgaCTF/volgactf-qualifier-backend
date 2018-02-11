@@ -1,10 +1,8 @@
-import mustache from 'mustache'
-import fs from 'fs'
-import path from 'path'
-import async from 'async'
-import axios from 'axios'
+const mustache = require('mustache')
+const async = require('async')
+const axios = require('axios')
 
-export default class EmailGenerator {
+class EmailGenerator {
   constructor () {
     this.templates = {}
     this.loaded = false
@@ -15,7 +13,7 @@ export default class EmailGenerator {
       if (this.loaded) {
         resolve(true)
       } else {
-        function fetch (url, next) {
+        const fetchFunc = function (url, next) {
           axios.get(url)
             .then(function (response) {
               next(null, response.data)
@@ -34,7 +32,7 @@ export default class EmailGenerator {
           `http://${customizerHost}:${customizerPort}/mail/restore/subject`,
           `http://${customizerHost}:${customizerPort}/mail/restore/plain`,
           `http://${customizerHost}:${customizerPort}/mail/restore/html`
-        ], fetch, (err, results) => {
+        ], fetchFunc, (err, results) => {
           if (err) {
             reject(err)
           }
@@ -79,3 +77,5 @@ export default class EmailGenerator {
     }
   }
 }
+
+module.exports = EmailGenerator

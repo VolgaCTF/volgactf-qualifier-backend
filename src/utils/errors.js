@@ -1,5 +1,4 @@
-
-export class BaseError extends Error {
+class BaseError extends Error {
   constructor (message, name = 'Error', httpStatus = 400) {
     super()
     this.message = message
@@ -11,267 +10,333 @@ export class BaseError extends Error {
     return this.httpStatus
   }
 }
+module.exports.BaseError = BaseError
 
-export class ValidationError extends BaseError {
+class ValidationError extends BaseError {
   constructor () {
     super('Validation error!', 'ValidationError', 400)
   }
 }
+module.exports.ValidationError = ValidationError
 
-export class AlreadyAuthenticatedError extends BaseError {
+class AlreadyAuthenticatedError extends BaseError {
   constructor () {
     super('Already authenticated!', 'AlreadyAuthenticatedError', 400)
   }
 }
+module.exports.AlreadyAuthenticatedError = AlreadyAuthenticatedError
 
-export class InvalidSupervisorCredentialsError extends BaseError {
+class InvalidSupervisorCredentialsError extends BaseError {
   constructor () {
     super('Invalid username or password!', 'InvalidSupervisorCredentialsError', 400)
   }
 }
+module.exports.InvalidSupervisorCredentialsError = InvalidSupervisorCredentialsError
 
-export class NotAuthenticatedError extends BaseError {
+class SupervisorNotFoundError extends BaseError {
+  constructor () {
+    super('Supervisor not found!', 'SupervisorNotFoundError', 400)
+  }
+}
+module.exports.SupervisorNotFoundError = SupervisorNotFoundError
+
+class SupervisorUsernameTakenError extends BaseError {
+  constructor () {
+    super('Supervisor already exists!', 'SupervisorUsernameTakenError', 400)
+  }
+}
+module.exports.SupervisorUsernameTakenError = SupervisorUsernameTakenError
+
+class NotAuthenticatedError extends BaseError {
   constructor () {
     super('Not authenticated', 'NotAuthenticatedError', 400)
   }
 }
+module.exports.NotAuthenticatedError = NotAuthenticatedError
 
-export class UnknownIdentityError extends BaseError {
+class UnknownIdentityError extends BaseError {
   constructor () {
     super('Unknown identity!', 'UnknownIdentityError', 400)
   }
 }
+module.exports.UnknownIdentityError = UnknownIdentityError
 
-export class InvalidVerificationURLError extends BaseError {
+class InvalidVerificationURLError extends BaseError {
   constructor () {
     super('Invalid verification URL!', 'InvalidVerificationURLError', 400)
   }
 }
+module.exports.InvalidVerificationURLError = InvalidVerificationURLError
 
-export class InternalError extends BaseError {
+class InternalError extends BaseError {
   constructor () {
     super('Internal error! Please try again later.', 'InternalError', 500)
   }
 }
+module.exports.InternalError = InternalError
 
-export class TeamNotFoundError extends BaseError {
+class TeamNotFoundError extends BaseError {
   constructor () {
     super('Team not found!', 'TeamNotFoundError', 400)
   }
 }
+module.exports.TeamNotFoundError = TeamNotFoundError
 
-export class InvalidTeamPasswordError extends BaseError {
+class InvalidTeamPasswordError extends BaseError {
   constructor () {
     super('Wrong password!', 'InvalidTeamPasswordError', 400)
   }
 }
+module.exports.InvalidTeamPasswordError = InvalidTeamPasswordError
 
-export class EmailConfirmedError extends BaseError {
+class EmailConfirmedError extends BaseError {
   constructor () {
     super('Email already confirmed!', 'EmailConfirmedError', 400)
   }
 }
+module.exports.EmailConfirmedError = EmailConfirmedError
 
-export class EmailTakenError extends BaseError {
+class EmailTakenError extends BaseError {
   constructor () {
     super('Email already taken by another team!', 'EmailTakenError', 400)
   }
 }
+module.exports.EmailTakenError = EmailTakenError
 
-export class InvalidTeamCredentialsError extends BaseError {
+class InvalidTeamCredentialsError extends BaseError {
   constructor () {
     super('Invalid team name or password!', 'InvalidTeamCredentialsError', 400)
   }
 }
+module.exports.InvalidTeamCredentialsError = InvalidTeamCredentialsError
 
-export class InvalidImageError extends BaseError {
+class InvalidImageError extends BaseError {
   constructor () {
     super('Invalid image!', 'InvalidImageError', 400)
   }
 }
+module.exports.InvalidImageError = InvalidImageError
 
-export class ImageDimensionsError extends BaseError {
+class ImageDimensionsError extends BaseError {
   constructor () {
     super('Image dimensions should be greater than or equal 48px!', 'ImageDimensionsError', 400)
   }
 }
+module.exports.ImageDimensionsError = ImageDimensionsError
 
-export class ImageAspectRatioError extends BaseError {
+class ImageAspectRatioError extends BaseError {
   constructor () {
     super('Image width should equal image height!', 'ImageAspectRatioError', 400)
   }
 }
+module.exports.ImageAspectRatioError = ImageAspectRatioError
 
-export class TeamCredentialsTakenError extends BaseError {
+class TeamCredentialsTakenError extends BaseError {
   constructor () {
     super('Specified credentials (team name and/or email) already taken!', 'TeamCredentialsTakenError', 400)
   }
 }
+module.exports.TeamCredentialsTakenError = TeamCredentialsTakenError
 
-export class PostNotFoundError extends BaseError {
+class PostNotFoundError extends BaseError {
   constructor () {
     super('Post not found!', 'PostNotFoundError', 400)
   }
 }
+module.exports.PostNotFoundError = PostNotFoundError
 
-export class DuplicatePostTitleError extends BaseError {
+class DuplicatePostTitleError extends BaseError {
   constructor () {
     super('Post title should be unique!', 'DuplicatePostTitleError', 400)
   }
 }
+module.exports.DuplicatePostTitleError = DuplicatePostTitleError
 
-export class InvalidCSRFTokenError extends BaseError {
+class InvalidCSRFTokenError extends BaseError {
   constructor () {
     super('CSRF-protection token is invalid or has expired! Please reload the page.', 'InvalidCSRFTokenError', 400)
   }
 }
+module.exports.InvalidCSRFTokenError = InvalidCSRFTokenError
 
-export class ContestNotInitializedError extends BaseError {
+class ContestNotInitializedError extends BaseError {
   constructor () {
     super('Contest not initialized!', 'ContestNotInitializedError', 400)
   }
 }
+module.exports.ContestNotInitializedError = ContestNotInitializedError
 
-export class CategoryNotFoundError extends BaseError {
+class CategoryNotFoundError extends BaseError {
   constructor () {
     super('Category not found!', 'CategoryNotFoundError', 400)
   }
 }
+module.exports.CategoryNotFoundError = CategoryNotFoundError
 
-export class DuplicateCategoryTitleError extends BaseError {
+class DuplicateCategoryTitleError extends BaseError {
   constructor () {
     super('Category title should be unique!', 'DuplicateCategoryTitleError', 400)
   }
 }
+module.exports.DuplicateCategoryTitleError = DuplicateCategoryTitleError
 
-export class ContestFinishedError extends BaseError {
+class ContestFinishedError extends BaseError {
   constructor () {
     super('Contest has finished!', 'ContestFinishedError', 400)
   }
 }
+module.exports.ContestFinishedError = ContestFinishedError
 
-export class DuplicateTaskTitleError extends BaseError {
+class DuplicateTaskTitleError extends BaseError {
   constructor () {
     super('Task title should be unique!', 'DuplicateTaskTitleError', 400)
   }
 }
+module.exports.DuplicateTaskTitleError = DuplicateTaskTitleError
 
-export class TaskNotFoundError extends BaseError {
+class TaskNotFoundError extends BaseError {
   constructor () {
     super('Task not found!', 'TaskNotFoundError', 400)
   }
 }
+module.exports.TaskNotFoundError = TaskNotFoundError
 
-export class WrongTaskAnswerError extends BaseError {
+class ContestNotFoundError extends BaseError {
+  constructor () {
+    super('Contest not found!', 'ContestNotFoundError', 400)
+  }
+}
+module.exports.ContestNotFoundError = ContestNotFoundError
+
+class WrongTaskAnswerError extends BaseError {
   constructor () {
     super('Wrong answer!', 'WrongTaskAnswerError', 400)
   }
 }
+module.exports.WrongTaskAnswerError = WrongTaskAnswerError
 
-export class ContestNotStartedError extends BaseError {
+class ContestNotStartedError extends BaseError {
   constructor () {
     super('Contest has not started or has already finished!', 'ContestNotStartedError', 400)
   }
 }
+module.exports.ContestNotStartedError = ContestNotStartedError
 
-export class ContestPausedError extends BaseError {
+class ContestPausedError extends BaseError {
   constructor () {
     super('Contest has been paused!', 'ContestPausedError', 400)
   }
 }
+module.exports.ContestPausedError = ContestPausedError
 
-export class TaskAlreadyOpenedError extends BaseError {
+class TaskAlreadyOpenedError extends BaseError {
   constructor () {
     super('Task has been already opened!', 'TaskAlreadyOpenedError', 400)
   }
 }
+module.exports.TaskAlreadyOpenedError = TaskAlreadyOpenedError
 
-export class TaskClosedError extends BaseError {
+class TaskClosedError extends BaseError {
   constructor () {
     super('Task has been closed!', 'TaskClosedError', 400)
   }
 }
+module.exports.TaskClosedError = TaskClosedError
 
-export class TaskNotOpenedError extends BaseError {
+class TaskNotOpenedError extends BaseError {
   constructor () {
     super('Task is not opened now!', 'TaskNotOpenedError', 400)
   }
 }
+module.exports.TaskNotOpenedError = TaskNotOpenedError
 
-export class TaskAlreadyClosedError extends BaseError {
+class TaskAlreadyClosedError extends BaseError {
   constructor () {
     super('Task has been already closed!', 'TaskAlreadyClosedError', 400)
   }
 }
+module.exports.TaskAlreadyClosedError = TaskAlreadyClosedError
 
-export class TaskAlreadySolvedError extends BaseError {
+class TaskAlreadySolvedError extends BaseError {
   constructor () {
     super('Task has been already solved by your team!', 'TaskAlreadySolvedError', 400)
   }
 }
+module.exports.TaskAlreadySolvedError = TaskAlreadySolvedError
 
-export class CategoryAttachedError extends BaseError {
+class CategoryAttachedError extends BaseError {
   constructor () {
     super('Category is attached to one or more tasks!', 'CategoryAttachedError', 400)
   }
 }
+module.exports.CategoryAttachedError = CategoryAttachedError
 
-export class TaskSubmitAttemptsLimitError extends BaseError {
+class TaskSubmitAttemptsLimitError extends BaseError {
   constructor () {
     super('Too many submit attempts!', 'TaskSubmitAttemptsLimitError', 400)
   }
 }
+module.exports.TaskSubmitAttemptsLimitError = TaskSubmitAttemptsLimitError
 
-export class EmailNotConfirmedError extends BaseError {
+class EmailNotConfirmedError extends BaseError {
   constructor () {
     super('You should confirm your email before you can submit an answer to the task', 'EmailNotConfirmedError', 400)
   }
 }
+module.exports.EmailNotConfirmedError = EmailNotConfirmedError
 
-export class TeamNotQualifiedError extends BaseError {
+class TeamNotQualifiedError extends BaseError {
   constructor () {
     super('Team has not qualified for the event!', 'TeamNotQualifiedError', 400)
   }
 }
+module.exports.TeamNotQualifiedError = TeamNotQualifiedError
 
-export class InvalidResetPasswordURLError extends BaseError {
+class InvalidResetPasswordURLError extends BaseError {
   constructor () {
     super('Reset password URL is invalid or has expired!', 'InvalidResetPasswordURLError', 400)
   }
 }
+module.exports.InvalidResetPasswordURLError = InvalidResetPasswordURLError
 
-export class ResetPasswordAttemptsLimitError extends BaseError {
+class ResetPasswordAttemptsLimitError extends BaseError {
   constructor () {
     super('Too many reset password attempts! Please wait some time before requesting a password reset again.', 'ResetPasswordAttemptsLimitError', 400)
   }
 }
+module.exports.ResetPasswordAttemptsLimitError = ResetPasswordAttemptsLimitError
 
-export class EmailVerificationAttemptsLimitError extends BaseError {
+class EmailVerificationAttemptsLimitError extends BaseError {
   constructor () {
     super('Too many email verification attempts! Please wait some time before requesting a confirmation email again.', 'EmailVerificationAttemptsLimitError', 400)
   }
 }
+module.exports.EmailVerificationAttemptsLimitError = EmailVerificationAttemptsLimitError
 
-export class InvalidStateTransitionError extends BaseError {
+class InvalidStateTransitionError extends BaseError {
   constructor () {
     super('Invalid state transition!', 'InvalidStateTransitionError', 400)
   }
 }
+module.exports.InvalidStateTransitionError = InvalidStateTransitionError
 
-export class TaskNotAvailableError extends BaseError {
+class TaskNotAvailableError extends BaseError {
   constructor () {
     super('Task is not available!', 'TaskNotAvailableError', 400)
   }
 }
+module.exports.TaskNotAvailableError = TaskNotAvailableError
 
-export class TaskReviewNotEligibleError extends BaseError {
+class TaskReviewNotEligibleError extends BaseError {
   constructor () {
     super("Your team hasn't solved the task so you can't submit the review!", 'TaskReviewNotEligibleError', 400)
   }
 }
+module.exports.TaskReviewNotEligibleError = TaskReviewNotEligibleError
 
-export class TaskReviewAlreadyGivenError extends BaseError {
+class TaskReviewAlreadyGivenError extends BaseError {
   constructor () {
     super('Your team has already given a review!', 'TaskReviewAlreadyGivenError', 400)
   }
 }
+module.exports.TaskReviewAlreadyGivenError = TaskReviewAlreadyGivenError

@@ -1,31 +1,31 @@
-import express from 'express'
+const express = require('express')
 
-import teamRouter from '../routes/team'
-import postRouter from '../routes/post'
-import contestRouter from '../routes/contest'
-import taskRouter from '../routes/task'
-import categoryRouter from '../routes/category'
-import thirdPartyRouter from '../routes/third-party'
-import countryRouter from '../routes/country'
-import supervisorRouter from '../routes/supervisor'
+const teamRouter = require('../routes/team')
+const postRouter = require('../routes/post')
+const contestRouter = require('../routes/contest')
+const taskRouter = require('../routes/task')
+const categoryRouter = require('../routes/category')
+const thirdPartyRouter = require('../routes/third-party')
+const countryRouter = require('../routes/country')
+const supervisorRouter = require('../routes/supervisor')
 
-import SupervisorController from '../controllers/supervisor'
+const SupervisorController = require('../controllers/supervisor')
 
-import TeamController from '../controllers/team'
+const TeamController = require('../controllers/team')
 
-import { UnknownIdentityError } from '../utils/errors'
+const { UnknownIdentityError } = require('../utils/errors')
 
-import { detectScope } from '../middleware/session'
-import { issueToken } from '../middleware/security'
-import getLastEventId from '../middleware/last-event-id'
+const { detectScope } = require('../middleware/session')
+const { issueToken } = require('../middleware/security')
+const { getLastEventId } = require('../middleware/last-event-id')
 
-import eventStream from '../controllers/event-stream'
-import EventController from '../controllers/event'
-import logger from '../utils/logger'
-import eventNameList from '../utils/event-name-list'
-import _ from 'underscore'
+const eventStream = require('../controllers/event-stream')
+const EventController = require('../controllers/event')
+const logger = require('../utils/logger')
+const eventNameList = require('../utils/event-name-list')
+const _ = require('underscore')
 
-let router = express.Router()
+const router = express.Router()
 
 router.use('/team', teamRouter)
 router.use('/post', postRouter)
@@ -36,11 +36,11 @@ router.use('/third-party', thirdPartyRouter)
 router.use('/country', countryRouter)
 router.use('/supervisor', supervisorRouter)
 
-router.get('/identity', detectScope, issueToken, (request, response, next) => {
-  let token = request.session.token
+router.get('/identity', detectScope, issueToken, function (request, response, next) {
+  const token = request.session.token
 
   if (request.scope.isSupervisor()) {
-    SupervisorController.get(request.session.identityID, (err, supervisor) => {
+    SupervisorController.get(request.session.identityID, function (err, supervisor) {
       if (err) {
         next(err)
       } else {
@@ -53,7 +53,7 @@ router.get('/identity', detectScope, issueToken, (request, response, next) => {
       }
     })
   } else if (request.scope.isTeam()) {
-    TeamController.get(request.session.identityID, (err, team) => {
+    TeamController.get(request.session.identityID, function (err, team) {
       if (err) {
         next(err)
       } else {
@@ -78,7 +78,7 @@ router.get('/identity', detectScope, issueToken, (request, response, next) => {
 
 function getLatestEvents (lastEventId, callback) {
   if (lastEventId != null) {
-    EventController.indexNew(lastEventId, (err, events) => {
+    EventController.indexNew(lastEventId, function (err, events) {
       if (err) {
         logger.error(err)
         callback(err, null)
@@ -91,7 +91,7 @@ function getLatestEvents (lastEventId, callback) {
   }
 }
 
-router.get('/stream', detectScope, getLastEventId, (request, response, next) => {
+router.get('/stream', detectScope, getLastEventId, function (request, response, next) {
   request.socket.setTimeout(0)
 
   response.writeHead(200, {
@@ -101,16 +101,16 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
   })
   response.write('\n')
 
-  getLatestEvents(request.lastEventId, (err, events) => {
+  getLatestEvents(request.lastEventId, function (err, events) {
     if (err) {
       logger.error(err)
       next(err)
     } else {
-      let writeFunc = (data) => {
+      const writeFunc = function (data) {
         response.write(data)
       }
 
-      for (let event of events) {
+      for (const event of events) {
         if (request.scope.isSupervisor() && event.data.supervisors) {
           writeFunc(eventStream.format(
             event.id,
@@ -144,7 +144,7 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
         }
       }
 
-      let mainChannel = `message:${request.scope.toString()}`
+      const mainChannel = `message:${request.scope.toString()}`
       let extraChannel = null
       if (request.scope.isTeam()) {
         extraChannel = `message:team-${request.session.identityID}`
@@ -155,7 +155,7 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
         eventStream.on(extraChannel, writeFunc)
       }
 
-      request.once('close', () => {
+      request.once('close', function () {
         eventStream.removeListener(mainChannel, writeFunc)
         if (extraChannel) {
           eventStream.removeListener(extraChannel, writeFunc)
@@ -165,4 +165,4 @@ router.get('/stream', detectScope, getLastEventId, (request, response, next) => 
   })
 })
 
-export default router
+module.exports = router
