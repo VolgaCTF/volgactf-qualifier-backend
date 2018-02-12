@@ -1,0 +1,10 @@
+.git
+.gitignore
+.editorconfig
+.env
+knexfile.js
+migrations
+node_modules
+LICENSE
+README.md
+exclude.txt
