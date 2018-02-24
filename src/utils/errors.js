@@ -19,6 +19,13 @@ class ValidationError extends BaseError {
 }
 module.exports.ValidationError = ValidationError
 
+class EmailAddressValidationError extends BaseError {
+  constructor (message) {
+    super(message, 'ValidationError', 400)
+  }
+}
+module.exports.EmailAddressValidationError = EmailAddressValidationError
+
 class AlreadyAuthenticatedError extends BaseError {
   constructor () {
     super('Already authenticated!', 'AlreadyAuthenticatedError', 400)

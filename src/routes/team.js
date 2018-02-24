@@ -34,6 +34,8 @@ const teamTaskHitSerializer = require('../serializers/team-task-hit')
 const TeamTaskReviewController = require('../controllers/team-task-review')
 const teamTaskReviewSerializer = require('../serializers/team-task-review')
 
+const emailAddressValidator = require('../controllers/email-address-validator')
+
 const router = express.Router()
 
 router.get('/index', detectScope, function (request, response, next) {
@@ -394,13 +396,20 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
           } else if (size.width !== size.height) {
             next(new ImageAspectRatioError())
           } else {
-            TeamController.create(teamInfo, function (err, team) {
-              if (err) {
+            emailAddressValidator
+              .validate(teamInfo.email)
+              .then(function () {
+                TeamController.create(teamInfo, function (err, team) {
+                  if (err) {
+                    next(err)
+                  } else {
+                    response.json({ success: true })
+                  }
+                })
+              })
+              .catch(function (err) {
                 next(err)
-              } else {
-                response.json({ success: true })
-              }
-            })
+              })
           }
         }
       })

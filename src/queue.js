@@ -5,7 +5,6 @@ const path = require('path')
 const token = require('./utils/token')
 const TeamScoreController = require('./controllers/team-score')
 const MailgunController = require('./controllers/mail/mailgun')
-const SendGridController = require('./controllers/mail/sendgrid')
 const TeamController = require('./controllers/team')
 const EventController = require('./controllers/event')
 const UpdateTeamLogoEvent = require('./events/update-team-logo')
@@ -123,8 +122,6 @@ queue('sendEmailQueue').process(function (job, done) {
 
         if (emailTransport === 'mailgun') {
           senderController = MailgunController
-        } else if (emailTransport === 'sendgrid') {
-          senderController = SendGridController
         }
 
         if (!senderController) {
