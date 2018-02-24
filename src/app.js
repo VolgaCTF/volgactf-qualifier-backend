@@ -46,9 +46,11 @@ app.use(session)
 app.use('/api', apiRouter)
 
 const distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
+const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
 app.get('/', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'index.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
   const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
@@ -80,7 +82,9 @@ app.get('/', detectScope, issueToken, function (request, response) {
       identity: identity,
       contest: contest,
       teamScores: teamScores,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate,
         statusbar: statusbarTemplate,
         contestStatePartial: contestStatePartialTemplate,
@@ -98,6 +102,7 @@ app.get('/', detectScope, issueToken, function (request, response) {
 
 app.get('/teams', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'teams.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
   const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
@@ -137,7 +142,9 @@ app.get('/teams', detectScope, issueToken, function (request, response) {
       countries: countries,
       teams: teams,
       teamScores: teamScores,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate,
         statusbar: statusbarTemplate,
         contestStatePartial: contestStatePartialTemplate,
@@ -157,6 +164,7 @@ app.get('/teams', detectScope, issueToken, function (request, response) {
 
 app.get('/news', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'news.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
   const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
@@ -197,7 +205,9 @@ app.get('/news', detectScope, issueToken, function (request, response) {
       contest: contest,
       posts: posts,
       teamScores: teamScores,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate,
         statusbar: statusbarTemplate,
         contestStatePartial: contestStatePartialTemplate,
@@ -220,6 +230,7 @@ app.param('teamId', teamParam.id)
 
 app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'profile.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
   const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
@@ -260,7 +271,9 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
       team: team,
       countries: countries,
       teamScores: teamScores,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate,
         statusbar: statusbarTemplate,
         contestStatePartial: contestStatePartialTemplate,
@@ -279,6 +292,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
 
 app.get('/about', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'about.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
   const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
@@ -310,7 +324,9 @@ app.get('/about', detectScope, issueToken, function (request, response) {
       identity: identity,
       contest: contest,
       teamScores: teamScores,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate,
         statusbar: statusbarTemplate,
         contestStatePartial: contestStatePartialTemplate,
@@ -328,6 +344,7 @@ app.get('/about', detectScope, issueToken, function (request, response) {
 
 app.get('/supervisor/signin', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'supervisor', 'signin.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -339,7 +356,9 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
     response.send(pageTemplate({
       _: _,
       identity: identity,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
@@ -351,6 +370,7 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
 
 app.get('/team/signin', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signin.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -362,7 +382,9 @@ app.get('/team/signin', detectScope, issueToken, function (request, response) {
     response.send(pageTemplate({
       _: _,
       identity: identity,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
@@ -374,6 +396,7 @@ app.get('/team/signin', detectScope, issueToken, function (request, response) {
 
 app.get('/team/restore', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'restore.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -385,7 +408,9 @@ app.get('/team/restore', detectScope, issueToken, function (request, response) {
     response.send(pageTemplate({
       _: _,
       identity: identity,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
@@ -397,6 +422,7 @@ app.get('/team/restore', detectScope, issueToken, function (request, response) {
 
 app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signup.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -415,7 +441,9 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request
       contest: contest,
       countries: countries,
       geoIPData: request.geoIPData,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
@@ -454,6 +482,7 @@ function verifyPromise (request) {
 
 app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'verify-email.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -470,7 +499,9 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
         identity: identity,
         success: true,
         text: 'Email verified. Thank you!',
+        google_tag_id: googleTagId,
         templates: {
+          analytics: analyticsTemplate,
           navbar: navbarTemplate
         }
       }))
@@ -494,6 +525,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
 
 app.get('/team/reset-password', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'reset-password.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -505,7 +537,9 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
     response.send(pageTemplate({
       _: _,
       identity: identity,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
@@ -517,6 +551,7 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
 
 app.get('*', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '404.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
   const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
 
@@ -529,7 +564,9 @@ app.get('*', detectScope, issueToken, function (request, response) {
       _: _,
       identity: identity,
       urlPath: request.path,
+      google_tag_id: googleTagId,
       templates: {
+        analytics: analyticsTemplate,
         navbar: navbarTemplate
       }
     }))
