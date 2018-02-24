@@ -457,6 +457,26 @@ class TeamController {
       })
   }
 
+  static fetch (qualifiedOnly = false) {
+    return new Promise(function (resolve, reject) {
+      let query = Team.query()
+      if (qualifiedOnly) {
+        query = query
+          .where('emailConfirmed', true)
+          .andWhere('disqualified', false)
+      }
+
+      query
+        .then(function (teams) {
+          resolve(teams)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
+
   static resetPassword (encodedEmail, encodedToken, newPassword, callback) {
     let email = null
     let code = null

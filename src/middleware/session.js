@@ -114,7 +114,7 @@ module.exports.session = session({
   name: 'themis-quals-session',
   cookie: {
     domain: process.env.THEMIS_QUALS_FQDN,
-    path: '/api',
+    path: '/',
     httpOnly: true,
     secure: secureConnection,
     expires: false

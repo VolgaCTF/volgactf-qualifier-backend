@@ -14,6 +14,20 @@ class CountryController {
         callback(new InternalError(), null)
       })
   }
+
+  static fetch (callback) {
+    return new Promise(function (resolve, reject) {
+      Country
+        .query()
+        .then(function (countries) {
+          resolve(countries)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
 }
 
 module.exports = CountryController

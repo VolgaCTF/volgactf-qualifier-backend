@@ -152,26 +152,6 @@ router.get('/:teamId/profile', detectScope, function (request, response) {
   })
 })
 
-router.post('/verify-email', checkToken, contestNotFinished, urlencodedParser, function (request, response, next) {
-  const verifyConstraints = {
-    team: constraints.base64url,
-    code: constraints.base64url
-  }
-
-  const validationResult = validator.validate(request.body, verifyConstraints)
-  if (validationResult !== true) {
-    throw new ValidationError()
-  }
-
-  TeamController.verifyEmail(request.body.team, request.body.code, function (err) {
-    if (err) {
-      next(err)
-    } else {
-      response.json({ success: true })
-    }
-  })
-})
-
 router.post('/reset-password', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
   const resetConstraints = {
     team: constraints.base64url,

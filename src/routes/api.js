@@ -155,10 +155,17 @@ router.get('/stream', detectScope, getLastEventId, function (request, response, 
         eventStream.on(extraChannel, writeFunc)
       }
 
+      const pingInterval = setInterval(function () {
+        writeFunc('event: ping\ndata: ping\n\n')
+      }, 5000)
+
       request.once('close', function () {
         eventStream.removeListener(mainChannel, writeFunc)
         if (extraChannel) {
           eventStream.removeListener(extraChannel, writeFunc)
+        }
+        if (pingInterval) {
+          clearInterval(pingInterval)
         }
       })
     }

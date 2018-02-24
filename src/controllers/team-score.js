@@ -39,6 +39,37 @@ class TeamScoreController {
     }, true)
   }
 
+  static fetch () {
+    return new Promise(function (resolve, reject) {
+      TeamController.index(function (err, teams) {
+        if (err) {
+          reject(err)
+        } else {
+          TeamScore
+            .query()
+            .then(function (teamScores) {
+              resolve(_.map(teams, function (team) {
+                let teamScore = _.findWhere(teamScores, { teamId: team.id })
+                if (!teamScore) {
+                  teamScore = {
+                    teamId: team.id,
+                    score: 0,
+                    updatedAt: null
+                  }
+                }
+
+                return teamScore
+              }))
+            })
+            .catch(function (err) {
+              logger.error(err)
+              reject(err)
+            })
+        }
+      }, true)
+    })
+  }
+
   static updateTeamScore (teamId, callback) {
     TeamController.get(teamId, function (err, team) {
       if (err) {

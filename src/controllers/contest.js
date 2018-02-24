@@ -23,6 +23,21 @@ class ContestController {
       })
   }
 
+  static fetch () {
+    return new Promise(function (resolve, reject) {
+      Contest
+        .query()
+        .first()
+        .then(function (contest) {
+          resolve(contest)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
+
   static isValidTransition (curState, newState) {
     if (curState === newState) {
       return true

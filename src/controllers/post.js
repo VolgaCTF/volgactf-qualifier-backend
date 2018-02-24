@@ -79,6 +79,20 @@ class PostController {
       })
   }
 
+  static fetch () {
+    return new Promise(function (resolve, reject) {
+      Post
+        .query()
+        .then(function (posts) {
+          resolve(posts)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(err)
+        })
+    })
+  }
+
   static index (callback) {
     Post
       .query()
