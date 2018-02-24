@@ -53,7 +53,8 @@ class TeamController {
                       message: 'restore',
                       name: team.name,
                       email: team.email,
-                      token: teamResetPasswordToken.token
+                      token: teamResetPasswordToken.token,
+                      teamId: team.id
                     })
                     callback(null)
                   })
@@ -136,7 +137,8 @@ class TeamController {
             message: 'welcome',
             name: team.name,
             email: team.email,
-            token: teamEmailVerificationToken.token
+            token: teamEmailVerificationToken.token,
+            teamId: team.id
           })
 
           callback(null)
@@ -217,7 +219,8 @@ class TeamController {
                       message: 'welcome',
                       name: team.name,
                       email: team.email,
-                      token: teamEmailVerificationToken.token
+                      token: teamEmailVerificationToken.token,
+                      teamId: team.id
                     })
 
                     callback(null)
@@ -336,7 +339,8 @@ class TeamController {
                     message: 'welcome',
                     name: updatedTeam.name,
                     email: updatedTeam.email,
-                    token: updatedTeamEmailVerificationToken.token
+                    token: updatedTeamEmailVerificationToken.token,
+                    teamId: updatedTeam.id
                   })
 
                   callback(null)

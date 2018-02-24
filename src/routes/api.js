@@ -25,6 +25,8 @@ const logger = require('../utils/logger')
 const eventNameList = require('../utils/event-name-list')
 const _ = require('underscore')
 
+const webhookRouter = require('../routes/webhook')
+
 const router = express.Router()
 
 router.use('/team', teamRouter)
@@ -35,6 +37,7 @@ router.use('/category', categoryRouter)
 router.use('/third-party', thirdPartyRouter)
 router.use('/country', countryRouter)
 router.use('/supervisor', supervisorRouter)
+router.use('/webhook', webhookRouter)
 
 router.get('/identity', detectScope, issueToken, function (request, response, next) {
   const token = request.session.token

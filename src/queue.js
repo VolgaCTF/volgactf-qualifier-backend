@@ -21,6 +21,8 @@ const EmailGenerator = require('./utils/email-generator')
 
 const emailGenerator = new EmailGenerator()
 
+const messageController = require('./controllers/message')
+
 queue('updateScoresQueue').process(function (job, done) {
   TeamScoreController.updateScores(function (err) {
     if (err) {
@@ -108,28 +110,60 @@ queue('sendEmailQueue').process(function (job, done) {
         return
       }
 
-      let senderController = null
-      let emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
+      messageController.create({
+        message: message,
+        recipientEmail: job.data.email,
+        recipientName: job.data.name,
+        teamId: job.data.teamId,
+        supervisorId: job.data.supervisorId
+      })
+      .then(function (messageEntity) {
+        let senderController = null
+        const emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
 
-      if (emailTransport === 'mailgun') {
-        senderController = MailgunController
-      } else if (emailTransport === 'sendgrid') {
-        senderController = SendGridController
-      }
+        if (emailTransport === 'mailgun') {
+          senderController = MailgunController
+        } else if (emailTransport === 'sendgrid') {
+          senderController = SendGridController
+        }
 
-      if (!senderController) {
-        done()
-        return
-      }
-
-      senderController
-        .sendEmail(message, job.data.email, job.data.name)
-        .then(function () {
+        if (!senderController) {
           done()
-        })
-        .catch(function (err) {
-          done(err)
-        })
+          return
+        }
+
+        senderController
+          .sendEmail(message, job.data.email, job.data.name, messageEntity.id)
+          .then(function (response) {
+            messageController.update({
+              id: messageEntity.id,
+              status: response
+            })
+            .then(function () {
+              done()
+            })
+            .catch(function (err3) {
+              logger.error(err3)
+              done()
+            })
+          })
+          .catch(function (err4) {
+            messageController.update({
+              id: messageEntity.id,
+              status: err4
+            })
+            .then(function () {
+              done(err4)
+            })
+            .catch(function (err5) {
+              logger.error(err5)
+              done(err4)
+            })
+          })
+      })
+      .catch(function (err2) {
+        done(err2)
+      })
     })
     .catch(function (err) {
       done(err)

@@ -2,7 +2,7 @@ const logger = require('../../utils/logger')
 const mailgun = require('mailgun-js')
 
 class MailgunController {
-  static sendEmail (message, recipientEmail, recipientName) {
+  static sendEmail (message, recipientEmail, recipientName, messageId) {
     return new Promise(function (resolve, reject) {
       const data = {
         from: `${process.env.THEMIS_QUALS_EMAIL_SENDER_NAME} <${process.env.THEMIS_QUALS_EMAIL_SENDER_ADDRESS}>`,
@@ -11,6 +11,8 @@ class MailgunController {
         text: message.plain,
         html: message.html
       }
+
+      data['v:themis_quals_message_id'] = messageId
 
       const client = mailgun({
         apiKey: process.env.MAILGUN_API_KEY,
@@ -22,7 +24,7 @@ class MailgunController {
           logger.error(err)
           reject(err)
         } else {
-          resolve()
+          resolve(body)
         }
       })
     })

@@ -36,7 +36,7 @@
     "is_js": "~0.7.3",
     "jsesc": "^2.4.0",
     "knex": "^0.9.0",
-    "mailgun-js": "^0.7.7",
+    "mailgun-js": "^0.16.0",
     "mandrill-api": "~1.0.41",
     "markdown-it": "^8.4.1",
     "markdown-it-emoji": "^1.4.0",
