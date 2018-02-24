@@ -549,6 +549,16 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
   })
 })
 
+app.get('/robots.txt', function (request, response) {
+  const template = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'robots.html'), 'utf8'))
+  response
+    .set('content-type', 'text/plain')
+    .send(template({
+      fqdn: process.env.THEMIS_QUALS_FQDN,
+      secure: (process.env.THEMIS_QUALS_SECURE === 'yes')
+    }))
+})
+
 app.get('*', detectScope, issueToken, function (request, response) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '404.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
