@@ -35,6 +35,8 @@ const postController = require('./controllers/post')
 const postSerializer = require('./serializers/post')
 const MarkdownRenderer = require('./utils/markdown')
 
+const teamParam = require('./params/team')
+
 const app = express()
 app.set('x-powered-by', false)
 app.set('trust proxy', true)
@@ -214,8 +216,65 @@ app.get('/news', detectScope, issueToken, function (request, response) {
   })
 })
 
-app.get('/team/:teamId/profile', function (request, response) {
-  response.sendFile(path.join(distFrontendDir, 'html', 'oldindex.html'))
+app.param('teamId', teamParam.id)
+
+app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function (request, response) {
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'profile.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestRealtimeStateTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-realtime-state.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  const teamProfilePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-profile-partial.html'), 'utf8'))
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch(),
+    teamController.fetchOne(request.teamId),
+    countryController.fetch()
+  ]
+
+  if (request.scope.isTeam()) {
+    promises.push(teamScoreController.fetch())
+  }
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[2].id)
+    const team = teamSerializer(values[2], { exposeEmail: exposeEmail })
+    const countries = _.map(values[3], countrySerializer)
+    let teamScores = []
+    if (request.scope.isTeam()) {
+      teamScores = _.map(values[4], teamScoreSerializer)
+    }
+    response.send(pageTemplate({
+      _: _,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      team: team,
+      countries: countries,
+      teamScores: teamScores,
+      templates: {
+        navbar: navbarTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestRealtimeState: contestRealtimeStateTemplate,
+        contestScore: contestScoreTemplate,
+        teamProfilePartial: teamProfilePartialTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    console.log(err)
+    throw err
+  })
 })
 
 app.get('/about', detectScope, issueToken, function (request, response) {

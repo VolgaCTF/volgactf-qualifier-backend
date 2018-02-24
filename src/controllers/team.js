@@ -623,6 +623,26 @@ class TeamController {
       })
   }
 
+  static fetchOne (id) {
+    return new Promise(function (resolve, reject) {
+      Team
+        .query()
+        .where('id', id)
+        .first()
+        .then(function (team) {
+          if (team) {
+            resolve(team)
+          } else {
+            reject(new TeamNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
+
   static get (id, callback) {
     Team
       .query()
