@@ -48,7 +48,7 @@ app.use('/api', apiRouter)
 const distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
-app.get('/', detectScope, issueToken, function (request, response) {
+app.get('/', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'index.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -95,12 +95,12 @@ app.get('/', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    console.log(err)
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/teams', detectScope, issueToken, function (request, response) {
+app.get('/teams', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'teams.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -157,12 +157,12 @@ app.get('/teams', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    console.log(err)
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/news', detectScope, issueToken, function (request, response) {
+app.get('/news', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'news.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -221,14 +221,14 @@ app.get('/news', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    console.log(err)
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
 app.param('teamId', teamParam.id)
 
-app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function (request, response) {
+app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'profile.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -285,12 +285,12 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
     }))
   })
   .catch(function (err) {
-    console.log(err)
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/about', detectScope, issueToken, function (request, response) {
+app.get('/about', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'about.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -337,12 +337,12 @@ app.get('/about', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    console.log(err)
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/supervisor/signin', detectScope, issueToken, function (request, response) {
+app.get('/supervisor/signin', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'supervisor', 'signin.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -364,11 +364,12 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
     }))
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/team/signin', detectScope, issueToken, function (request, response) {
+app.get('/team/signin', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signin.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -390,11 +391,12 @@ app.get('/team/signin', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/team/restore', detectScope, issueToken, function (request, response) {
+app.get('/team/restore', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'restore.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -416,11 +418,12 @@ app.get('/team/restore', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request, response) {
+app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signup.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -449,7 +452,8 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request
     }))
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
@@ -460,8 +464,6 @@ function verifyPromise (request) {
       code: constraints.base64url
     }
 
-    console.log(request.query.team)
-    console.log(request.query.code)
     const validationResult = validator.validate({
       team: request.query.team,
       code: request.query.code
@@ -480,7 +482,7 @@ function verifyPromise (request) {
   })
 }
 
-app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, function (request, response) {
+app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'verify-email.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -519,11 +521,12 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
     })
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
-app.get('/team/reset-password', detectScope, issueToken, function (request, response) {
+app.get('/team/reset-password', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'reset-password.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -545,7 +548,8 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
     }))
   })
   .catch(function (err) {
-    throw err
+    logger.error(err)
+    next(err)
   })
 })
 
@@ -559,7 +563,7 @@ app.get('/robots.txt', function (request, response) {
     }))
 })
 
-app.get('*', detectScope, issueToken, function (request, response) {
+app.get('*', detectScope, issueToken, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '404.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -582,19 +586,41 @@ app.get('*', detectScope, issueToken, function (request, response) {
     }))
   })
   .catch(function (err) {
-    throw err
+    next(err)
   })
 })
 
 app.use(function (err, request, response, next) {
-  if (err instanceof BaseError) {
-    response.status(err.getHttpStatus())
-    response.json(err.message)
-  } else {
-    logger.error(err)
-    response.status(500)
-    response.json('Internal Server Error')
-  }
+  logger.error(err)
+
+  detectScope(request, response, function () {
+    const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '500.html'), 'utf8'))
+    const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+    const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+
+    Promise.all([
+      identityController.fetch(request)
+    ])
+    .then(function (values) {
+      const identity = values[0]
+      response.status(500).send(pageTemplate({
+        _: _,
+        identity: identity,
+        google_tag_id: googleTagId,
+        templates: {
+          analytics: analyticsTemplate,
+          navbar: navbarTemplate
+        }
+      }))
+    })
+    .catch(function (err2) {
+      logger.error(err2)
+      response
+        .status(500)
+        .json('Internal Server Error')
+    })
+  })
 })
 
 module.exports = app

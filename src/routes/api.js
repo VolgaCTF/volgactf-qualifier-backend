@@ -175,4 +175,21 @@ router.get('/stream', detectScope, getLastEventId, function (request, response, 
   })
 })
 
+router.get('*', detectScope, issueToken, function (request, response, next) {
+  response.status(404).json('Not Found')
+})
+
+router.use(function (err, request, response, next) {
+  if (err instanceof BaseError) {
+    response
+      .status(err.getHttpStatus())
+      .json(err.message)
+  } else {
+    logger.error(err)
+    response
+      .status(500)
+      .json('Internal Server Error')
+  }
+})
+
 module.exports = router
