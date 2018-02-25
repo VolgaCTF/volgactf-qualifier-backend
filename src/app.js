@@ -37,6 +37,8 @@ const MarkdownRenderer = require('./utils/markdown')
 
 const teamParam = require('./params/team')
 
+const jsesc = require('jsesc')
+
 const app = express()
 app.set('x-powered-by', false)
 app.set('trust proxy', true)
@@ -78,6 +80,7 @@ app.get('/', detectScope, issueToken, function (request, response, next) {
     }
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       moment: moment,
       identity: identity,
       contest: contest,
@@ -136,6 +139,7 @@ app.get('/teams', detectScope, issueToken, function (request, response, next) {
     }
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       moment: moment,
       identity: identity,
       contest: contest,
@@ -199,6 +203,7 @@ app.get('/news', detectScope, issueToken, function (request, response, next) {
     }
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       moment: moment,
       md: md,
       identity: identity,
@@ -265,6 +270,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
     }
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       moment: moment,
       identity: identity,
       contest: contest,
@@ -320,6 +326,7 @@ app.get('/about', detectScope, issueToken, function (request, response, next) {
     }
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       moment: moment,
       identity: identity,
       contest: contest,
@@ -355,6 +362,7 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
     const identity = values[0]
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       google_tag_id: googleTagId,
       templates: {
@@ -382,6 +390,7 @@ app.get('/team/signin', detectScope, issueToken, function (request, response, ne
     const identity = values[0]
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       google_tag_id: googleTagId,
       templates: {
@@ -409,6 +418,7 @@ app.get('/team/restore', detectScope, issueToken, function (request, response, n
     const identity = values[0]
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       google_tag_id: googleTagId,
       templates: {
@@ -440,6 +450,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request
     const countries = _.map(values[2], countrySerializer)
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       contest: contest,
       countries: countries,
@@ -498,6 +509,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
     .then(function () {
       response.send(pageTemplate({
         _: _,
+        jsesc: jsesc,
         identity: identity,
         success: true,
         text: 'Email verified. Thank you!',
@@ -511,6 +523,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
     .catch(function (err2) {
       response.send(pageTemplate({
         _: _,
+        jsesc: jsesc,
         identity: identity,
         success: false,
         text: err2.message,
@@ -539,6 +552,7 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
     const identity = values[0]
     response.send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       google_tag_id: googleTagId,
       templates: {
@@ -576,6 +590,7 @@ app.get('*', detectScope, issueToken, function (request, response, next) {
     const identity = values[0]
     response.status(404).send(pageTemplate({
       _: _,
+      jsesc: jsesc,
       identity: identity,
       urlPath: request.path,
       google_tag_id: googleTagId,
@@ -606,6 +621,7 @@ app.use(function (err, request, response, next) {
       const identity = values[0]
       response.status(500).send(pageTemplate({
         _: _,
+        jsesc: jsesc,
         identity: identity,
         google_tag_id: googleTagId,
         templates: {
