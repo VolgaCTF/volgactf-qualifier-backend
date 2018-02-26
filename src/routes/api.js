@@ -26,6 +26,7 @@ const eventNameList = require('../utils/event-name-list')
 const _ = require('underscore')
 
 const webhookRouter = require('../routes/webhook')
+const { BaseError } = require('../utils/errors')
 
 const router = express.Router()
 
