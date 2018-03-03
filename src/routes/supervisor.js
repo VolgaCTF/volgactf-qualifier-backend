@@ -48,7 +48,7 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, func
   })
 })
 
-router.post('/signout', checkToken, needsToBeAuthorizedSupervisor, getSupervisor, function (request, response, next) {
+router.post('/signout', needsToBeAuthorizedSupervisor, getSupervisor, function (request, response, next) {
   request.session.authenticated = false
   request.session.destroy(function (err) {
     if (err) {

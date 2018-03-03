@@ -294,7 +294,7 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, func
   })
 })
 
-router.post('/signout', checkToken, needsToBeAuthorizedTeam, getTeam, function (request, response, next) {
+router.post('/signout', needsToBeAuthorizedTeam, getTeam, function (request, response, next) {
   request.session.authenticated = false
   request.session.destroy(function (err) {
     if (err) {
