@@ -10,6 +10,20 @@ const UpdateCategoryEvent = require('../events/update-category')
 const DeleteCategoryEvent = require('../events/delete-category')
 
 class CategoryController {
+  static fetch () {
+    return new Promise(function (resolve, reject) {
+      Category
+        .query()
+        .then(function (categories) {
+          resolve(categories)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(err)
+        })
+    })
+  }
+
   static index (callback) {
     Category
       .query()

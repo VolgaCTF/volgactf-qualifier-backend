@@ -35,6 +35,9 @@ const postController = require('./controllers/post')
 const postSerializer = require('./serializers/post')
 const MarkdownRenderer = require('./utils/markdown')
 
+const categoryController = require('./controllers/category')
+const categorySerializer = require('./serializers/category')
+
 const teamParam = require('./params/team')
 
 const jsesc = require('jsesc')
@@ -228,6 +231,67 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
         postList: postListTemplate,
         postPartial: postPartialTemplate,
         postSimplifiedPartial: postSimplifiedPartialTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.get('/categories', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  if (request.scope.isTeam() || request.scope.isGuest()) {
+    next()
+    return
+  }
+
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'categories.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  const categoryListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'category-list.html'), 'utf8'))
+  const categoryPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'category-partial.html'), 'utf8'))
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch(),
+    categoryController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    const categories = _.map(values[2], categorySerializer)
+    let teamScores = []
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      categories: categories,
+      teamScores: teamScores,
+      google_tag_id: googleTagId,
+      templates: {
+        analytics: analyticsTemplate,
+        navbar: navbarTemplate,
+        streamStatePartial: streamStatePartialTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestScore: contestScoreTemplate,
+        categoryList: categoryListTemplate,
+        categoryPartial: categoryPartialTemplate
       }
     }))
   })
