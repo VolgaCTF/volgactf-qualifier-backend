@@ -1,5 +1,6 @@
 const ContestController = require('../controllers/contest')
 const { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } = require('../utils/errors')
+const axios = require('axios')
 
 function getState (request, response, next) {
   ContestController.get(function (err, contest) {
@@ -12,6 +13,29 @@ function getState (request, response, next) {
   })
 }
 module.exports.getState = getState
+
+let contestTitle = null
+
+function getContestTitle (request, response, next) {
+  if (contestTitle) {
+    request.contestTitle = contestTitle
+    next()
+  } else {
+    const customizerHost = process.env.THEMIS_QUALS_CUSTOMIZER_HOST
+    const customizerPort = parseInt(process.env.THEMIS_QUALS_CUSTOMIZER_PORT, 10)
+    const url = `http://${customizerHost}:${customizerPort}/event-title`
+    axios.get(url)
+      .then(function (response) {
+        contestTitle = response.data
+        request.contestTitle = contestTitle
+        next()
+      })
+      .catch(function (err) {
+        next(err)
+      })
+  }
+}
+module.exports.getContestTitle = getContestTitle
 
 function contestNotFinished (request, response, next) {
   ContestController.get(function (err, contest) {

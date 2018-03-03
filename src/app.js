@@ -20,7 +20,7 @@ const teamScoreSerializer = require('./serializers/team-score')
 const countryController = require('./controllers/country')
 const countrySerializer = require('./serializers/country')
 
-const { contestNotFinished } = require('./middleware/contest')
+const { contestNotFinished, getContestTitle } = require('./middleware/contest')
 const constraints = require('./utils/constraints')
 const teamController = require('./controllers/team')
 const Validator = require('validator.js')
@@ -50,7 +50,7 @@ app.use('/api', apiRouter)
 const distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
-app.get('/', detectScope, issueToken, function (request, response, next) {
+app.get('/', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'index.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -85,6 +85,7 @@ app.get('/', detectScope, issueToken, function (request, response, next) {
       moment: moment,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: {
@@ -104,7 +105,7 @@ app.get('/', detectScope, issueToken, function (request, response, next) {
   })
 })
 
-app.get('/teams', detectScope, issueToken, function (request, response, next) {
+app.get('/teams', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'teams.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -145,6 +146,7 @@ app.get('/teams', detectScope, issueToken, function (request, response, next) {
       moment: moment,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       countries: countries,
       teams: teams,
       teamScores: teamScores,
@@ -168,7 +170,7 @@ app.get('/teams', detectScope, issueToken, function (request, response, next) {
   })
 })
 
-app.get('/news', detectScope, issueToken, function (request, response, next) {
+app.get('/news', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'news.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -211,6 +213,7 @@ app.get('/news', detectScope, issueToken, function (request, response, next) {
       md: md,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       posts: posts,
       teamScores: teamScores,
       google_tag_id: googleTagId,
@@ -236,7 +239,7 @@ app.get('/news', detectScope, issueToken, function (request, response, next) {
 
 app.param('teamId', teamParam.id)
 
-app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function (request, response, next) {
+app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'profile.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -278,6 +281,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
       moment: moment,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       team: team,
       countries: countries,
       teamScores: teamScores,
@@ -300,7 +304,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, function
   })
 })
 
-app.get('/about', detectScope, issueToken, function (request, response, next) {
+app.get('/about', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'about.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
   const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
@@ -334,6 +338,7 @@ app.get('/about', detectScope, issueToken, function (request, response, next) {
       moment: moment,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: {
@@ -353,7 +358,7 @@ app.get('/about', detectScope, issueToken, function (request, response, next) {
   })
 })
 
-app.get('/supervisor/signin', detectScope, issueToken, function (request, response, next) {
+app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'supervisor', 'signin.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -369,6 +374,7 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
       _: _,
       jsesc: jsesc,
       identity: identity,
+      contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: {
         analytics: analyticsTemplate,
@@ -383,7 +389,7 @@ app.get('/supervisor/signin', detectScope, issueToken, function (request, respon
   })
 })
 
-app.get('/team/signin', detectScope, issueToken, function (request, response, next) {
+app.get('/team/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signin.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -399,6 +405,7 @@ app.get('/team/signin', detectScope, issueToken, function (request, response, ne
       _: _,
       jsesc: jsesc,
       identity: identity,
+      contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: {
         analytics: analyticsTemplate,
@@ -413,7 +420,7 @@ app.get('/team/signin', detectScope, issueToken, function (request, response, ne
   })
 })
 
-app.get('/team/restore', detectScope, issueToken, function (request, response, next) {
+app.get('/team/restore', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'restore.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -429,6 +436,7 @@ app.get('/team/restore', detectScope, issueToken, function (request, response, n
       _: _,
       jsesc: jsesc,
       identity: identity,
+      contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: {
         analytics: analyticsTemplate,
@@ -443,7 +451,7 @@ app.get('/team/restore', detectScope, issueToken, function (request, response, n
   })
 })
 
-app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request, response, next) {
+app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signup.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -464,6 +472,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, function (request
       jsesc: jsesc,
       identity: identity,
       contest: contest,
+      contestTitle: request.contestTitle,
       countries: countries,
       geoIPData: request.geoIPData,
       google_tag_id: googleTagId,
@@ -505,7 +514,7 @@ function verifyPromise (request) {
   })
 }
 
-app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, function (request, response, next) {
+app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'verify-email.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -524,6 +533,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
         _: _,
         jsesc: jsesc,
         identity: identity,
+        contestTitle: request.contestTitle,
         success: true,
         text: 'Email verified. Thank you!',
         google_tag_id: googleTagId,
@@ -539,6 +549,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
         _: _,
         jsesc: jsesc,
         identity: identity,
+        contestTitle: request.contestTitle,
         success: false,
         text: err2.message,
         templates: {
@@ -554,7 +565,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, funct
   })
 })
 
-app.get('/team/reset-password', detectScope, issueToken, function (request, response, next) {
+app.get('/team/reset-password', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'reset-password.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -570,6 +581,7 @@ app.get('/team/reset-password', detectScope, issueToken, function (request, resp
       _: _,
       jsesc: jsesc,
       identity: identity,
+      contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: {
         analytics: analyticsTemplate,
@@ -594,7 +606,7 @@ app.get('/robots.txt', function (request, response) {
     }))
 })
 
-app.get('*', detectScope, issueToken, function (request, response, next) {
+app.get('*', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '404.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
@@ -610,6 +622,7 @@ app.get('*', detectScope, issueToken, function (request, response, next) {
       _: _,
       jsesc: jsesc,
       identity: identity,
+      contestTitle: request.contestTitle,
       urlPath: request.path,
       google_tag_id: googleTagId,
       templates: {
@@ -628,34 +641,37 @@ app.use(function (err, request, response, next) {
   logger.error(err)
 
   detectScope(request, response, function () {
-    const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '500.html'), 'utf8'))
-    const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+    getContestTitle(request, response, function () {
+      const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '500.html'), 'utf8'))
+      const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
 
-    const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-    const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+      const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+      const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
 
-    Promise.all([
-      identityController.fetch(request)
-    ])
-    .then(function (values) {
-      const identity = values[0]
-      response.status(500).send(pageTemplate({
-        _: _,
-        jsesc: jsesc,
-        identity: identity,
-        google_tag_id: googleTagId,
-        templates: {
-          analytics: analyticsTemplate,
-          navbar: navbarTemplate,
-          streamStatePartial: streamStatePartialTemplate,
-        }
-      }))
-    })
-    .catch(function (err2) {
-      logger.error(err2)
-      response
-        .status(500)
-        .json('Internal Server Error')
+      Promise.all([
+        identityController.fetch(request)
+      ])
+      .then(function (values) {
+        const identity = values[0]
+        response.status(500).send(pageTemplate({
+          _: _,
+          jsesc: jsesc,
+          identity: identity,
+          contestTitle: request.contestTitle,
+          google_tag_id: googleTagId,
+          templates: {
+            analytics: analyticsTemplate,
+            navbar: navbarTemplate,
+            streamStatePartial: streamStatePartialTemplate,
+          }
+        }))
+      })
+      .catch(function (err2) {
+        logger.error(err2)
+        response
+          .status(500)
+          .json('Internal Server Error')
+      })
     })
   })
 })
