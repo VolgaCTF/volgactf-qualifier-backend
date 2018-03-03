@@ -368,6 +368,67 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
   })
 })
 
+app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  const scoreboardTableTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard-table.html'), 'utf8'))
+  const scoreboardTableRowPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard-table-row-partial.html'), 'utf8'))
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch(),
+    countryController.fetch(),
+    teamController.fetch(!request.scope.isSupervisor()),
+    teamScoreController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    const countries = _.map(values[2], countrySerializer)
+    const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
+    const teamScores = _.map(values[4], teamScoreSerializer)
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      countries: countries,
+      teams: teams,
+      teamScores: teamScores,
+      detailed: request.query.hasOwnProperty('detailed'),
+      google_tag_id: googleTagId,
+      templates: {
+        analytics: analyticsTemplate,
+        navbar: navbarTemplate,
+        streamStatePartial: streamStatePartialTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestScore: contestScoreTemplate,
+        scoreboardTable: scoreboardTableTemplate,
+        scoreboardTableRowPartial: scoreboardTableRowPartialTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
 app.get('/about', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'about.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
