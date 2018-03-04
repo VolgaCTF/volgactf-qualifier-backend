@@ -38,6 +38,15 @@ const MarkdownRenderer = require('./utils/markdown')
 const categoryController = require('./controllers/category')
 const categorySerializer = require('./serializers/category')
 
+const taskController = require('./controllers/task')
+const taskSerializer = require('./serializers/task')
+
+const taskCategoryController = require('./controllers/task-category')
+const taskCategorySerializer = require('./serializers/task-category')
+
+const teamTaskHitController = require('./controllers/team-task-hit')
+const teamTaskHitSerializer = require('./serializers/team-task-hit')
+
 const teamParam = require('./params/team')
 
 const jsesc = require('jsesc')
@@ -120,7 +129,7 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
   const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
   const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
   const teamListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-list.html'), 'utf8'))
-  const teamProfileSimplifiedPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-profile-simplified-partial.html'), 'utf8'))
+  const teamCardTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-card.html'), 'utf8'))
 
   let promises = [
     identityController.fetch(request),
@@ -163,7 +172,7 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
         contestTimer: contestTimerTemplate,
         contestScore: contestScoreTemplate,
         teamList: teamListTemplate,
-        teamProfileSimplifiedPartial: teamProfileSimplifiedPartialTemplate
+        teamCard: teamCardTemplate
       }
     }))
   })
@@ -420,6 +429,94 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
         contestScore: contestScoreTemplate,
         scoreboardTable: scoreboardTableTemplate,
         scoreboardTableRowPartial: scoreboardTableRowPartialTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'tasks.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  const taskContentPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-content-partial.html'), 'utf8'))
+  const createTaskHintTextareaPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'create-task-hint-textarea-partial.html'), 'utf8'))
+  const createTaskAnswerInputPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'create-task-answer-input-partial.html'), 'utf8'))
+  const editTaskHintTextareaPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'edit-task-hint-textarea-partial.html'), 'utf8'))
+  const editTaskAnswerInputPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'edit-task-answer-input-partial.html'), 'utf8'))
+
+  const taskListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-list.html'), 'utf8'))
+  const taskCardTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-card.html'), 'utf8'))
+  const reviseTaskStatusPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'revise-task-status-partial.html'), 'utf8'))
+  const submitTaskStatusPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'submit-task-status-partial.html'), 'utf8'))
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch(),
+    categoryController.fetch(),
+    taskController.fetch(request.scope.isSupervisor()),
+    taskCategoryController.fetch(request.scope.isSupervisor())
+  ]
+
+  if (request.scope.isTeam()) {
+    promises.push(teamTaskHitController.fetchForTeam(request.session.identityID))
+    promises.push(teamScoreController.fetch())
+  }
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    const categories = _.map(values[2], categorySerializer)
+    const taskPreviews = _.map(values[3], _.partial(taskSerializer, _, { preview: true }))
+    const taskCategories = _.map(values[4], taskCategorySerializer)
+    let teamHits = []
+    let teamScores = []
+    if (request.scope.isTeam()) {
+      teamHits = _.map(values[5], teamTaskHitSerializer)
+      teamScores = _.map(values[6], teamScoreSerializer)
+    }
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      categories: categories,
+      taskPreviews: taskPreviews,
+      taskCategories: taskCategories,
+      teamHits: teamHits,
+      teamScores: teamScores,
+      google_tag_id: googleTagId,
+      templates: {
+        analytics: analyticsTemplate,
+        navbar: navbarTemplate,
+        streamStatePartial: streamStatePartialTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestScore: contestScoreTemplate,
+        taskContentPartial: taskContentPartialTemplate,
+        createTaskHintTextareaPartial: createTaskHintTextareaPartialTemplate,
+        createTaskAnswerInputPartial: createTaskAnswerInputPartialTemplate,
+        editTaskHintTextareaPartial: editTaskHintTextareaPartialTemplate,
+        editTaskAnswerInputPartial: editTaskAnswerInputPartialTemplate,
+        taskList: taskListTemplate,
+        taskCard: taskCardTemplate,
+        reviseTaskStatusPartial: reviseTaskStatusPartialTemplate,
+        submitTaskStatusPartial: submitTaskStatusPartialTemplate
       }
     }))
   })

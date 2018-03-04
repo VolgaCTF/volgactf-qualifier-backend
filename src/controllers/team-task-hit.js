@@ -44,6 +44,20 @@ class TeamTaskHitController {
       })
   }
 
+  static fetchForTeam (teamId) {
+    return new Promise(function (resolve, reject) {
+      TeamTaskHit
+        .query()
+        .where('teamId', teamId)
+        .then(function (teamTaskHits) {
+          resolve(teamTaskHits)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
+    })
+  }
+
   static listForTeam (teamId, callback) {
     TeamTaskHit
       .query()

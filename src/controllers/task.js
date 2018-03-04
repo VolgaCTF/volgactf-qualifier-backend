@@ -196,6 +196,25 @@ class TaskController {
     })
   }
 
+  static fetch (privateData = false) {
+    return new Promise(function (resolve, reject) {
+      let taskPromise = Task.query()
+      if (!privateData) {
+        taskPromise = taskPromise
+          .where('state', TASK_OPENED)
+          .orWhere('state', TASK_CLOSED)
+      }
+
+      taskPromise
+        .then(function (tasks) {
+          resolve(tasks)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
+    })
+  }
+
   static index (callback, filterNew = false) {
     let taskPromise = Task.query()
     if (filterNew) {
