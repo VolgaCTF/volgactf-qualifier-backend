@@ -580,6 +580,59 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
   })
 })
 
+app.get('/contest', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  if (request.scope.isTeam() || request.scope.isGuest()) {
+    next()
+    return
+  }
+
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    let teamScores = []
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      teamScores: teamScores,
+      google_tag_id: googleTagId,
+      templates: {
+        analytics: analyticsTemplate,
+        navbar: navbarTemplate,
+        streamStatePartial: streamStatePartialTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestScore: contestScoreTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
 app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'supervisor', 'signin.html'), 'utf8'))
   const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
