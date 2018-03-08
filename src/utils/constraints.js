@@ -136,5 +136,21 @@ module.exports = {
     new Assert().Required(),
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 300 })
+  ],
+  remoteCheckerName: [
+    new Assert().Required(),
+    new Assert().Callback(is_.string),
+    new Assert().Length({ min: 2, max: 50 })
+  ],
+  remoteCheckerUrl: [
+    new Assert().Required(),
+    new Assert().Callback(is_.string),
+    new Assert().Callback(is_.url),
+    new Assert().Length({ min: 2, max: 256 })
+  ],
+  remoteCheckerAuthUsername: [
+    new Assert().Required(),
+    new Assert().Callback(is_.string),
+    new Assert().Length({ min: 2, max: 50 })
   ]
 }

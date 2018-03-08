@@ -347,3 +347,25 @@ class TaskReviewAlreadyGivenError extends BaseError {
   }
 }
 module.exports.TaskReviewAlreadyGivenError = TaskReviewAlreadyGivenError
+
+class DuplicateRemoteCheckerNameError extends BaseError {
+  constructor () {
+    super('Remote checker name must be unique!', 'DuplicateRemoteCheckerNameError', 400)
+  }
+}
+module.exports.DuplicateRemoteCheckerNameError = DuplicateRemoteCheckerNameError
+
+class RemoteCheckerNotFoundError extends BaseError {
+  constructor () {
+    super('Remote checker not found!', 'RemoteCheckerNotFoundError', 400)
+  }
+}
+module.exports.RemoteCheckerNotFoundError = RemoteCheckerNotFoundError
+
+class RemoteCheckerAttachedError extends BaseError {
+  constructor () {
+    super('Remote checker is attached to a task!', 'RemoteCheckerAttachedError', 400)
+  }
+}
+module.exports.RemoteCheckerAttachedError = RemoteCheckerAttachedError
+
