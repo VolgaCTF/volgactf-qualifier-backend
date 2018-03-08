@@ -46,7 +46,7 @@ class TeamController {
                     token: token.generate(),
                     used: false,
                     createdAt: new Date(),
-                    expiresAt: moment().add(1, 'h').toDate()
+                    expiresAt: moment().add(2, 'h').toDate()
                   })
                   .then(function (teamResetPasswordToken) {
                     queue('sendEmailQueue').add({
@@ -118,7 +118,7 @@ class TeamController {
                   token: token.generate(),
                   used: false,
                   createdAt: new Date(),
-                  expiresAt: moment().add(1, 'h').toDate()
+                  expiresAt: moment().add(2, 'h').toDate()
                 })
                 .then(function (newTeamEmailVerificationToken) {
                   teamEmailVerificationToken = newTeamEmailVerificationToken
@@ -212,7 +212,7 @@ class TeamController {
                     token: token.generate(),
                     used: false,
                     createdAt: new Date(),
-                    expiresAt: moment().add(1, 'h').toDate()
+                    expiresAt: moment().add(2, 'd').toDate()
                   })
                   .then(function (teamEmailVerificationToken) {
                     queue('sendEmailQueue').add({
@@ -326,7 +326,7 @@ class TeamController {
                               token: token.generate(),
                               used: false,
                               createdAt: new Date(),
-                              expiresAt: moment().add(1, 'h').toDate()
+                              expiresAt: moment().add(2, 'd').toDate()
                             })
                             .then(function (updatedTeamEmailVerificationTokenObject) {
                               updatedTeamEmailVerificationToken = updatedTeamEmailVerificationTokenObject
