@@ -55,6 +55,9 @@ const remoteCheckerSerializer = require('./serializers/remote-checker')
 const taskRemoteCheckerController = require('./controllers/task-remote-checker')
 const taskRemoteCheckerSerializer = require('./serializers/task-remote-checker')
 
+const teamTaskReviewController = require('./controllers/team-task-review')
+const teamTaskReviewSerializer = require('./serializers/team-task-review')
+
 const jsesc = require('jsesc')
 
 const app = express()
@@ -67,6 +70,12 @@ app.use('/api', apiRouter)
 
 const distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
+
+function voidPromise () {
+  return new Promise(function (resolve, reject) {
+    resolve(null)
+  })
+}
 
 app.get('/', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'index.html'), 'utf8'))
@@ -339,6 +348,16 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     countryController.fetch()
   ]
 
+  if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
+    promises.push(taskController.fetch(request.scope.isSupervisor()))
+    promises.push(teamTaskHitController.fetchForTeam(request.teamId))
+    promises.push(teamTaskReviewController.fetchByTeam(request.teamId))
+  } else {
+    promises.push(voidPromise())
+    promises.push(teamTaskHitController.fetchForTeam(request.teamId))
+    promises.push(teamTaskReviewController.fetchByTeam(request.teamId))
+  }
+
   if (request.scope.isTeam()) {
     promises.push(teamScoreController.fetch())
   }
@@ -350,9 +369,31 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[2].id)
     const team = teamSerializer(values[2], { exposeEmail: exposeEmail })
     const countries = _.map(values[3], countrySerializer)
+
+    let tasks = []
+    let teamTaskHits = []
+    let teamTaskHitStatistics = null
+    let teamTaskReviews = []
+    let teamTaskReviewStatistics = null
+    if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
+      tasks = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
+      teamTaskHits = _.map(values[5], teamTaskHitSerializer)
+      teamTaskReviews = _.map(values[6], teamTaskReviewSerializer)
+    } else {
+      teamTaskHitStatistics = {
+        count: values[5].length
+      }
+      teamTaskReviewStatistics = {
+        count: values[6].length,
+        averageRating: _.reduce(values[6], function (sum, review) {
+          return sum + review.rating
+        }, 0) / (values[6].length === 0 ? 1 : values[6].length)
+      }
+    }
+
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[4], teamScoreSerializer)
+      teamScores = _.map(values[7], teamScoreSerializer)
     }
     response.send(pageTemplate({
       _: _,
@@ -363,6 +404,11 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       contestTitle: request.contestTitle,
       team: team,
       countries: countries,
+      tasks: tasks,
+      teamTaskHits: teamTaskHits,
+      teamTaskHitStatistics: teamTaskHitStatistics,
+      teamTaskReviews: teamTaskReviews,
+      teamTaskReviewStatistics: teamTaskReviewStatistics,
       teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: {
@@ -493,10 +539,10 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     const taskPreviews = _.map(values[3], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[4], taskCategorySerializer)
 
-    let teamHits = []
+    let teamTaskHits = []
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamHits = _.map(values[5], teamTaskHitSerializer)
+      teamTaskHits = _.map(values[5], teamTaskHitSerializer)
       teamScores = _.map(values[6], teamScoreSerializer)
     }
 
@@ -517,7 +563,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       categories: categories,
       taskPreviews: taskPreviews,
       taskCategories: taskCategories,
-      teamHits: teamHits,
+      teamTaskHits: teamTaskHits,
       teamScores: teamScores,
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
