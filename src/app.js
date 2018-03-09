@@ -3,8 +3,6 @@ const logger = require('./utils/logger')
 
 const apiRouter = require('./routes/api')
 
-const { BaseError } = require('./utils/errors')
-
 const { session, detectScope } = require('./middleware/session')
 const { issueToken } = require('./middleware/security')
 
@@ -861,7 +859,7 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -892,7 +890,7 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -923,7 +921,7 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -961,7 +959,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -1022,7 +1020,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         templates: {
           analytics: analyticsTemplate,
           navbar: navbarTemplate,
-          streamStatePartial: streamStatePartialTemplate,
+          streamStatePartial: streamStatePartialTemplate
         }
       }))
     })
@@ -1036,7 +1034,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         text: err2.message,
         templates: {
           navbar: navbarTemplate,
-          streamStatePartial: streamStatePartialTemplate,
+          streamStatePartial: streamStatePartialTemplate
         }
       }))
     })
@@ -1068,7 +1066,7 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -1110,7 +1108,7 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
       templates: {
         analytics: analyticsTemplate,
         navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
+        streamStatePartial: streamStatePartialTemplate
       }
     }))
   })
@@ -1144,7 +1142,7 @@ app.use(function (err, request, response, next) {
           templates: {
             analytics: analyticsTemplate,
             navbar: navbarTemplate,
-            streamStatePartial: streamStatePartialTemplate,
+            streamStatePartial: streamStatePartialTemplate
           }
         }))
       })

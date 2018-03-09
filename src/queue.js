@@ -179,6 +179,9 @@ queue('notifyStartCompetition').process(function (job, done) {
       `Competition has begun!`,
       `:triangular_flag_on_post: Check out [tasks](${getTasksLink()}) and good luck!`,
       function (err, post) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -187,6 +190,9 @@ queue('notifyStartCompetition').process(function (job, done) {
     TwitterController.post(
       `🚩 Competition has begun! Good luck! ${getTasksLink()}`,
       function (err) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -195,6 +201,9 @@ queue('notifyStartCompetition').process(function (job, done) {
     TelegramController.post(
       `🚩 Competition has begun! Check out [tasks](${getTasksLink()}) and good luck!`,
       function (err) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -214,6 +223,9 @@ queue('notifyFinishCompetition').process(function (job, done) {
       `Competition has ended!`,
       `:triangular_flag_on_post: Check out the final [scoreboard](${getScoreboardLink()})!`,
       function (err, post) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -222,6 +234,9 @@ queue('notifyFinishCompetition').process(function (job, done) {
     TwitterController.post(
       `🚩 Competition has ended! Check out the final scoreboard! ${getScoreboardLink()}`,
       function (err) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -230,6 +245,9 @@ queue('notifyFinishCompetition').process(function (job, done) {
     TelegramController.post(
       `🚩 Competition has ended! Check out the final [scoreboard](${getScoreboardLink()})!`,
       function (err) {
+        if (err) {
+          logger.error(err)
+        }
       }
     )
   }
@@ -247,6 +265,9 @@ queue('notifyOpenTask').process(function (job, done) {
           `New task — ${task.title}`,
           `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
           function (err, post) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
@@ -255,6 +276,9 @@ queue('notifyOpenTask').process(function (job, done) {
         TwitterController.post(
           `🚩 New task — ${task.title} — worth ${task.value} pts! ${TaskController.getTaskLink(task.id)}`,
           function (err) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
@@ -263,6 +287,9 @@ queue('notifyOpenTask').process(function (job, done) {
         TelegramController.post(
           `🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
           function (err) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
@@ -282,6 +309,9 @@ queue('notifyTaskHint').process(function (job, done) {
           `Task ${task.title} — new hint!`,
           `:triangular_flag_on_post: Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
           function (err, post) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
@@ -290,6 +320,9 @@ queue('notifyTaskHint').process(function (job, done) {
         TwitterController.post(
           `🚩 Task ${task.title} — new hint! ${TaskController.getTaskLink(task.id)}`,
           function (err) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
@@ -298,6 +331,9 @@ queue('notifyTaskHint').process(function (job, done) {
         TelegramController.post(
           `🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
           function (err) {
+            if (err) {
+              logger.error(err)
+            }
           }
         )
       }
