@@ -369,3 +369,16 @@ class RemoteCheckerAttachedError extends BaseError {
 }
 module.exports.RemoteCheckerAttachedError = RemoteCheckerAttachedError
 
+class TaskRemoteCheckerNotFoundError extends BaseError {
+  constructor () {
+    super('Task remote checker not found!', 'TaskRemoteCheckerNotFoundError', 400)
+  }
+}
+module.exports.TaskRemoteCheckerNotFoundError = TaskRemoteCheckerNotFoundError
+
+class RemoteCheckerUnavailableError extends BaseError {
+  constructor () {
+    super('Remote checker is unavailable at the moment! Please try again later', 'RemoteCheckerUnavailableError', 400)
+  }
+}
+module.exports.RemoteCheckerUnavailableError = RemoteCheckerUnavailableError

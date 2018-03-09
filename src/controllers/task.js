@@ -2,13 +2,14 @@ const Task = require('../models/task')
 const TaskCategory = require('../models/task-category')
 const TaskAnswer = require('../models/task-answer')
 const TaskHint = require('../models/task-hint')
+const TaskRemoteChecker = require('../models/task-remote-checker')
 
 const TaskAnswerController = require('./task-answer')
 const TaskCategoryController = require('./task-category')
 
 const logger = require('../utils/logger')
 const { InternalError, DuplicateTaskTitleError, TaskAlreadyOpenedError, TaskClosedError, TaskNotOpenedError,
-  TaskAlreadyClosedError, TaskNotFoundError } = require('../utils/errors')
+  TaskAlreadyClosedError, TaskNotFoundError, RemoteCheckerAttachedError, RemoteCheckerUnavailableError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION, TASK_INITIAL, TASK_OPENED, TASK_CLOSED } = require('../utils/constants')
 
 const _ = require('underscore')
@@ -22,8 +23,17 @@ const CloseTaskEvent = require('../events/close-task')
 const CreateTaskCategoryEvent = require('../events/create-task-category')
 const DeleteTaskCategoryEvent = require('../events/delete-task-category')
 const RevealTaskCategoryEvent = require('../events/reveal-task-category')
+const CreateTaskRemoteCheckerEvent = require('../events/create-task-remote-checker')
+
+const remoteCheckerController = require('./remote-checker')
+const taskRemoteCheckerController = require('./task-remote-checker')
 
 const queue = require('../utils/queue')
+const request = require('request')
+
+function isTaskRemoteCheckerUniqueConstraintViolation (err) {
+  return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_remote_checkers_ndx_remote_checker_unique')
+}
 
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
@@ -34,8 +44,9 @@ class TaskController {
     const now = new Date()
     let task = null
     let taskCategories = null
+    let taskRemoteChecker = null
 
-    transaction(Task, TaskCategory, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskAnswer, TaskHint) {
+    transaction(Task, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker, function (Task, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker) {
       return Task
         .query()
         .insert({
@@ -59,28 +70,41 @@ class TaskController {
             }))
             .then(function (newTaskCategories) {
               taskCategories = newTaskCategories
-              return TaskAnswer
+              return TaskHint
                 .query()
-                .insert(options.answers.map(function (entry) {
+                .insert(options.hints.map(function (hint) {
                   return {
                     taskId: task.id,
-                    answer: entry.answer,
-                    caseSensitive: entry.caseSensitive,
+                    hint: hint,
                     createdAt: now
                   }
                 }))
-                .then(function (newTaskAnswers) {
-                  return TaskHint
-                    .query()
-                    .insert(options.hints.map(function (hint) {
-                      return {
+                .then(function (newTaskHints) {
+                  if (options.checkMethod === 'list') {
+                    return TaskAnswer
+                      .query()
+                      .insert(options.answers.map(function (entry) {
+                        return {
+                          taskId: task.id,
+                          answer: entry.answer,
+                          caseSensitive: entry.caseSensitive,
+                          createdAt: now
+                        }
+                      }))
+                  } else if (options.checkMethod === 'remote') {
+                    return TaskRemoteChecker
+                      .query()
+                      .insert({
                         taskId: task.id,
-                        hint: hint,
+                        remoteCheckerId: options.remoteChecker,
                         createdAt: now
-                      }
-                    }))
-                    .then(function (newTaskHints) {
-                    })
+                      })
+                      .then(function (newTaskRemoteChecker) {
+                        taskRemoteChecker = newTaskRemoteChecker
+                      })
+                  } else {
+                    throw new InternalError()
+                  }
                 })
             })
         })
@@ -91,10 +115,15 @@ class TaskController {
       for (const taskCategory of taskCategories) {
         EventController.push(new CreateTaskCategoryEvent(task, taskCategory))
       }
+      if (options.checkMethod === 'remote' && taskRemoteChecker) {
+        EventController.push(new CreateTaskRemoteCheckerEvent(taskRemoteChecker))
+      }
     })
     .catch(function (err) {
       if (TaskController.isTaskTitleUniqueConstraintViolation(err)) {
         callback(new DuplicateTaskTitleError(), null)
+      } else if (isTaskRemoteCheckerUniqueConstraintViolation(err)) {
+        callback(new RemoteCheckerAttachedError(), null)
       } else {
         logger.error(err)
         callback(new InternalError(), null)
@@ -106,6 +135,7 @@ class TaskController {
     let updatedTask = null
     let deletedTaskCategories = null
     let createdTaskCategories = null
+    let hintNotification = false
 
     transaction(Task, TaskCategory, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskAnswer, TaskHint) {
       const now = new Date()
@@ -148,31 +178,31 @@ class TaskController {
                 )
                 .then(function (response) {
                   createdTaskCategories = response.rows
-                  return TaskAnswer
+                  return TaskHint
                     .query()
-                    .insert(options.answers.map(function (entry) {
+                    .insert(options.hints.map(function (hint) {
                       return {
                         taskId: task.id,
-                        answer: entry.answer,
-                        caseSensitive: entry.caseSensitive,
+                        hint: hint,
                         createdAt: now
                       }
                     }))
-                    .then(function (newTaskAnswers) {
-                      return TaskHint
-                        .query()
-                        .insert(options.hints.map(function (hint) {
-                          return {
-                            taskId: task.id,
-                            hint: hint,
-                            createdAt: now
-                          }
-                        }))
-                        .then(function (newTaskHints) {
-                          if (newTaskHints.length > 0) {
-                            queue('notifyTaskHint').add({ taskId: task.id })
-                          }
-                        })
+                    .then(function (newTaskHints) {
+                      if (newTaskHints.length > 0) {
+                        hintNotification = true
+                      }
+                      if (options.checkMethod === 'list') {
+                        return TaskAnswer
+                          .query()
+                          .insert(options.answers.map(function (entry) {
+                            return {
+                              taskId: task.id,
+                              answer: entry.answer,
+                              caseSensitive: entry.caseSensitive,
+                              createdAt: now
+                            }
+                          }))
+                      }
                     })
                 })
             })
@@ -180,6 +210,9 @@ class TaskController {
     })
     .then(function () {
       callback(null, updatedTask)
+      if (hintNotification) {
+        queue('notifyTaskHint').add({ taskId: updatedTask.id })
+      }
       EventController.push(new UpdateTaskEvent(updatedTask))
 
       for (const taskCategory of deletedTaskCategories) {
@@ -238,19 +271,57 @@ class TaskController {
       if (err) {
         callback(err, null)
       } else {
-        let answerCorrect = false
-        for (const entry of taskAnswers) {
-          if (entry.caseSensitive) {
-            answerCorrect = (proposedAnswer === entry.answer)
-          } else {
-            answerCorrect = (proposedAnswer.toLowerCase() === entry.answer.toLowerCase())
+        if (taskAnswers.length === 0) {
+          taskRemoteCheckerController
+          .getByTaskId(task.id)
+          .then(function (taskRemoteChecker) {
+            return remoteCheckerController.get(taskRemoteChecker.remoteCheckerId)
+          })
+          .then(function (remoteChecker) {
+            request({
+              method: 'POST',
+              url: remoteChecker.url,
+              body: {
+                answer: proposedAnswer
+              },
+              auth: {
+                user: remoteChecker.authUsername,
+                pass: remoteChecker.authPassword
+              },
+              json: true,
+              timeout: 10000
+            }, function (err3, response, body) {
+              if (err3) {
+                logger.error(err3)
+                callback(new RemoteCheckerUnavailableError(), null)
+              } else {
+                if (response.statusCode === 200 && body.hasOwnProperty('result')) {
+                  callback(null, body.result)
+                } else {
+                  logger.error(response)
+                  callback(new RemoteCheckerUnavailableError(), null)
+                }
+              }
+            })
+          })
+          .catch(function (err2) {
+            callback(err2, null)
+          })
+        } else {
+          let answerCorrect = false
+          for (const entry of taskAnswers) {
+            if (entry.caseSensitive) {
+              answerCorrect = (proposedAnswer === entry.answer)
+            } else {
+              answerCorrect = (proposedAnswer.toLowerCase() === entry.answer.toLowerCase())
+            }
+            if (answerCorrect) {
+              break
+            }
           }
-          if (answerCorrect) {
-            break
-          }
-        }
 
-        callback(null, answerCorrect)
+          callback(null, answerCorrect)
+        }
       }
     })
   }

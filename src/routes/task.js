@@ -474,6 +474,12 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
+  const sanitizeCheckMethod = function () {
+    const deferred = when_.defer()
+    deferred.resolve(params.checkMethod)
+    return deferred.promise
+  }
+
   const sanitizeAnswers = function () {
     const deferred = when_.defer()
     let answers = params.answers
@@ -482,12 +488,16 @@ function sanitizeCreateTaskParams (params, callback) {
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers, function (entry) {
-        return {
-          answer: entry.answer,
-          caseSensitive: entry.caseSensitive === 'true'
-        }
-      }))
+      if (params.checkMethod === 'list') {
+        deferred.resolve(_.map(answers, function (entry) {
+          return {
+            answer: entry.answer,
+            caseSensitive: entry.caseSensitive === 'true'
+          }
+        }))
+      } else {
+        deferred.resolve([])
+      }
     } else {
       deferred.reject(new ValidationError())
     }
@@ -495,22 +505,48 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
+  const sanitizeRemoteChecker = function () {
+    const deferred = when_.defer()
+    if (params.checkMethod === 'remote') {
+      const value = parseInt(params.remoteChecker, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(-1)
+    }
+    return deferred.promise
+  }
+
   when_
-    .all([sanitizeTitle(), sanitizeDescription(), sanitizeHints(), sanitizeValue(), sanitizeCategories(), sanitizeAnswers()])
-    .then(function (res) {
-      callback(null, {
-        title: res[0],
-        description: res[1],
-        hints: res[2],
-        value: res[3],
-        categories: res[4],
-        answers: res[5]
-      })
+  .all([
+    sanitizeTitle(),
+    sanitizeDescription(),
+    sanitizeHints(),
+    sanitizeValue(),
+    sanitizeCategories(),
+    sanitizeCheckMethod(),
+    sanitizeAnswers(),
+    sanitizeRemoteChecker()
+  ])
+  .then(function (res) {
+    callback(null, {
+      title: res[0],
+      description: res[1],
+      hints: res[2],
+      value: res[3],
+      categories: res[4],
+      checkMethod: res[5],
+      answers: res[6],
+      remoteChecker: res[7]
     })
-    .catch(function (err) {
-      logger.error(err)
-      callback(err, null)
-    })
+  })
+  .catch(function (err) {
+    logger.error(err)
+    callback(err, null)
+  })
 }
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
@@ -524,7 +560,13 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         hints: constraints.taskHints,
         value: constraints.taskValue,
         categories: constraints.taskCategories,
-        answers: constraints.taskAnswers
+        checkMethod: constraints.checkMethod
+      }
+
+      if (taskParams.checkMethod === 'list') {
+        createConstraints['answers'] = constraints.taskAnswers
+      } else if (taskParams.checkMethod === 'remote') {
+        createConstraints['remoteChecker'] = constraints.remoteCheckerId
       }
 
       const validationResult = validator.validate(taskParams, createConstraints)
@@ -590,6 +632,12 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     return deferred.promise
   }
 
+  const sanitizeCheckMethod = function () {
+    const deferred = when_.defer()
+    deferred.resolve(params.checkMethod)
+    return deferred.promise
+  }
+
   const sanitizeAnswers = function () {
     const deferred = when_.defer()
     let answers = params.answers
@@ -598,12 +646,16 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     }
 
     if (is_.array(answers)) {
-      deferred.resolve(_.map(answers, function (entry) {
-        return {
-          answer: entry.answer,
-          caseSensitive: entry.caseSensitive === 'true'
-        }
-      }))
+      if (params.checkMethod === 'list') {
+        deferred.resolve(_.map(answers, function (entry) {
+          return {
+            answer: entry.answer,
+            caseSensitive: entry.caseSensitive === 'true'
+          }
+        }))
+      } else {
+        deferred.resolve([])
+      }
     } else {
       deferred.reject(new ValidationError())
     }
@@ -612,18 +664,25 @@ function sanitizeUpdateTaskParams (params, task, callback) {
   }
 
   when_
-    .all([sanitizeDescription(), sanitizeHints(), sanitizeCategories(), sanitizeAnswers()])
-    .then(function (res) {
-      callback(null, {
-        description: res[0],
-        hints: res[1],
-        categories: res[2],
-        answers: res[3]
-      })
+  .all([
+    sanitizeDescription(),
+    sanitizeHints(),
+    sanitizeCategories(),
+    sanitizeCheckMethod(),
+    sanitizeAnswers()
+  ])
+  .then(function (res) {
+    callback(null, {
+      description: res[0],
+      hints: res[1],
+      categories: res[2],
+      checkMethod: res[3],
+      answers: res[4]
     })
-    .catch(function (err) {
-      callback(err, null)
-    })
+  })
+  .catch(function (err) {
+    callback(err, null)
+  })
 }
 
 router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedExtendedParser, function (request, response, next) {
@@ -635,7 +694,11 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         description: constraints.taskDescription,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
-        answers: constraints.taskExtraAnswers
+        checkMethod: constraints.checkMethod
+      }
+
+      if (taskParams.checkMethod === 'list') {
+        updateConstraints['answers'] = constraints.taskExtraAnswers
       }
 
       const validationResult = validator.validate(taskParams, updateConstraints)

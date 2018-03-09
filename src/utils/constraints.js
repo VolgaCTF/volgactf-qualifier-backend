@@ -152,5 +152,13 @@ module.exports = {
     new Assert().Required(),
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 50 })
+  ],
+  checkMethod: [
+    new Assert().Required(),
+    new Assert().Choice(['list', 'remote'])
+  ],
+  remoteCheckerId: [
+    new Assert().Required(),
+    new Assert().Callback(is_.number)
   ]
 }

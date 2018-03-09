@@ -52,6 +52,9 @@ const teamParam = require('./params/team')
 const remoteCheckerController = require('./controllers/remote-checker')
 const remoteCheckerSerializer = require('./serializers/remote-checker')
 
+const taskRemoteCheckerController = require('./controllers/task-remote-checker')
+const taskRemoteCheckerSerializer = require('./serializers/task-remote-checker')
+
 const jsesc = require('jsesc')
 
 const app = express()
@@ -477,6 +480,11 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     promises.push(teamScoreController.fetch())
   }
 
+  if (request.scope.isAdmin()) {
+    promises.push(remoteCheckerController.fetch())
+    promises.push(taskRemoteCheckerController.fetch())
+  }
+
   Promise.all(promises)
   .then(function (values) {
     const identity = values[0]
@@ -484,12 +492,21 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     const categories = _.map(values[2], categorySerializer)
     const taskPreviews = _.map(values[3], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[4], taskCategorySerializer)
+
     let teamHits = []
     let teamScores = []
     if (request.scope.isTeam()) {
       teamHits = _.map(values[5], teamTaskHitSerializer)
       teamScores = _.map(values[6], teamScoreSerializer)
     }
+
+    let remoteCheckers = []
+    let taskRemoteCheckers = []
+    if (request.scope.isAdmin()) {
+      remoteCheckers = _.map(values[5], remoteCheckerSerializer)
+      taskRemoteCheckers = _.map(values[6], taskRemoteCheckerSerializer)
+    }
+
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -502,6 +519,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       taskCategories: taskCategories,
       teamHits: teamHits,
       teamScores: teamScores,
+      remoteCheckers: remoteCheckers,
+      taskRemoteCheckers: taskRemoteCheckers,
       google_tag_id: googleTagId,
       templates: {
         analytics: analyticsTemplate,

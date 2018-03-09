@@ -32,23 +32,25 @@ class RemoteCheckerController {
     })
   }
 
-  // static get (id, callback) {
-  //   Category
-  //     .query()
-  //     .where('id', id)
-  //     .first()
-  //     .then(function (category) {
-  //       if (category) {
-  //         callback(null, category)
-  //       } else {
-  //         callback(new CategoryNotFoundError(), null)
-  //       }
-  //     })
-  //     .catch(function (err) {
-  //       logger.error(err)
-  //       callback(new CategoryNotFoundError(), null)
-  //     })
-  // }
+  get (id) {
+    return new Promise(function (resolve, reject) {
+      RemoteChecker
+      .query()
+      .where('id', id)
+      .first()
+      .then(function (remoteChecker) {
+        if (remoteChecker) {
+          resolve(remoteChecker)
+        } else {
+          reject(new RemoteCheckerNotFoundError())
+        }
+      })
+      .catch(function (err) {
+        logger.error(err)
+        reject(new InternalError())
+      })
+    })
+  }
 
   create (name, url, authUsername, authPassword) {
     return new Promise(function (resolve, reject) {
