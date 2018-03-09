@@ -1,5 +1,4 @@
 const express = require('express')
-const _ = require('underscore')
 const router = express.Router()
 
 const RemoteCheckerController = require('../controllers/remote-checker')
@@ -38,7 +37,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
     request.body.authUsername,
     request.body.authPassword
   )
-  .then(function(remoteChecker) {
+  .then(function (remoteChecker) {
     response.json({ success: true })
   })
   .catch(function (err) {

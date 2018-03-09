@@ -58,6 +58,11 @@ const taskRemoteCheckerSerializer = require('./serializers/task-remote-checker')
 const teamTaskReviewController = require('./controllers/team-task-review')
 const teamTaskReviewSerializer = require('./serializers/team-task-review')
 
+const taskHintController = require('./controllers/task-hint')
+const taskHintSerializer = require('./serializers/task-hint')
+
+const taskParam = require('./params/task')
+
 const jsesc = require('jsesc')
 
 const app = express()
@@ -585,6 +590,79 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
         taskCard: taskCardTemplate,
         reviseTaskStatusPartial: reviseTaskStatusPartialTemplate,
         submitTaskStatusPartial: submitTaskStatusPartialTemplate
+      }
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.param('taskId', taskParam.id)
+
+app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  if (request.scope.isTeam() || request.scope.isGuest()) {
+    next()
+    return
+  }
+
+  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task', 'statistics.html'), 'utf8'))
+  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
+
+  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
+  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
+
+  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
+  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
+  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
+  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
+
+  const md = new MarkdownRenderer()
+
+  let promises = [
+    identityController.fetch(request),
+    contestController.fetch(),
+    teamController.fetch(false),
+    taskController.fetchOne(request.taskId),
+    taskHintController.fetchByTask(request.taskId),
+    teamTaskHitController.fetchByTask(request.taskId),
+    teamTaskReviewController.fetchByTask(request.taskId)
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const identity = values[0]
+    const contest = contestSerializer(values[1])
+    const teams = _.map(values[2], _.partial(teamSerializer, _, { exposeEmail: true }))
+    const task = taskSerializer(values[3])
+    const taskHints = _.map(values[4], taskHintSerializer)
+    const teamTaskHits = _.map(values[5], teamTaskHitSerializer)
+    const teamTaskReviews = _.map(values[6], teamTaskReviewSerializer)
+    const teamScores = []
+    response.send(pageTemplate({
+      _: _,
+      md: md,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      teams: teams,
+      task: task,
+      taskHints: taskHints,
+      teamTaskHits: teamTaskHits,
+      teamTaskReviews: teamTaskReviews,
+      teamScores: teamScores,
+      google_tag_id: googleTagId,
+      templates: {
+        analytics: analyticsTemplate,
+        navbar: navbarTemplate,
+        streamStatePartial: streamStatePartialTemplate,
+        statusbar: statusbarTemplate,
+        contestStatePartial: contestStatePartialTemplate,
+        contestTimer: contestTimerTemplate,
+        contestScore: contestScoreTemplate
       }
     }))
   })

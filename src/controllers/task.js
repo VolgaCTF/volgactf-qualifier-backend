@@ -400,6 +400,26 @@ class TaskController {
     }
   }
 
+  static fetchOne (id) {
+    return new Promise(function (resolve, reject) {
+      Task
+      .query()
+      .where('id', id)
+      .first()
+      .then(function (task) {
+        if (task) {
+          resolve(task)
+        } else {
+          reject(new TaskNotFoundError())
+        }
+      })
+      .catch(function (err) {
+        logger.error(err)
+        reject(new InternalError())
+      })
+    })
+  }
+
   static get (id, callback) {
     Task
       .query()

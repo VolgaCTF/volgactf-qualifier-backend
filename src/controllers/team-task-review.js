@@ -23,6 +23,21 @@ class TeamTaskReviewController {
       })
   }
 
+  static fetchByTask (taskId) {
+    return new Promise(function (resolve, reject) {
+      TeamTaskReview
+      .query()
+      .where('taskId', taskId)
+      .then(function (teamTaskReviews) {
+        resolve(teamTaskReviews)
+      })
+      .catch(function (err) {
+        logger.error(err)
+        reject(new InternalError())
+      })
+    })
+  }
+
   static indexByTask (taskId, callback) {
     TeamTaskReview
       .query()
