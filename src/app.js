@@ -68,7 +68,7 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE, TEMPLATE_404_PAGE,
   TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
   TEMPLATE_ANALYTICS, TEMPLATE_NAVBAR, TEMPLATE_STREAM_STATE_PARTIAL, TEMPLATE_STATUSBAR, TEMPLATE_CONTEST_STATE_PARTIAL,
-  TEMPLATE_CONTEST_TIMER, TEMPLATE_CONTEST_SCORE, TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
+  TEMPLATE_CONTEST_TIMER, TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
   TEMPLATE_POST_PARTIAL, TEMPLATE_POST_SIMPLIFIED_PARTIAL, TEMPLATE_CATEGORY_LIST, TEMPLATE_CATEGORY_PARTIAL,
   TEMPLATE_TEAM_PROFILE_PARTIAL, TEMPLATE_SCOREBOARD_TABLE, TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, TEMPLATE_TASK_CONTENT_PARTIAL,
   TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL, TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL,
@@ -121,7 +121,6 @@ templateStore.register(TEMPLATE_STREAM_STATE_PARTIAL, 'html/stream-state-partial
 templateStore.register(TEMPLATE_STATUSBAR, 'html/statusbar-view.html')
 templateStore.register(TEMPLATE_CONTEST_STATE_PARTIAL, 'html/contest-state-partial.html')
 templateStore.register(TEMPLATE_CONTEST_TIMER, 'html/contest-timer.html')
-templateStore.register(TEMPLATE_CONTEST_SCORE, 'html/contest-score.html')
 
 templateStore.register(TEMPLATE_TEAM_LIST, 'html/team-list.html')
 templateStore.register(TEMPLATE_TEAM_CARD, 'html/team-card.html')
@@ -160,16 +159,11 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
       TEMPLATE_STREAM_STATE_PARTIAL,
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE
+      TEMPLATE_CONTEST_TIMER
     ]),
     identityController.fetch(request),
     contestController.fetch()
   ]
-
-  if (request.scope.isTeam()) {
-    promises.push(teamScoreController.fetch())
-  }
 
   Promise
   .all(promises)
@@ -177,10 +171,6 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
     const templates = values[0]
     const identity = values[1]
     const contest = contestSerializer(values[2])
-    let teamScores = []
-    if (request.scope.isTeam()) {
-      teamScores = _.map(values[3], teamScoreSerializer)
-    }
     const pageTemplate = templates[TEMPLATE_INDEX_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -189,7 +179,6 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
       identity: identity,
       contest: contest,
       contestTitle: request.contestTitle,
-      teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_INDEX_PAGE)
     }))
@@ -210,7 +199,6 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_TEAM_LIST,
       TEMPLATE_TEAM_CARD
     ]),
@@ -220,10 +208,6 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
     teamController.fetch(!request.scope.isSupervisor())
   ]
 
-  if (request.scope.isTeam()) {
-    promises.push(teamScoreController.fetch())
-  }
-
   Promise
   .all(promises)
   .then(function (values) {
@@ -232,10 +216,6 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
     const contest = contestSerializer(values[2])
     const countries = _.map(values[3], countrySerializer)
     const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
-    let teamScores = []
-    if (request.scope.isTeam()) {
-      teamScores = _.map(values[5], teamScoreSerializer)
-    }
     const pageTemplate = templates[TEMPLATE_TEAMS_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -246,7 +226,6 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
       contestTitle: request.contestTitle,
       countries: countries,
       teams: teams,
-      teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TEAMS_PAGE)
     }))
@@ -267,7 +246,6 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_POST_LIST,
       TEMPLATE_POST_PARTIAL,
       TEMPLATE_POST_SIMPLIFIED_PARTIAL
@@ -277,10 +255,6 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
     postController.fetch()
   ]
 
-  if (request.scope.isTeam()) {
-    promises.push(teamScoreController.fetch())
-  }
-
   Promise
   .all(promises)
   .then(function (values) {
@@ -288,10 +262,6 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
     const identity = values[1]
     const contest = contestSerializer(values[2])
     const posts = _.map(values[3], postSerializer)
-    let teamScores = []
-    if (request.scope.isTeam()) {
-      teamScores = _.map(values[4], teamScoreSerializer)
-    }
     const pageTemplate = templates[TEMPLATE_NEWS_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -302,7 +272,6 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
       contest: contest,
       contestTitle: request.contestTitle,
       posts: posts,
-      teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_NEWS_PAGE)
     }))
@@ -328,7 +297,6 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_CATEGORY_LIST,
       TEMPLATE_CATEGORY_PARTIAL
     ]),
@@ -353,7 +321,6 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
       contest: contest,
       contestTitle: request.contestTitle,
       categories: categories,
-      teamScores: [],
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE)
     }))
@@ -376,7 +343,6 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_TEAM_PROFILE_PARTIAL
     ]),
     identityController.fetch(request),
@@ -393,10 +359,6 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     promises.push(voidPromise())
     promises.push(teamTaskHitController.fetchForTeam(request.teamId))
     promises.push(teamTaskReviewController.fetchByTeam(request.teamId))
-  }
-
-  if (request.scope.isTeam()) {
-    promises.push(teamScoreController.fetch())
   }
 
   Promise
@@ -430,10 +392,6 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       }
     }
 
-    let teamScores = []
-    if (request.scope.isTeam()) {
-      teamScores = _.map(values[8], teamScoreSerializer)
-    }
     const pageTemplate = templates[TEMPLATE_TEAM_PROFILE_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -449,7 +407,6 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       teamTaskHitStatistics: teamTaskHitStatistics,
       teamTaskReviews: teamTaskReviews,
       teamTaskReviewStatistics: teamTaskReviewStatistics,
-      teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE)
     }))
@@ -470,7 +427,6 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_SCOREBOARD_TABLE,
       TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL
     ]),
@@ -522,7 +478,6 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_TASK_CONTENT_PARTIAL,
       TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL,
       TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
@@ -542,7 +497,6 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
 
   if (request.scope.isTeam()) {
     promises.push(teamTaskHitController.fetchForTeam(request.session.identityID))
-    promises.push(teamScoreController.fetch())
   }
 
   if (request.scope.isAdmin()) {
@@ -561,10 +515,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     const taskCategories = _.map(values[5], taskCategorySerializer)
 
     let teamTaskHits = []
-    let teamScores = []
     if (request.scope.isTeam()) {
       teamTaskHits = _.map(values[6], teamTaskHitSerializer)
-      teamScores = _.map(values[7], teamScoreSerializer)
     }
 
     let remoteCheckers = []
@@ -585,7 +537,6 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       taskPreviews: taskPreviews,
       taskCategories: taskCategories,
       teamTaskHits: teamTaskHits,
-      teamScores: teamScores,
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
       google_tag_id: googleTagId,
@@ -614,8 +565,7 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
       TEMPLATE_STREAM_STATE_PARTIAL,
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE
+      TEMPLATE_CONTEST_TIMER
     ]),
     identityController.fetch(request),
     contestController.fetch(),
@@ -651,7 +601,6 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
       taskHints: taskHints,
       teamTaskHits: teamTaskHits,
       teamTaskReviews: teamTaskReviews,
-      teamScores: [],
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE)
     }))
@@ -671,16 +620,11 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_STREAM_STATE_PARTIAL,
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE
+      TEMPLATE_CONTEST_TIMER
     ]),
     identityController.fetch(request),
     contestController.fetch()
   ]
-
-  if (request.scope.isTeam()) {
-    promises.push(teamScoreController.fetch())
-  }
 
   Promise
   .all(promises)
@@ -688,10 +632,6 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
     const templates = values[0]
     const identity = values[1]
     const contest = contestSerializer(values[2])
-    let teamScores = []
-    if (request.scope.isTeam()) {
-      teamScores = _.map(values[3], teamScoreSerializer)
-    }
     const pageTemplate = templates[TEMPLATE_ABOUT_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -700,7 +640,6 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
       identity: identity,
       contest: contest,
       contestTitle: request.contestTitle,
-      teamScores: teamScores,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_ABOUT_PAGE)
     }))
@@ -725,8 +664,7 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
       TEMPLATE_STREAM_STATE_PARTIAL,
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE
+      TEMPLATE_CONTEST_TIMER
     ]),
     identityController.fetch(request),
     contestController.fetch()
@@ -745,7 +683,6 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
       identity: identity,
       contest: contest,
       contestTitle: request.contestTitle,
-      teamScores: [],
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_CONTEST_PAGE)
     }))
@@ -771,7 +708,6 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
       TEMPLATE_CONTEST_TIMER,
-      TEMPLATE_CONTEST_SCORE,
       TEMPLATE_REMOTE_CHECKER_LIST,
       TEMPLATE_REMOTE_CHECKER_BLOCK
     ]),
@@ -795,7 +731,6 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       contest: contest,
       contestTitle: request.contestTitle,
       remoteCheckers: remoteCheckers,
-      teamScores: [],
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE)
     }))
