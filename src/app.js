@@ -6,8 +6,6 @@ const apiRouter = require('./routes/api')
 const { session, detectScope } = require('./middleware/session')
 const { issueToken } = require('./middleware/security')
 
-const fs = require('fs')
-const path = require('path')
 const _ = require('underscore')
 const moment = require('moment')
 const identityController = require('./controllers/identity')
@@ -63,6 +61,21 @@ const taskParam = require('./params/task')
 
 const jsesc = require('jsesc')
 
+const templateStore = require('./utils/template-store')
+const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_CATEGORIES_PAGE, TEMPLATE_TEAM_PROFILE_PAGE,
+  TEMPLATE_SCOREBOARD_PAGE, TEMPLATE_TASKS_PAGE, TEMPLATE_TASK_STATISTICS_PAGE, TEMPLATE_ABOUT_PAGE, TEMPLATE_CONTEST_PAGE,
+  TEMPLATE_REMOTE_CHECKERS_PAGE, TEMPLATE_SUPERVISOR_SIGNIN_PAGE, TEMPLATE_TEAM_SIGNIN_PAGE, TEMPLATE_TEAM_RESTORE_PAGE,
+  TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE, TEMPLATE_404_PAGE,
+  TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
+  TEMPLATE_ANALYTICS, TEMPLATE_NAVBAR, TEMPLATE_STREAM_STATE_PARTIAL, TEMPLATE_STATUSBAR, TEMPLATE_CONTEST_STATE_PARTIAL,
+  TEMPLATE_CONTEST_TIMER, TEMPLATE_CONTEST_SCORE, TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
+  TEMPLATE_POST_PARTIAL, TEMPLATE_POST_SIMPLIFIED_PARTIAL, TEMPLATE_CATEGORY_LIST, TEMPLATE_CATEGORY_PARTIAL,
+  TEMPLATE_TEAM_PROFILE_PARTIAL, TEMPLATE_SCOREBOARD_TABLE, TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, TEMPLATE_TASK_CONTENT_PARTIAL,
+  TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL, TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL,
+  TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL, TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD, TEMPLATE_REVISE_TASK_STATUS_PARTIAL,
+  TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST, TEMPLATE_REMOTE_CHECKER_BLOCK
+} = require('./constants/template')
+
 const app = express()
 app.set('x-powered-by', false)
 app.set('trust proxy', true)
@@ -71,7 +84,6 @@ app.use(session)
 
 app.use('/api', apiRouter)
 
-const distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
 function voidPromise () {
@@ -80,19 +92,77 @@ function voidPromise () {
   })
 }
 
+templateStore.register(TEMPLATE_INDEX_PAGE, 'html/index.html')
+templateStore.register(TEMPLATE_TEAMS_PAGE, 'html/teams.html')
+templateStore.register(TEMPLATE_NEWS_PAGE, 'html/news.html')
+templateStore.register(TEMPLATE_CATEGORIES_PAGE, 'html/categories.html')
+templateStore.register(TEMPLATE_TEAM_PROFILE_PAGE, 'html/team/profile.html')
+templateStore.register(TEMPLATE_SCOREBOARD_PAGE, 'html/scoreboard.html')
+templateStore.register(TEMPLATE_TASKS_PAGE, 'html/tasks.html')
+templateStore.register(TEMPLATE_TASK_STATISTICS_PAGE, 'html/task/statistics.html')
+templateStore.register(TEMPLATE_ABOUT_PAGE, 'html/about.html')
+templateStore.register(TEMPLATE_CONTEST_PAGE, 'html/contest.html')
+templateStore.register(TEMPLATE_REMOTE_CHECKERS_PAGE, 'html/remote_checkers.html')
+templateStore.register(TEMPLATE_SUPERVISOR_SIGNIN_PAGE, 'html/supervisor/signin.html')
+templateStore.register(TEMPLATE_TEAM_SIGNIN_PAGE, 'html/team/signin.html')
+templateStore.register(TEMPLATE_TEAM_RESTORE_PAGE, 'html/team/restore.html')
+templateStore.register(TEMPLATE_TEAM_SIGNUP_PAGE, 'html/team/signup.html')
+templateStore.register(TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, 'html/team/verify-email.html')
+templateStore.register(TEMPLATE_TEAM_RESET_PASSWORD_PAGE, 'html/team/reset-password.html')
+templateStore.register(TEMPLATE_404_PAGE, 'html/404.html')
+templateStore.register(TEMPLATE_500_PAGE, 'html/500.html')
+templateStore.register(TEMPLATE_ROBOTS_PAGE, 'html/robots.html')
+
+templateStore.register(TEMPLATE_ANALYTICS, 'html/analytics.html')
+
+templateStore.register(TEMPLATE_NAVBAR, 'html/navbar-view.html')
+templateStore.register(TEMPLATE_STREAM_STATE_PARTIAL, 'html/stream-state-partial.html')
+
+templateStore.register(TEMPLATE_STATUSBAR, 'html/statusbar-view.html')
+templateStore.register(TEMPLATE_CONTEST_STATE_PARTIAL, 'html/contest-state-partial.html')
+templateStore.register(TEMPLATE_CONTEST_TIMER, 'html/contest-timer.html')
+templateStore.register(TEMPLATE_CONTEST_SCORE, 'html/contest-score.html')
+
+templateStore.register(TEMPLATE_TEAM_LIST, 'html/team-list.html')
+templateStore.register(TEMPLATE_TEAM_CARD, 'html/team-card.html')
+
+templateStore.register(TEMPLATE_POST_LIST, 'html/post-list.html')
+templateStore.register(TEMPLATE_POST_PARTIAL, 'html/post-partial.html')
+templateStore.register(TEMPLATE_POST_SIMPLIFIED_PARTIAL, 'html/post-simplified-partial.html')
+
+templateStore.register(TEMPLATE_CATEGORY_LIST, 'html/category-list.html')
+templateStore.register(TEMPLATE_CATEGORY_PARTIAL, 'html/category-partial.html')
+
+templateStore.register(TEMPLATE_TEAM_PROFILE_PARTIAL, 'html/team-profile-partial.html')
+
+templateStore.register(TEMPLATE_SCOREBOARD_TABLE, 'html/scoreboard-table.html')
+templateStore.register(TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, 'html/scoreboard-table-row-partial.html')
+
+templateStore.register(TEMPLATE_TASK_CONTENT_PARTIAL, 'html/task-content-partial.html')
+templateStore.register(TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, 'html/create-task-hint-textarea-partial.html')
+templateStore.register(TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL, 'html/create-task-answer-input-partial.html')
+templateStore.register(TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL, 'html/edit-task-hint-textarea-partial.html')
+templateStore.register(TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL, 'html/edit-task-answer-input-partial.html')
+templateStore.register(TEMPLATE_TASK_LIST, 'html/task-list.html')
+templateStore.register(TEMPLATE_TASK_CARD, 'html/task-card.html')
+templateStore.register(TEMPLATE_REVISE_TASK_STATUS_PARTIAL, 'html/revise-task-status-partial.html')
+templateStore.register(TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, 'html/submit-task-status-partial.html')
+
+templateStore.register(TEMPLATE_REMOTE_CHECKER_LIST, 'html/remote-checker-list.html')
+templateStore.register(TEMPLATE_REMOTE_CHECKER_BLOCK, 'html/remote-checker-block.html')
+
 app.get('/', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'index.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_INDEX_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE
+    ]),
     identityController.fetch(request),
     contestController.fetch()
   ]
@@ -101,14 +171,17 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
     promises.push(teamScoreController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[2], teamScoreSerializer)
+      teamScores = _.map(values[3], teamScoreSerializer)
     }
+    const pageTemplate = templates[TEMPLATE_INDEX_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -118,15 +191,7 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
       contestTitle: request.contestTitle,
       teamScores: teamScores,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_INDEX_PAGE)
     }))
   })
   .catch(function (err) {
@@ -136,20 +201,19 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
 })
 
 app.get('/teams', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'teams.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-  const teamListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-list.html'), 'utf8'))
-  const teamCardTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-card.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAMS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_TEAM_LIST,
+      TEMPLATE_TEAM_CARD
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     countryController.fetch(),
@@ -160,16 +224,19 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
     promises.push(teamScoreController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const countries = _.map(values[2], countrySerializer)
-    const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const countries = _.map(values[3], countrySerializer)
+    const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[4], teamScoreSerializer)
+      teamScores = _.map(values[5], teamScoreSerializer)
     }
+    const pageTemplate = templates[TEMPLATE_TEAMS_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -181,17 +248,7 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
       teams: teams,
       teamScores: teamScores,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        teamList: teamListTemplate,
-        teamCard: teamCardTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAMS_PAGE)
     }))
   })
   .catch(function (err) {
@@ -201,23 +258,20 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
 })
 
 app.get('/news', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'news.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-  const postListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'post-list.html'), 'utf8'))
-  const postPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'post-partial.html'), 'utf8'))
-  const postSimplifiedPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'post-simplified-partial.html'), 'utf8'))
-
-  const md = new MarkdownRenderer()
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_NEWS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_POST_LIST,
+      TEMPLATE_POST_PARTIAL,
+      TEMPLATE_POST_SIMPLIFIED_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     postController.fetch()
@@ -227,38 +281,30 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
     promises.push(teamScoreController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const posts = _.map(values[2], postSerializer)
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const posts = _.map(values[3], postSerializer)
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[3], teamScoreSerializer)
+      teamScores = _.map(values[4], teamScoreSerializer)
     }
+    const pageTemplate = templates[TEMPLATE_NEWS_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
       moment: moment,
-      md: md,
+      md: new MarkdownRenderer(),
       identity: identity,
       contest: contest,
       contestTitle: request.contestTitle,
       posts: posts,
       teamScores: teamScores,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        postList: postListTemplate,
-        postPartial: postPartialTemplate,
-        postSimplifiedPartial: postSimplifiedPartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_NEWS_PAGE)
     }))
   })
   .catch(function (err) {
@@ -273,32 +319,32 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
     return
   }
 
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'categories.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const categoryListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'category-list.html'), 'utf8'))
-  const categoryPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'category-partial.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_CATEGORIES_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_CATEGORY_LIST,
+      TEMPLATE_CATEGORY_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     categoryController.fetch()
   ]
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const categories = _.map(values[2], categorySerializer)
-    let teamScores = []
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const categories = _.map(values[3], categorySerializer)
+    const pageTemplate = templates[TEMPLATE_CATEGORIES_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -307,19 +353,9 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
       contest: contest,
       contestTitle: request.contestTitle,
       categories: categories,
-      teamScores: teamScores,
+      teamScores: [],
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        categoryList: categoryListTemplate,
-        categoryPartial: categoryPartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE)
     }))
   })
   .catch(function (err) {
@@ -331,20 +367,18 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
 app.param('teamId', teamParam.id)
 
 app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'profile.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const teamProfilePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team-profile-partial.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_PROFILE_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_TEAM_PROFILE_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     teamController.fetchOne(request.teamId),
@@ -365,13 +399,15 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     promises.push(teamScoreController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[2].id)
-    const team = teamSerializer(values[2], { exposeEmail: exposeEmail })
-    const countries = _.map(values[3], countrySerializer)
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[3].id)
+    const team = teamSerializer(values[3], { exposeEmail: exposeEmail })
+    const countries = _.map(values[4], countrySerializer)
 
     let tasks = []
     let teamTaskHits = []
@@ -379,25 +415,26 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     let teamTaskReviews = []
     let teamTaskReviewStatistics = null
     if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
-      tasks = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
-      teamTaskHits = _.map(values[5], teamTaskHitSerializer)
-      teamTaskReviews = _.map(values[6], teamTaskReviewSerializer)
+      tasks = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+      teamTaskHits = _.map(values[6], teamTaskHitSerializer)
+      teamTaskReviews = _.map(values[7], teamTaskReviewSerializer)
     } else {
       teamTaskHitStatistics = {
-        count: values[5].length
+        count: values[6].length
       }
       teamTaskReviewStatistics = {
-        count: values[6].length,
-        averageRating: _.reduce(values[6], function (sum, review) {
+        count: values[7].length,
+        averageRating: _.reduce(values[7], function (sum, review) {
           return sum + review.rating
-        }, 0) / (values[6].length === 0 ? 1 : values[6].length)
+        }, 0) / (values[7].length === 0 ? 1 : values[7].length)
       }
     }
 
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[7], teamScoreSerializer)
+      teamScores = _.map(values[8], teamScoreSerializer)
     }
+    const pageTemplate = templates[TEMPLATE_TEAM_PROFILE_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -414,16 +451,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       teamTaskReviewStatistics: teamTaskReviewStatistics,
       teamScores: teamScores,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        teamProfilePartial: teamProfilePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE)
     }))
   })
   .catch(function (err) {
@@ -433,21 +461,19 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
 })
 
 app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const scoreboardTableTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard-table.html'), 'utf8'))
-  const scoreboardTableRowPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'scoreboard-table-row-partial.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_SCOREBOARD_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_SCOREBOARD_TABLE,
+      TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     countryController.fetch(),
@@ -455,13 +481,16 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
     teamScoreController.fetch()
   ]
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const countries = _.map(values[2], countrySerializer)
-    const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
-    const teamScores = _.map(values[4], teamScoreSerializer)
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const countries = _.map(values[3], countrySerializer)
+    const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
+    const teamScores = _.map(values[5], teamScoreSerializer)
+    const pageTemplate = templates[TEMPLATE_SCOREBOARD_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -474,17 +503,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       teamScores: teamScores,
       detailed: request.query.hasOwnProperty('detailed'),
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        scoreboardTable: scoreboardTableTemplate,
-        scoreboardTableRowPartial: scoreboardTableRowPartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE)
     }))
   })
   .catch(function (err) {
@@ -494,29 +513,26 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
 })
 
 app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'tasks.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const taskContentPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-content-partial.html'), 'utf8'))
-  const createTaskHintTextareaPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'create-task-hint-textarea-partial.html'), 'utf8'))
-  const createTaskAnswerInputPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'create-task-answer-input-partial.html'), 'utf8'))
-  const editTaskHintTextareaPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'edit-task-hint-textarea-partial.html'), 'utf8'))
-  const editTaskAnswerInputPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'edit-task-answer-input-partial.html'), 'utf8'))
-
-  const taskListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-list.html'), 'utf8'))
-  const taskCardTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task-card.html'), 'utf8'))
-  const reviseTaskStatusPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'revise-task-status-partial.html'), 'utf8'))
-  const submitTaskStatusPartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'submit-task-status-partial.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TASKS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_TASK_CONTENT_PARTIAL,
+      TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL,
+      TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
+      TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL,
+      TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL,
+      TEMPLATE_TASK_LIST,
+      TEMPLATE_TASK_CARD,
+      TEMPLATE_REVISE_TASK_STATUS_PARTIAL,
+      TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     categoryController.fetch(),
@@ -534,28 +550,30 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     promises.push(taskRemoteCheckerController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const categories = _.map(values[2], categorySerializer)
-    const taskPreviews = _.map(values[3], _.partial(taskSerializer, _, { preview: true }))
-    const taskCategories = _.map(values[4], taskCategorySerializer)
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const categories = _.map(values[3], categorySerializer)
+    const taskPreviews = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
+    const taskCategories = _.map(values[5], taskCategorySerializer)
 
     let teamTaskHits = []
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamTaskHits = _.map(values[5], teamTaskHitSerializer)
-      teamScores = _.map(values[6], teamScoreSerializer)
+      teamTaskHits = _.map(values[6], teamTaskHitSerializer)
+      teamScores = _.map(values[7], teamScoreSerializer)
     }
 
     let remoteCheckers = []
     let taskRemoteCheckers = []
     if (request.scope.isAdmin()) {
-      remoteCheckers = _.map(values[5], remoteCheckerSerializer)
-      taskRemoteCheckers = _.map(values[6], taskRemoteCheckerSerializer)
+      remoteCheckers = _.map(values[6], remoteCheckerSerializer)
+      taskRemoteCheckers = _.map(values[7], taskRemoteCheckerSerializer)
     }
-
+    const pageTemplate = templates[TEMPLATE_TASKS_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -571,24 +589,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        taskContentPartial: taskContentPartialTemplate,
-        createTaskHintTextareaPartial: createTaskHintTextareaPartialTemplate,
-        createTaskAnswerInputPartial: createTaskAnswerInputPartialTemplate,
-        editTaskHintTextareaPartial: editTaskHintTextareaPartialTemplate,
-        editTaskAnswerInputPartial: editTaskAnswerInputPartialTemplate,
-        taskList: taskListTemplate,
-        taskCard: taskCardTemplate,
-        reviseTaskStatusPartial: reviseTaskStatusPartialTemplate,
-        submitTaskStatusPartial: submitTaskStatusPartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TASKS_PAGE)
     }))
   })
   .catch(function (err) {
@@ -605,20 +606,17 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
     return
   }
 
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'task', 'statistics.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const md = new MarkdownRenderer()
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TASK_STATISTICS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     teamController.fetch(false),
@@ -628,19 +626,21 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
     teamTaskReviewController.fetchByTask(request.taskId)
   ]
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const teams = _.map(values[2], _.partial(teamSerializer, _, { exposeEmail: true }))
-    const task = taskSerializer(values[3])
-    const taskHints = _.map(values[4], taskHintSerializer)
-    const teamTaskHits = _.map(values[5], teamTaskHitSerializer)
-    const teamTaskReviews = _.map(values[6], teamTaskReviewSerializer)
-    const teamScores = []
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: true }))
+    const task = taskSerializer(values[4])
+    const taskHints = _.map(values[5], taskHintSerializer)
+    const teamTaskHits = _.map(values[6], teamTaskHitSerializer)
+    const teamTaskReviews = _.map(values[7], teamTaskReviewSerializer)
+    const pageTemplate = templates[TEMPLATE_TASK_STATISTICS_PAGE]
     response.send(pageTemplate({
       _: _,
-      md: md,
+      md: new MarkdownRenderer(),
       jsesc: jsesc,
       moment: moment,
       identity: identity,
@@ -651,17 +651,9 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
       taskHints: taskHints,
       teamTaskHits: teamTaskHits,
       teamTaskReviews: teamTaskReviews,
-      teamScores: teamScores,
+      teamScores: [],
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE)
     }))
   })
   .catch(function (err) {
@@ -671,17 +663,17 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
 })
 
 app.get('/about', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'about.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_ABOUT_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE
+    ]),
     identityController.fetch(request),
     contestController.fetch()
   ]
@@ -690,14 +682,17 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
     promises.push(teamScoreController.fetch())
   }
 
-  Promise.all(promises)
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
     let teamScores = []
     if (request.scope.isTeam()) {
-      teamScores = _.map(values[2], teamScoreSerializer)
+      teamScores = _.map(values[3], teamScoreSerializer)
     }
+    const pageTemplate = templates[TEMPLATE_ABOUT_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -707,15 +702,7 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
       contestTitle: request.contestTitle,
       teamScores: teamScores,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_ABOUT_PAGE)
     }))
   })
   .catch(function (err) {
@@ -730,27 +717,27 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
     return
   }
 
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_CONTEST_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE
+    ]),
     identityController.fetch(request),
     contestController.fetch()
   ]
 
   Promise.all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    let teamScores = []
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const pageTemplate = templates[TEMPLATE_CONTEST_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -758,17 +745,9 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
       identity: identity,
       contest: contest,
       contestTitle: request.contestTitle,
-      teamScores: teamScores,
+      teamScores: [],
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_CONTEST_PAGE)
     }))
   })
   .catch(function (err) {
@@ -783,21 +762,19 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
     return
   }
 
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'remote_checkers.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  const statusbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'statusbar-view.html'), 'utf8'))
-  const contestStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-state-partial.html'), 'utf8'))
-  const contestTimerTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-timer.html'), 'utf8'))
-  const contestScoreTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'contest-score.html'), 'utf8'))
-
-  const remoteCheckerListTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'remote-checker-list.html'), 'utf8'))
-  const remoteCheckerBlockTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'remote-checker-block.html'), 'utf8'))
-
-  let promises = [
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_REMOTE_CHECKERS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_STATUSBAR,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_CONTEST_TIMER,
+      TEMPLATE_CONTEST_SCORE,
+      TEMPLATE_REMOTE_CHECKER_LIST,
+      TEMPLATE_REMOTE_CHECKER_BLOCK
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     remoteCheckerController.fetch()
@@ -805,10 +782,11 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
 
   Promise.all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const remoteCheckers = _.map(values[2], remoteCheckerSerializer)
-    let teamScores = []
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const remoteCheckers = _.map(values[3], remoteCheckerSerializer)
+    const pageTemplate = templates[TEMPLATE_REMOTE_CHECKERS_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -817,19 +795,9 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       contest: contest,
       contestTitle: request.contestTitle,
       remoteCheckers: remoteCheckers,
-      teamScores: teamScores,
+      teamScores: [],
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate,
-        statusbar: statusbarTemplate,
-        contestStatePartial: contestStatePartialTemplate,
-        contestTimer: contestTimerTemplate,
-        contestScore: contestScoreTemplate,
-        remoteCheckerList: remoteCheckerListTemplate,
-        remoteCheckerBlock: remoteCheckerBlockTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE)
     }))
   })
   .catch(function (err) {
@@ -839,28 +807,29 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
 })
 
 app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'supervisor', 'signin.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_SUPERVISOR_SIGNIN_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_SUPERVISOR_SIGNIN_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
       identity: identity,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE)
     }))
   })
   .catch(function (err) {
@@ -870,28 +839,29 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
 })
 
 app.get('/team/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signin.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_SIGNIN_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_TEAM_SIGNIN_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
       identity: identity,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE)
     }))
   })
   .catch(function (err) {
@@ -901,28 +871,29 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
 })
 
 app.get('/team/restore', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'restore.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_RESTORE_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_TEAM_RESTORE_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
       identity: identity,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE)
     }))
   })
   .catch(function (err) {
@@ -932,21 +903,26 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
 })
 
 app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'signup.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_SIGNUP_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request),
     contestController.fetch(),
     countryController.fetch()
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
-    const contest = contestSerializer(values[1])
-    const countries = _.map(values[2], countrySerializer)
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const countries = _.map(values[3], countrySerializer)
+    const pageTemplate = templates[TEMPLATE_TEAM_SIGNUP_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -956,11 +932,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
       countries: countries,
       geoIPData: request.geoIPData,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE)
     }))
   })
   .catch(function (err) {
@@ -995,18 +967,22 @@ function verifyPromise (request) {
 }
 
 app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'verify-email.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_VERIFY_EMAIL_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
-  .then(function (values) {
-    const identity = values[0]
+  ]
 
+  Promise
+  .all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_TEAM_VERIFY_EMAIL_PAGE]
     verifyPromise(request)
     .then(function () {
       response.send(pageTemplate({
@@ -1017,11 +993,7 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         success: true,
         text: 'Email verified. Thank you!',
         google_tag_id: googleTagId,
-        templates: {
-          analytics: analyticsTemplate,
-          navbar: navbarTemplate,
-          streamStatePartial: streamStatePartialTemplate
-        }
+        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE)
       }))
     })
     .catch(function (err2) {
@@ -1032,10 +1004,8 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         contestTitle: request.contestTitle,
         success: false,
         text: err2.message,
-        templates: {
-          navbar: navbarTemplate,
-          streamStatePartial: streamStatePartialTemplate
-        }
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE)
       }))
     })
   })
@@ -1046,28 +1016,29 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
 })
 
 app.get('/team/reset-password', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'team', 'reset-password.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_TEAM_RESET_PASSWORD_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_TEAM_RESET_PASSWORD_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
       identity: identity,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE)
     }))
   })
   .catch(function (err) {
@@ -1076,28 +1047,48 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
   })
 })
 
-app.get('/robots.txt', function (request, response) {
-  const template = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'robots.html'), 'utf8'))
-  response
+app.get('/robots.txt', function (request, response, next) {
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_ROBOTS_PAGE
+    ])
+  ]
+
+  Promise
+  .all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const pageTemplate = templates[TEMPLATE_ROBOTS_PAGE]
+    response
     .set('content-type', 'text/plain')
-    .send(template({
+    .send(pageTemplate({
       fqdn: process.env.THEMIS_QUALS_FQDN,
       secure: (process.env.THEMIS_QUALS_SECURE === 'yes')
     }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
 })
 
 app.get('*', detectScope, issueToken, getContestTitle, function (request, response, next) {
-  const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '404.html'), 'utf8'))
-  const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-  const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-  const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-  Promise.all([
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_404_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL
+    ]),
     identityController.fetch(request)
-  ])
+  ]
+
+  Promise
+  .all(promises)
   .then(function (values) {
-    const identity = values[0]
+    const templates = values[0]
+    const identity = values[1]
+    const pageTemplate = templates[TEMPLATE_404_PAGE]
     response.status(404).send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -1105,11 +1096,7 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
       contestTitle: request.contestTitle,
       urlPath: request.path,
       google_tag_id: googleTagId,
-      templates: {
-        analytics: analyticsTemplate,
-        navbar: navbarTemplate,
-        streamStatePartial: streamStatePartialTemplate
-      }
+      templates: _.omit(templates, TEMPLATE_404_PAGE)
     }))
   })
   .catch(function (err) {
@@ -1122,28 +1109,29 @@ app.use(function (err, request, response, next) {
 
   detectScope(request, response, function () {
     getContestTitle(request, response, function () {
-      const pageTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', '500.html'), 'utf8'))
-      const analyticsTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'analytics.html'), 'utf8'))
-
-      const navbarTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'navbar-view.html'), 'utf8'))
-      const streamStatePartialTemplate = _.template(fs.readFileSync(path.join(distFrontendDir, 'html', 'stream-state-partial.html'), 'utf8'))
-
-      Promise.all([
+      const promises = [
+        templateStore.resolveAll([
+          TEMPLATE_500_PAGE,
+          TEMPLATE_ANALYTICS,
+          TEMPLATE_NAVBAR,
+          TEMPLATE_STREAM_STATE_PARTIAL
+        ]),
         identityController.fetch(request)
-      ])
+      ]
+
+      Promise
+      .all(promises)
       .then(function (values) {
-        const identity = values[0]
+        const templates = values[0]
+        const identity = values[1]
+        const pageTemplate = templates[TEMPLATE_500_PAGE]
         response.status(500).send(pageTemplate({
           _: _,
           jsesc: jsesc,
           identity: identity,
           contestTitle: request.contestTitle,
           google_tag_id: googleTagId,
-          templates: {
-            analytics: analyticsTemplate,
-            navbar: navbarTemplate,
-            streamStatePartial: streamStatePartialTemplate
-          }
+          templates: _.omit(templates, TEMPLATE_500_PAGE)
         }))
       })
       .catch(function (err2) {

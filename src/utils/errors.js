@@ -382,3 +382,10 @@ class RemoteCheckerUnavailableError extends BaseError {
   }
 }
 module.exports.RemoteCheckerUnavailableError = RemoteCheckerUnavailableError
+
+class TemplateNotRegisteredError extends BaseError {
+  constructor (message) {
+    super(message, 'TemplateNotRegisteredError', 500)
+  }
+}
+module.exports.TemplateNotRegisteredError = TemplateNotRegisteredError
