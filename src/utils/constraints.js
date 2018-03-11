@@ -153,12 +153,24 @@ module.exports = {
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 50 })
   ],
-  checkMethod: [
+  taskCheckMethod: [
     new Assert().Required(),
     new Assert().Choice(['list', 'remote'])
   ],
   remoteCheckerId: [
     new Assert().Required(),
     new Assert().Callback(is_.number)
+  ],
+  taskRewardScheme: [
+    new Assert().Required(),
+    new Assert().Choice(['fixed', 'variable'])
+  ],
+  taskSubtractPoints: [
+    new Assert().Required(),
+    new Assert().Range(1, 100)
+  ],
+  taskSubtractHitCount: [
+    new Assert().Required(),
+    new Assert().Range(1, 500)
   ]
 }

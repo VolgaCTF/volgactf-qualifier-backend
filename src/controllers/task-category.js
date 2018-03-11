@@ -46,6 +46,20 @@ class TaskCategoryController {
       })
   }
 
+  static fetchByTask (taskId) {
+    return new Promise(function (resolve, reject) {
+      TaskCategory
+      .query()
+      .where('taskId', taskId)
+      .then(function (taskCategories) {
+        resolve(taskCategories)
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
+  }
+
   static indexByTask (taskId, callback) {
     TaskCategory
       .query()

@@ -3,6 +3,8 @@ const TaskCategory = require('../models/task-category')
 const TaskAnswer = require('../models/task-answer')
 const TaskHint = require('../models/task-hint')
 const TaskRemoteChecker = require('../models/task-remote-checker')
+const TaskValue = require('../models/task-value')
+const TaskRewardScheme = require('../models/task-reward-scheme')
 
 const TaskAnswerController = require('./task-answer')
 const TaskCategoryController = require('./task-category')
@@ -28,6 +30,16 @@ const CreateTaskRemoteCheckerEvent = require('../events/create-task-remote-check
 const remoteCheckerController = require('./remote-checker')
 const taskRemoteCheckerController = require('./task-remote-checker')
 
+const CreateTaskRewardSchemeEvent = require('../events/create-task-reward-scheme')
+const CreateTaskValueEvent = require('../events/create-task-value')
+const UpdateTaskRewardSchemeEvent = require('../events/update-task-reward-scheme')
+
+const RevealTaskValueEvent = require('../events/reveal-task-value')
+const RevealTaskRewardSchemeEvent = require('../events/reveal-task-reward-scheme')
+
+const taskValueController = require('./task-value')
+const taskRewardSchemeController = require('./task-reward-scheme')
+
 const queue = require('../utils/queue')
 const request = require('request')
 
@@ -43,23 +55,48 @@ class TaskController {
   static create (options, callback) {
     const now = new Date()
     let task = null
+    let taskValue = null
+    let taskRewardScheme = null
     let taskCategories = null
     let taskRemoteChecker = null
 
-    transaction(Task, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker, function (Task, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker) {
+    transaction(Task, TaskValue, TaskRewardScheme, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker, function (Task, TaskValue, TaskRewardScheme, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker) {
       return Task
+      .query()
+      .insert({
+        title: options.title,
+        description: options.description,
+        createdAt: now,
+        updatedAt: now,
+        value: options.value,
+        state: TASK_INITIAL
+      })
+      .then(function (newTask) {
+        task = newTask
+        return TaskRewardScheme
         .query()
         .insert({
-          title: options.title,
-          description: options.description,
-          createdAt: now,
-          updatedAt: now,
-          value: options.value,
-          state: TASK_INITIAL
+          taskId: task.id,
+          maxValue: options.maxValue,
+          minValue: options.minValue,
+          subtractPoints: options.subtractPoints,
+          subtractHitCount: options.subtractHitCount,
+          created: now,
+          updated: now
         })
-        .then(function (newTask) {
-          task = newTask
-          return TaskCategory
+        .then(function (newTaskRewardScheme) {
+          taskRewardScheme = newTaskRewardScheme
+          return TaskValue
+          .query()
+          .insert({
+            taskId: task.id,
+            value: options.maxValue,
+            created: now,
+            updated: now
+          })
+          .then(function (newTaskValue) {
+            taskValue = newTaskValue
+            return TaskCategory
             .query()
             .insert(options.categories.map(function (categoryId) {
               return {
@@ -71,53 +108,57 @@ class TaskController {
             .then(function (newTaskCategories) {
               taskCategories = newTaskCategories
               return TaskHint
-                .query()
-                .insert(options.hints.map(function (hint) {
-                  return {
+              .query()
+              .insert(options.hints.map(function (hint) {
+                return {
+                  taskId: task.id,
+                  hint: hint,
+                  createdAt: now
+                }
+              }))
+              .then(function (newTaskHints) {
+                if (options.checkMethod === 'list') {
+                  return TaskAnswer
+                  .query()
+                  .insert(options.answers.map(function (entry) {
+                    return {
+                      taskId: task.id,
+                      answer: entry.answer,
+                      caseSensitive: entry.caseSensitive,
+                      createdAt: now
+                    }
+                  }))
+                } else if (options.checkMethod === 'remote') {
+                  return TaskRemoteChecker
+                  .query()
+                  .insert({
                     taskId: task.id,
-                    hint: hint,
+                    remoteCheckerId: options.remoteChecker,
                     createdAt: now
-                  }
-                }))
-                .then(function (newTaskHints) {
-                  if (options.checkMethod === 'list') {
-                    return TaskAnswer
-                      .query()
-                      .insert(options.answers.map(function (entry) {
-                        return {
-                          taskId: task.id,
-                          answer: entry.answer,
-                          caseSensitive: entry.caseSensitive,
-                          createdAt: now
-                        }
-                      }))
-                  } else if (options.checkMethod === 'remote') {
-                    return TaskRemoteChecker
-                      .query()
-                      .insert({
-                        taskId: task.id,
-                        remoteCheckerId: options.remoteChecker,
-                        createdAt: now
-                      })
-                      .then(function (newTaskRemoteChecker) {
-                        taskRemoteChecker = newTaskRemoteChecker
-                      })
-                  } else {
-                    throw new InternalError()
-                  }
-                })
+                  })
+                  .then(function (newTaskRemoteChecker) {
+                    taskRemoteChecker = newTaskRemoteChecker
+                  })
+                } else {
+                  throw new InternalError()
+                }
+              })
             })
+          })
         })
+      })
     })
     .then(function () {
-      callback(null, task)
       EventController.push(new CreateTaskEvent(task))
+      EventController.push(new CreateTaskValueEvent(taskValue))
+      EventController.push(new CreateTaskRewardSchemeEvent(taskRewardScheme))
       for (const taskCategory of taskCategories) {
         EventController.push(new CreateTaskCategoryEvent(task, taskCategory))
       }
       if (options.checkMethod === 'remote' && taskRemoteChecker) {
         EventController.push(new CreateTaskRemoteCheckerEvent(taskRemoteChecker))
       }
+      callback(null, task)
     })
     .catch(function (err) {
       if (TaskController.isTaskTitleUniqueConstraintViolation(err)) {
@@ -133,88 +174,107 @@ class TaskController {
 
   static update (task, options, callback) {
     let updatedTask = null
+    let updatedTaskRewardScheme = null
     let deletedTaskCategories = null
     let createdTaskCategories = null
     let hintNotification = false
 
-    transaction(Task, TaskCategory, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskAnswer, TaskHint) {
+    transaction(Task, TaskCategory, TaskRewardScheme, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskRewardScheme, TaskAnswer, TaskHint) {
       const now = new Date()
       return Task
+      .query()
+      .patchAndFetchById(task.id, {
+        description: options.description,
+        updatedAt: now
+      })
+      .then(function (updatedTaskObject) {
+        updatedTask = updatedTaskObject
+
+        return TaskRewardScheme
         .query()
-        .patchAndFetchById(task.id, {
-          description: options.description,
-          updatedAt: now
+        .update({
+          maxValue: options.maxValue,
+          minValue: options.minValue,
+          subtractPoints: options.subtractPoints,
+          subtractHitCount: options.subtractHitCount,
+          updated: now
         })
-        .then(function (updatedTaskObject) {
-          updatedTask = updatedTaskObject
+        .where('taskId', task.id)
+        .returning('*')
+        .then(function (updatedTaskRewardSchemes) {
+          if (updatedTaskRewardSchemes.length === 1) {
+            updatedTaskRewardScheme = updatedTaskRewardSchemes[0]
+          }
           return TaskCategory
-            .query()
-            .delete()
-            .whereNotIn('categoryId', options.categories)
-            .andWhere('taskId', task.id)
-            .returning('*')
-            .then(function (deletedTaskCategoryObjects) {
-              deletedTaskCategories = deletedTaskCategoryObjects
+          .query()
+          .delete()
+          .whereNotIn('categoryId', options.categories)
+          .andWhere('taskId', task.id)
+          .returning('*')
+          .then(function (deletedTaskCategoryObjects) {
+            deletedTaskCategories = deletedTaskCategoryObjects
 
-              const valuePlaceholderExpressions = _.times(options.categories.length, function () {
-                return '(?, ?, ?)'
-              })
-
-              const values = options.categories.map(function (categoryId) {
-                return [
-                  task.id,
-                  categoryId,
-                  now
-                ]
-              })
-
-              return TaskCategory
-                .raw(
-                  `INSERT INTO task_categories ("taskId", "categoryId", "createdAt")
-                  VALUES ${valuePlaceholderExpressions.join(', ')}
-                  ON CONFLICT ("taskId", "categoryId") DO NOTHING
-                  RETURNING *`,
-                  _.flatten(values)
-                )
-                .then(function (response) {
-                  createdTaskCategories = response.rows
-                  return TaskHint
-                    .query()
-                    .insert(options.hints.map(function (hint) {
-                      return {
-                        taskId: task.id,
-                        hint: hint,
-                        createdAt: now
-                      }
-                    }))
-                    .then(function (newTaskHints) {
-                      if (newTaskHints.length > 0) {
-                        hintNotification = true
-                      }
-                      if (options.checkMethod === 'list') {
-                        return TaskAnswer
-                          .query()
-                          .insert(options.answers.map(function (entry) {
-                            return {
-                              taskId: task.id,
-                              answer: entry.answer,
-                              caseSensitive: entry.caseSensitive,
-                              createdAt: now
-                            }
-                          }))
-                      }
-                    })
-                })
+            const valuePlaceholderExpressions = _.times(options.categories.length, function () {
+              return '(?, ?, ?)'
             })
+
+            const values = options.categories.map(function (categoryId) {
+              return [
+                task.id,
+                categoryId,
+                now
+              ]
+            })
+
+            return TaskCategory
+            .raw(
+              `INSERT INTO task_categories ("taskId", "categoryId", "createdAt")
+              VALUES ${valuePlaceholderExpressions.join(', ')}
+              ON CONFLICT ("taskId", "categoryId") DO NOTHING
+              RETURNING *`,
+              _.flatten(values)
+            )
+            .then(function (response) {
+              createdTaskCategories = response.rows
+              return TaskHint
+              .query()
+              .insert(options.hints.map(function (hint) {
+                return {
+                  taskId: task.id,
+                  hint: hint,
+                  createdAt: now
+                }
+              }))
+              .then(function (newTaskHints) {
+                if (newTaskHints.length > 0) {
+                  hintNotification = true
+                }
+                if (options.checkMethod === 'list') {
+                  return TaskAnswer
+                  .query()
+                  .insert(options.answers.map(function (entry) {
+                    return {
+                      taskId: task.id,
+                      answer: entry.answer,
+                      caseSensitive: entry.caseSensitive,
+                      createdAt: now
+                    }
+                  }))
+                }
+              })
+            })
+          })
         })
+      })
     })
     .then(function () {
-      callback(null, updatedTask)
       if (hintNotification) {
         queue('notifyTaskHint').add({ taskId: updatedTask.id })
       }
       EventController.push(new UpdateTaskEvent(updatedTask))
-
+      if (updatedTaskRewardScheme) {
+        EventController.push(new UpdateTaskRewardSchemeEvent(updatedTask, updatedTaskRewardScheme))
+      }
       for (const taskCategory of deletedTaskCategories) {
         EventController.push(new DeleteTaskCategoryEvent(updatedTask, taskCategory))
       }
@@ -222,6 +282,8 @@ class TaskController {
       for (const taskCategory of createdTaskCategories) {
         EventController.push(new CreateTaskCategoryEvent(updatedTask, taskCategory))
       }
+
+      callback(null, updatedTask)
     })
     .catch(function (err) {
       logger.error(err)
@@ -332,36 +394,60 @@ class TaskController {
     return `${prefix}://${fqdn}/tasks?action=show&taskId=${taskId}`
   }
 
+  static constructEventsOnOpen (task) {
+    return new Promise(function (resolve, reject) {
+      Promise
+      .all([
+        TaskCategoryController.fetchByTask(task.id),
+        taskValueController.getByTaskId(task.id),
+        taskRewardSchemeController.getByTaskId(task.id)
+      ])
+      .then(function (values) {
+        const eventList = []
+        eventList.push(new OpenTaskEvent(task))
+        _.each(values[0], function (taskCategory) {
+          eventList.push(new RevealTaskCategoryEvent(taskCategory))
+        })
+        eventList.push(new RevealTaskValueEvent(values[1]))
+        eventList.push(new RevealTaskRewardSchemeEvent(values[2]))
+        resolve(eventList)
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
+  }
+
   static open (task, callback) {
     if (task.isInitial()) {
       Task
-        .query()
-        .patchAndFetchById(task.id, {
-          state: TASK_OPENED,
-          updatedAt: new Date()
-        })
-        .then(function (updatedTask) {
-          callback(null)
-          EventController.push(new OpenTaskEvent(updatedTask))
-          TaskCategoryController.indexByTask(updatedTask.id, function (err, taskCategories) {
-            if (err) {
-              logger.error(err)
-              callback(new InternalError())
-            } else {
-              for (const taskCategory of taskCategories) {
-                EventController.push(new RevealTaskCategoryEvent(taskCategory))
-              }
-            }
+      .query()
+      .patchAndFetchById(task.id, {
+        state: TASK_OPENED,
+        updatedAt: new Date()
+      })
+      .then(function (updatedTask) {
+        TaskController.constructEventsOnOpen(updatedTask)
+        .then(function (eventList) {
+          _.each(eventList, function (eventObj) {
+            EventController.push(eventObj)
           })
 
           queue('notifyOpenTask').add({
             taskId: updatedTask.id
           })
+
+          callback(null)
         })
-        .catch(function (err) {
-          logger.error(err)
+        .catch(function (err2) {
+          logger.error(err2)
           callback(new InternalError())
         })
+      })
+      .catch(function (err) {
+        logger.error(err)
+        callback(new InternalError())
+      })
     } else {
       if (task.isOpened()) {
         callback(new TaskAlreadyOpenedError())

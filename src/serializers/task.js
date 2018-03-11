@@ -9,7 +9,6 @@ module.exports = function (task, options = {}) {
   const result = {
     id: task.id,
     title: task.title,
-    value: task.value,
     createdAt: task.createdAt.getTime(),
     updatedAt: task.updatedAt.getTime(),
     state: task.state

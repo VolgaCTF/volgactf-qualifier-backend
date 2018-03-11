@@ -22,6 +22,20 @@ const emailGenerator = new EmailGenerator()
 
 const messageController = require('./controllers/message')
 
+const recalculateController = require('./controllers/recalculate')
+
+queue('recalculateQueue').process(function (job, done) {
+  recalculateController
+  .recalculate()
+  .then(function () {
+    done()
+  })
+  .catch(function (err) {
+    logger.error(err)
+    throw err
+  })
+})
+
 queue('updateScoresQueue').process(function (job, done) {
   TeamScoreController.updateScores(function (err) {
     if (err) {
@@ -35,17 +49,6 @@ queue('updateScoresQueue').process(function (job, done) {
 
 queue('checkContestQueue').process(function (job, done) {
   ContestController.checkUpdate(function (err, contest) {
-    if (err) {
-      logger.error(err)
-      throw err
-    } else {
-      done()
-    }
-  })
-})
-
-queue('updateTeamScore').process(function (job, done) {
-  TeamScoreController.updateTeamScore(job.data.teamId, function (err) {
     if (err) {
       logger.error(err)
       throw err

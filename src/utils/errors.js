@@ -389,3 +389,17 @@ class TemplateNotRegisteredError extends BaseError {
   }
 }
 module.exports.TemplateNotRegisteredError = TemplateNotRegisteredError
+
+class TaskValueNotFoundError extends BaseError {
+  constructor () {
+    super('Task value not found!', 'TaskValueNotFoundError', 400)
+  }
+}
+module.exports.TaskValueNotFoundError = TaskValueNotFoundError
+
+class TaskRewardSchemeNotFoundError extends BaseError {
+  constructor () {
+    super('Task reward scheme not found!', 'TaskRewardSchemeNotFoundError', 400)
+  }
+}
+module.exports.TaskRewardSchemeNotFoundError = TaskRewardSchemeNotFoundError

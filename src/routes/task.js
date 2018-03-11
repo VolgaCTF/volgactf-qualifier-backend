@@ -313,7 +313,6 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
                   if (err) {
                     next(err)
                   } else {
-                    queue('updateTeamScore').add({ teamId: request.team.id })
                     response.json({ success: true })
                   }
                 })
@@ -436,18 +435,6 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
-  const sanitizeValue = function () {
-    const deferred = when_.defer()
-    const value = parseInt(params.value, 10)
-    if (is_.number(value)) {
-      deferred.resolve(value)
-    } else {
-      deferred.reject(new ValidationError())
-    }
-
-    return deferred.promise
-  }
-
   const sanitizeCategories = function () {
     const deferred = when_.defer()
     let categories = params.categories
@@ -520,27 +507,101 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
+  const sanitizeRewardScheme = function () {
+    const deferred = when_.defer()
+    deferred.resolve(params.rewardScheme)
+    return deferred.promise
+  }
+
+  const sanitizeMaxValue = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.reward.maxValue, 10)
+    if (is_.number(value)) {
+      deferred.resolve(value)
+    } else {
+      deferred.reject(new ValidationError())
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeMinValue = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.minValue, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeSubtractPoints = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.subtractPoints, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeSubtractHitCount = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.subtractHitCount, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
   when_
   .all([
     sanitizeTitle(),
     sanitizeDescription(),
     sanitizeHints(),
-    sanitizeValue(),
     sanitizeCategories(),
     sanitizeCheckMethod(),
     sanitizeAnswers(),
-    sanitizeRemoteChecker()
+    sanitizeRemoteChecker(),
+    sanitizeRewardScheme(),
+    sanitizeMaxValue(),
+    sanitizeMinValue(),
+    sanitizeSubtractPoints(),
+    sanitizeSubtractHitCount()
   ])
   .then(function (res) {
     callback(null, {
       title: res[0],
       description: res[1],
       hints: res[2],
-      value: res[3],
-      categories: res[4],
-      checkMethod: res[5],
-      answers: res[6],
-      remoteChecker: res[7]
+      categories: res[3],
+      checkMethod: res[4],
+      answers: res[5],
+      remoteChecker: res[6],
+      rewardScheme: res[7],
+      maxValue: res[8],
+      minValue: res[9],
+      subtractPoints: res[10],
+      subtractHitCount: res[11]
     })
   })
   .catch(function (err) {
@@ -558,15 +619,24 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         title: constraints.taskTitle,
         description: constraints.taskDescription,
         hints: constraints.taskHints,
-        value: constraints.taskValue,
         categories: constraints.taskCategories,
-        checkMethod: constraints.checkMethod
+        rewardScheme: constraints.taskRewardScheme,
+        checkMethod: constraints.taskCheckMethod
       }
 
       if (taskParams.checkMethod === 'list') {
         createConstraints['answers'] = constraints.taskAnswers
       } else if (taskParams.checkMethod === 'remote') {
         createConstraints['remoteChecker'] = constraints.remoteCheckerId
+      }
+
+      if (taskParams.rewardScheme === 'fixed') {
+        createConstraints['maxValue'] = constraints.taskValue
+      } else if (taskParams.rewardScheme === 'variable') {
+        createConstraints['maxValue'] = constraints.taskValue
+        createConstraints['minValue'] = constraints.taskValue
+        createConstraints['subtractPoints'] = constraints.taskSubtractPoints
+        createConstraints['subtractHitCount'] = constraints.taskSubtractHitCount
       }
 
       const validationResult = validator.validate(taskParams, createConstraints)
@@ -663,13 +733,84 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     return deferred.promise
   }
 
+  const sanitizeRewardScheme = function () {
+    const deferred = when_.defer()
+    deferred.resolve(params.rewardScheme)
+    return deferred.promise
+  }
+
+  const sanitizeMaxValue = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.reward.maxValue, 10)
+    if (is_.number(value)) {
+      deferred.resolve(value)
+    } else {
+      deferred.reject(new ValidationError())
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeMinValue = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.minValue, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeSubtractPoints = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.subtractPoints, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
+  const sanitizeSubtractHitCount = function () {
+    const deferred = when_.defer()
+    if (params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.subtractHitCount, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
   when_
   .all([
     sanitizeDescription(),
     sanitizeHints(),
     sanitizeCategories(),
     sanitizeCheckMethod(),
-    sanitizeAnswers()
+    sanitizeAnswers(),
+    sanitizeRewardScheme(),
+    sanitizeMaxValue(),
+    sanitizeMinValue(),
+    sanitizeSubtractPoints(),
+    sanitizeSubtractHitCount()
   ])
   .then(function (res) {
     callback(null, {
@@ -677,7 +818,12 @@ function sanitizeUpdateTaskParams (params, task, callback) {
       hints: res[1],
       categories: res[2],
       checkMethod: res[3],
-      answers: res[4]
+      answers: res[4],
+      rewardScheme: res[5],
+      maxValue: res[6],
+      minValue: res[7],
+      subtractPoints: res[8],
+      subtractHitCount: res[9]
     })
   })
   .catch(function (err) {
@@ -694,11 +840,21 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         description: constraints.taskDescription,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
-        checkMethod: constraints.checkMethod
+        rewardScheme: constraints.taskRewardScheme,
+        checkMethod: constraints.taskCheckMethod
       }
 
       if (taskParams.checkMethod === 'list') {
         updateConstraints['answers'] = constraints.taskExtraAnswers
+      }
+
+      if (taskParams.rewardScheme === 'fixed') {
+        updateConstraints['maxValue'] = constraints.taskValue
+      } else if (taskParams.rewardScheme === 'variable') {
+        updateConstraints['maxValue'] = constraints.taskValue
+        updateConstraints['minValue'] = constraints.taskValue
+        updateConstraints['subtractPoints'] = constraints.taskSubtractPoints
+        updateConstraints['subtractHitCount'] = constraints.taskSubtractHitCount
       }
 
       const validationResult = validator.validate(taskParams, updateConstraints)

@@ -19,7 +19,6 @@ class TemplateStore {
   resolveOne (templateId) {
     return new Promise((resolve, reject) => {
       if (!this.cache.hasOwnProperty(templateId)) {
-        logger.info(`Template "${templateId}" is not in cache`)
         if (!this.metadata.hasOwnProperty(templateId)) {
           reject(new TemplateNotRegisteredError(`Template "${templateId}" is not available!`))
         } else {
@@ -34,7 +33,6 @@ class TemplateStore {
           })
         }
       } else {
-        logger.info(`Template "${templateId}" is in cache`)
         resolve(this.cache[templateId])
       }
     })

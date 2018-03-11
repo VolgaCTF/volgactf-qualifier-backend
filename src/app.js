@@ -16,6 +16,9 @@ const teamScoreSerializer = require('./serializers/team-score')
 const countryController = require('./controllers/country')
 const countrySerializer = require('./serializers/country')
 
+const teamRankingController = require('./controllers/team-ranking')
+const teamRankingSerializer = require('./serializers/team-ranking')
+
 const { contestNotFinished, getContestTitle } = require('./middleware/contest')
 const constraints = require('./utils/constraints')
 const teamController = require('./controllers/team')
@@ -57,6 +60,12 @@ const teamTaskReviewSerializer = require('./serializers/team-task-review')
 const taskHintController = require('./controllers/task-hint')
 const taskHintSerializer = require('./serializers/task-hint')
 
+const taskValueController = require('./controllers/task-value')
+const taskValueSerializer = require('./serializers/task-value')
+
+const taskRewardSchemeController = require('./controllers/task-reward-scheme')
+const taskRewardSchemeSerializer = require('./serializers/task-reward-scheme')
+
 const taskParam = require('./params/task')
 
 const jsesc = require('jsesc')
@@ -71,9 +80,13 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_CONTEST_TIMER, TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
   TEMPLATE_POST_PARTIAL, TEMPLATE_POST_SIMPLIFIED_PARTIAL, TEMPLATE_CATEGORY_LIST, TEMPLATE_CATEGORY_PARTIAL,
   TEMPLATE_TEAM_PROFILE_PARTIAL, TEMPLATE_SCOREBOARD_TABLE, TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, TEMPLATE_TASK_CONTENT_PARTIAL,
-  TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL, TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL,
-  TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL, TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD, TEMPLATE_REVISE_TASK_STATUS_PARTIAL,
-  TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST, TEMPLATE_REMOTE_CHECKER_BLOCK
+  TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
+  TEMPLATE_CREATE_TASK_REWARD_SCHEME_PARTIAL, TEMPLATE_CREATE_TASK_CHECK_METHOD_PARTIAL,
+  TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL,
+  TEMPLATE_EDIT_TASK_REWARD_SCHEME_PARTIAL, TEMPLATE_EDIT_TASK_CHECK_METHOD_PARTIAL,
+  TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD,
+  TEMPLATE_REVISE_TASK_STATUS_PARTIAL, TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST,
+  TEMPLATE_REMOTE_CHECKER_BLOCK
 } = require('./constants/template')
 
 const app = express()
@@ -140,8 +153,12 @@ templateStore.register(TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, 'html/scoreboard-t
 templateStore.register(TEMPLATE_TASK_CONTENT_PARTIAL, 'html/task-content-partial.html')
 templateStore.register(TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, 'html/create-task-hint-textarea-partial.html')
 templateStore.register(TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL, 'html/create-task-answer-input-partial.html')
+templateStore.register(TEMPLATE_CREATE_TASK_REWARD_SCHEME_PARTIAL, 'html/create-task-reward-scheme-partial.html')
+templateStore.register(TEMPLATE_CREATE_TASK_CHECK_METHOD_PARTIAL, 'html/create-task-check-method-partial.html')
 templateStore.register(TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL, 'html/edit-task-hint-textarea-partial.html')
 templateStore.register(TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL, 'html/edit-task-answer-input-partial.html')
+templateStore.register(TEMPLATE_EDIT_TASK_REWARD_SCHEME_PARTIAL, 'html/edit-task-reward-scheme-partial.html')
+templateStore.register(TEMPLATE_EDIT_TASK_CHECK_METHOD_PARTIAL, 'html/edit-task-check-method-partial.html')
 templateStore.register(TEMPLATE_TASK_LIST, 'html/task-list.html')
 templateStore.register(TEMPLATE_TASK_CARD, 'html/task-card.html')
 templateStore.register(TEMPLATE_REVISE_TASK_STATUS_PARTIAL, 'html/revise-task-status-partial.html')
@@ -434,7 +451,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
     contestController.fetch(),
     countryController.fetch(),
     teamController.fetch(!request.scope.isSupervisor()),
-    teamScoreController.fetch()
+    teamRankingController.fetch()
   ]
 
   Promise
@@ -445,7 +462,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
     const contest = contestSerializer(values[2])
     const countries = _.map(values[3], countrySerializer)
     const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
-    const teamScores = _.map(values[5], teamScoreSerializer)
+    const teamRankings = _.map(values[5], teamRankingSerializer)
     const pageTemplate = templates[TEMPLATE_SCOREBOARD_PAGE]
     response.send(pageTemplate({
       _: _,
@@ -456,7 +473,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       contestTitle: request.contestTitle,
       countries: countries,
       teams: teams,
-      teamScores: teamScores,
+      teamRankings: teamRankings,
       detailed: request.query.hasOwnProperty('detailed'),
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE)
@@ -481,8 +498,12 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_TASK_CONTENT_PARTIAL,
       TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL,
       TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
+      TEMPLATE_CREATE_TASK_REWARD_SCHEME_PARTIAL,
+      TEMPLATE_CREATE_TASK_CHECK_METHOD_PARTIAL,
       TEMPLATE_EDIT_TASK_HINT_TEXTAREA_PARTIAL,
       TEMPLATE_EDIT_TASK_ANSWER_INPUT_PARTIAL,
+      TEMPLATE_EDIT_TASK_REWARD_SCHEME_PARTIAL,
+      TEMPLATE_EDIT_TASK_CHECK_METHOD_PARTIAL,
       TEMPLATE_TASK_LIST,
       TEMPLATE_TASK_CARD,
       TEMPLATE_REVISE_TASK_STATUS_PARTIAL,
@@ -492,7 +513,9 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     contestController.fetch(),
     categoryController.fetch(),
     taskController.fetch(request.scope.isSupervisor()),
-    taskCategoryController.fetch(request.scope.isSupervisor())
+    taskCategoryController.fetch(request.scope.isSupervisor()),
+    taskValueController.fetch(request.scope.isSupervisor()),
+    taskRewardSchemeController.fetch(request.scope.isSupervisor())
   ]
 
   if (request.scope.isTeam()) {
@@ -513,17 +536,19 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     const categories = _.map(values[3], categorySerializer)
     const taskPreviews = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[5], taskCategorySerializer)
+    const taskValues = _.map(values[6], taskValueSerializer)
+    const taskRewardSchemes = _.map(values[7], taskRewardSchemeSerializer)
 
     let teamTaskHits = []
     if (request.scope.isTeam()) {
-      teamTaskHits = _.map(values[6], teamTaskHitSerializer)
+      teamTaskHits = _.map(values[8], teamTaskHitSerializer)
     }
 
     let remoteCheckers = []
     let taskRemoteCheckers = []
     if (request.scope.isAdmin()) {
-      remoteCheckers = _.map(values[6], remoteCheckerSerializer)
-      taskRemoteCheckers = _.map(values[7], taskRemoteCheckerSerializer)
+      remoteCheckers = _.map(values[8], remoteCheckerSerializer)
+      taskRemoteCheckers = _.map(values[9], taskRemoteCheckerSerializer)
     }
     const pageTemplate = templates[TEMPLATE_TASKS_PAGE]
     response.send(pageTemplate({
@@ -536,6 +561,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       categories: categories,
       taskPreviews: taskPreviews,
       taskCategories: taskCategories,
+      taskValues: taskValues,
+      taskRewardSchemes: taskRewardSchemes,
       teamTaskHits: teamTaskHits,
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
