@@ -24,9 +24,7 @@ module.exports.TEMPLATE_ANALYTICS = 'analytics'
 module.exports.TEMPLATE_NAVBAR = 'navbar'
 module.exports.TEMPLATE_STREAM_STATE_PARTIAL = 'streamStatePartial'
 
-module.exports.TEMPLATE_STATUSBAR = 'statusbar'
 module.exports.TEMPLATE_CONTEST_STATE_PARTIAL = 'contestStatePartial'
-module.exports.TEMPLATE_CONTEST_TIMER = 'contestTimer'
 module.exports.TEMPLATE_CONTEST_SCORE = 'contestScore'
 
 module.exports.TEMPLATE_TEAM_LIST = 'teamList'

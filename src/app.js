@@ -74,8 +74,8 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_REMOTE_CHECKERS_PAGE, TEMPLATE_SUPERVISOR_SIGNIN_PAGE, TEMPLATE_TEAM_SIGNIN_PAGE, TEMPLATE_TEAM_RESTORE_PAGE,
   TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE, TEMPLATE_404_PAGE,
   TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
-  TEMPLATE_ANALYTICS, TEMPLATE_NAVBAR, TEMPLATE_STREAM_STATE_PARTIAL, TEMPLATE_STATUSBAR, TEMPLATE_CONTEST_STATE_PARTIAL,
-  TEMPLATE_CONTEST_TIMER, TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
+  TEMPLATE_ANALYTICS, TEMPLATE_NAVBAR, TEMPLATE_STREAM_STATE_PARTIAL, TEMPLATE_CONTEST_STATE_PARTIAL,
+  TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
   TEMPLATE_POST_PARTIAL, TEMPLATE_POST_SIMPLIFIED_PARTIAL, TEMPLATE_CATEGORY_LIST, TEMPLATE_CATEGORY_PARTIAL,
   TEMPLATE_TEAM_PROFILE_PARTIAL, TEMPLATE_SCOREBOARD_TABLE, TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL, TEMPLATE_TASK_CONTENT_PARTIAL,
   TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL, TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
@@ -129,9 +129,7 @@ templateStore.register(TEMPLATE_ANALYTICS, 'html/analytics.html')
 templateStore.register(TEMPLATE_NAVBAR, 'html/navbar-view.html')
 templateStore.register(TEMPLATE_STREAM_STATE_PARTIAL, 'html/stream-state-partial.html')
 
-templateStore.register(TEMPLATE_STATUSBAR, 'html/statusbar-view.html')
 templateStore.register(TEMPLATE_CONTEST_STATE_PARTIAL, 'html/contest-state-partial.html')
-templateStore.register(TEMPLATE_CONTEST_TIMER, 'html/contest-timer.html')
 
 templateStore.register(TEMPLATE_TEAM_LIST, 'html/team-list.html')
 templateStore.register(TEMPLATE_TEAM_CARD, 'html/team-card.html')
@@ -172,9 +170,7 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
-      TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
     identityController.fetch(request),
     contestController.fetch()
@@ -211,9 +207,7 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_TEAM_LIST,
       TEMPLATE_TEAM_CARD
     ]),
@@ -258,9 +252,7 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_POST_LIST,
       TEMPLATE_POST_PARTIAL,
       TEMPLATE_POST_SIMPLIFIED_PARTIAL
@@ -309,9 +301,7 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_CATEGORY_LIST,
       TEMPLATE_CATEGORY_PARTIAL
     ]),
@@ -355,9 +345,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_TEAM_PROFILE_PARTIAL
     ]),
     identityController.fetch(request),
@@ -444,9 +432,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_SCOREBOARD_TABLE,
       TEMPLATE_SCOREBOARD_TABLE_ROW_PARTIAL
     ]),
@@ -495,9 +481,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_TASK_CONTENT_PARTIAL,
       TEMPLATE_CREATE_TASK_HINT_TEXTAREA_PARTIAL,
       TEMPLATE_CREATE_TASK_ANSWER_INPUT_PARTIAL,
@@ -593,9 +577,7 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
-      TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
     identityController.fetch(request),
     contestController.fetch(),
@@ -648,9 +630,7 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
-      TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
     identityController.fetch(request),
     contestController.fetch()
@@ -692,9 +672,7 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
-      TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
     identityController.fetch(request),
     contestController.fetch()
@@ -735,9 +713,7 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
-      TEMPLATE_STATUSBAR,
       TEMPLATE_CONTEST_STATE_PARTIAL,
-      TEMPLATE_CONTEST_TIMER,
       TEMPLATE_REMOTE_CHECKER_LIST,
       TEMPLATE_REMOTE_CHECKER_BLOCK
     ]),
@@ -777,9 +753,11 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
       TEMPLATE_SUPERVISOR_SIGNIN_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -787,11 +765,14 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_SUPERVISOR_SIGNIN_PAGE]
     response.send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
+      contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE)
@@ -809,9 +790,11 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
       TEMPLATE_TEAM_SIGNIN_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -819,11 +802,14 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_TEAM_SIGNIN_PAGE]
     response.send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
+      contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE)
@@ -841,9 +827,11 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
       TEMPLATE_TEAM_RESTORE_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -851,11 +839,14 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_TEAM_RESTORE_PAGE]
     response.send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
+      contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE)
@@ -873,7 +864,8 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
       TEMPLATE_TEAM_SIGNUP_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
     identityController.fetch(request),
     contestController.fetch(),
@@ -890,6 +882,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
     const pageTemplate = templates[TEMPLATE_TEAM_SIGNUP_PAGE]
     response.send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
       contest: contest,
@@ -937,9 +930,11 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
       TEMPLATE_TEAM_VERIFY_EMAIL_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -947,13 +942,16 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_TEAM_VERIFY_EMAIL_PAGE]
     verifyPromise(request)
     .then(function () {
       response.send(pageTemplate({
         _: _,
+        moment: moment,
         jsesc: jsesc,
         identity: identity,
+        contest: contest,
         contestTitle: request.contestTitle,
         success: true,
         text: 'Email verified. Thank you!',
@@ -964,8 +962,10 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
     .catch(function (err2) {
       response.send(pageTemplate({
         _: _,
+        moment: moment,
         jsesc: jsesc,
         identity: identity,
+        contest: contest,
         contestTitle: request.contestTitle,
         success: false,
         text: err2.message,
@@ -986,9 +986,11 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
       TEMPLATE_TEAM_RESET_PASSWORD_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -996,11 +998,14 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_TEAM_RESET_PASSWORD_PAGE]
     response.send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
+      contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE)
@@ -1043,9 +1048,11 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
       TEMPLATE_404_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
-      TEMPLATE_STREAM_STATE_PARTIAL
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
     ]),
-    identityController.fetch(request)
+    identityController.fetch(request),
+    contestController.fetch()
   ]
 
   Promise
@@ -1053,11 +1060,14 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
   .then(function (values) {
     const templates = values[0]
     const identity = values[1]
+    const contest = contestSerializer(values[2])
     const pageTemplate = templates[TEMPLATE_404_PAGE]
     response.status(404).send(pageTemplate({
       _: _,
+      moment: moment,
       jsesc: jsesc,
       identity: identity,
+      contest: contest,
       contestTitle: request.contestTitle,
       urlPath: request.path,
       google_tag_id: googleTagId,
@@ -1079,9 +1089,11 @@ app.use(function (err, request, response, next) {
           TEMPLATE_500_PAGE,
           TEMPLATE_ANALYTICS,
           TEMPLATE_NAVBAR,
-          TEMPLATE_STREAM_STATE_PARTIAL
+          TEMPLATE_STREAM_STATE_PARTIAL,
+          TEMPLATE_CONTEST_STATE_PARTIAL
         ]),
-        identityController.fetch(request)
+        identityController.fetch(request),
+        contestController.fetch()
       ]
 
       Promise
@@ -1089,11 +1101,14 @@ app.use(function (err, request, response, next) {
       .then(function (values) {
         const templates = values[0]
         const identity = values[1]
+        const contest = contestSerializer(values[2])
         const pageTemplate = templates[TEMPLATE_500_PAGE]
         response.status(500).send(pageTemplate({
           _: _,
+          moment: moment,
           jsesc: jsesc,
           identity: identity,
+          contest: contest,
           contestTitle: request.contestTitle,
           google_tag_id: googleTagId,
           templates: _.omit(templates, TEMPLATE_500_PAGE)
