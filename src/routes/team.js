@@ -27,8 +27,6 @@ const { getTeam } = require('../middleware/team')
 const EventController = require('../controllers/event')
 const LogoutTeamEvent = require('../events/logout-team')
 const { SCOPE_TEAM } = require('../utils/constants')
-const TeamScoreController = require('../controllers/team-score')
-const teamScoreSerializer = require('../serializers/team-score')
 const TeamTaskHitController = require('../controllers/team-task-hit')
 const teamTaskHitSerializer = require('../serializers/team-task-hit')
 const TeamTaskReviewController = require('../controllers/team-task-review')
@@ -48,16 +46,6 @@ router.get('/index', detectScope, function (request, response, next) {
       response.json(_.map(teams, serializer))
     }
   }, !request.scope.isSupervisor())
-})
-
-router.get('/score/index', function (request, response, next) {
-  TeamScoreController.index(function (err, teamScores) {
-    if (err) {
-      next(err)
-    } else {
-      response.json(_.map(teamScores, teamScoreSerializer))
-    }
-  })
 })
 
 router.param('teamId', teamParam.id)

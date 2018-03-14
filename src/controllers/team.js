@@ -1,7 +1,7 @@
 const Team = require('../models/team')
 const TeamResetPasswordToken = require('../models/team-reset-password-token')
 const TeamEmailVerificationToken = require('../models/team-email-verification-token')
-const TeamScore = require('../models/team-score')
+const TeamRanking = require('../models/team-ranking')
 const { getPasswordHash, checkPassword } = require('../utils/security')
 const queue = require('../utils/queue')
 const token = require('../utils/token')
@@ -250,7 +250,7 @@ class TeamController {
         } else {
           let updatedTeam = null
 
-          transaction(Team, TeamScore, function (Team, TeamScore) {
+          transaction(Team, TeamRanking, function (Team, TeamRanking) {
             return Team
               .query()
               .patchAndFetchById(team.id, {
@@ -258,7 +258,7 @@ class TeamController {
               })
               .then(function (updatedTeamObject) {
                 updatedTeam = updatedTeamObject
-                return TeamScore
+                return TeamRanking
                   .query()
                   .delete()
                   .where('teamId', team.id)

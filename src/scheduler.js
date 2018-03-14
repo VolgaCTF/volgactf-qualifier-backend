@@ -9,12 +9,6 @@ class Scheduler {
       this.recalculateInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_RECALCULATE_INTERVAL, 10)
     }
 
-    // this.updateScoresIntervalId = null
-    // this.updateScoresInterval = 60
-    // if (process.env.THEMIS_QUALS_SCHEDULER_UPDATE_SCORES_INTERVAL) {
-    //   this.updateScoresInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_UPDATE_SCORES_INTERVAL, 10)
-    // }
-
     this.checkContestIntervalId = null
     this.checkContestInterval = 10
     if (process.env.THEMIS_QUALS_SCHEDULER_CHECK_CONTEST_INTERVAL) {
@@ -23,12 +17,6 @@ class Scheduler {
   }
 
   run () {
-    // logger.info('Setting updateScoresInterval')
-    // this.updateScoresIntervalId = setInterval(function () {
-    //   logger.info('Triggered updateScoresInterval')
-    //   queue('updateScoresQueue').add()
-    // }, this.updateScoresInterval * 1000)
-
     logger.info('Setting checkContestInterval')
     this.checkContestIntervalId = setInterval(function () {
       logger.info('Triggered checkContestInterval')
@@ -43,11 +31,6 @@ class Scheduler {
   }
 
   shutdown () {
-    // if (this.updateScoresIntervalId) {
-    //   logger.info('Cancelling updateScoresInterval')
-    //   clearInterval(this.updateScoresIntervalId)
-    // }
-
     if (this.checkContestIntervalId) {
       logger.info('Cancelling checkContestInterval')
       clearInterval(this.checkContestIntervalId)

@@ -68,7 +68,6 @@ class TaskController {
         description: options.description,
         createdAt: now,
         updatedAt: now,
-        value: options.value,
         state: TASK_INITIAL
       })
       .then(function (newTask) {

@@ -8,7 +8,6 @@ const { getTeam } = require('../middleware/team')
 
 const constraints = require('../utils/constraints')
 const logger = require('../utils/logger')
-const queue = require('../utils/queue')
 
 const bodyParser = require('body-parser')
 const Validator = require('validator.js')

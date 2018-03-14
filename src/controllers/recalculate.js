@@ -175,9 +175,9 @@ class RecalculateController {
 
   compareTeamScores (a, b) {
     if (a.score > b.score) {
-        return -1
+      return -1
     } else if (a.score < b.score) {
-        return 1
+      return 1
     } else {
       if (a.lastUpdated && b.lastUpdated) {
         if (a.lastUpdated < b.lastUpdated) {

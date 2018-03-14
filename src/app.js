@@ -11,8 +11,6 @@ const moment = require('moment')
 const identityController = require('./controllers/identity')
 const contestController = require('./controllers/contest')
 const contestSerializer = require('./serializers/contest')
-const teamScoreController = require('./controllers/team-score')
-const teamScoreSerializer = require('./serializers/team-score')
 const countryController = require('./controllers/country')
 const countrySerializer = require('./serializers/country')
 
@@ -369,10 +367,12 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
   ]
 
   if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
-    promises.push(taskController.fetch(request.scope.isSupervisor()))
+    promises.push(taskController.fetch(false))
+    promises.push(taskValueController.fetch(false))
     promises.push(teamTaskHitController.fetchForTeam(request.teamId))
     promises.push(teamTaskReviewController.fetchByTeam(request.teamId))
   } else {
+    promises.push(voidPromise())
     promises.push(voidPromise())
     promises.push(teamTaskHitController.fetchForTeam(request.teamId))
     promises.push(teamTaskReviewController.fetchByTeam(request.teamId))
@@ -389,23 +389,25 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     const countries = _.map(values[4], countrySerializer)
 
     let tasks = []
+    let taskValues = []
     let teamTaskHits = []
     let teamTaskHitStatistics = null
     let teamTaskReviews = []
     let teamTaskReviewStatistics = null
     if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
       tasks = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
-      teamTaskHits = _.map(values[6], teamTaskHitSerializer)
-      teamTaskReviews = _.map(values[7], teamTaskReviewSerializer)
+      taskValues = _.map(values[6], taskValueSerializer)
+      teamTaskHits = _.map(values[7], teamTaskHitSerializer)
+      teamTaskReviews = _.map(values[8], teamTaskReviewSerializer)
     } else {
       teamTaskHitStatistics = {
-        count: values[6].length
+        count: values[7].length
       }
       teamTaskReviewStatistics = {
-        count: values[7].length,
-        averageRating: _.reduce(values[7], function (sum, review) {
+        count: values[8].length,
+        averageRating: _.reduce(values[8], function (sum, review) {
           return sum + review.rating
-        }, 0) / (values[7].length === 0 ? 1 : values[7].length)
+        }, 0) / (values[8].length === 0 ? 1 : values[8].length)
       }
     }
 
@@ -420,6 +422,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       team: team,
       countries: countries,
       tasks: tasks,
+      taskValues: taskValues,
       teamTaskHits: teamTaskHits,
       teamTaskHitStatistics: teamTaskHitStatistics,
       teamTaskReviews: teamTaskReviews,

@@ -3,13 +3,13 @@ const logger = require('./utils/logger')
 const gm = require('gm')
 const path = require('path')
 const token = require('./utils/token')
-const TeamScoreController = require('./controllers/team-score')
 const MailgunController = require('./controllers/mail/mailgun')
 const TeamController = require('./controllers/team')
 const EventController = require('./controllers/event')
 const UpdateTeamLogoEvent = require('./events/update-team-logo')
 
 const TaskController = require('./controllers/task')
+const TaskValueController = require('./controllers/task-value')
 const PostController = require('./controllers/post')
 const TwitterController = require('./controllers/twitter')
 const TelegramController = require('./controllers/telegram')
@@ -33,17 +33,6 @@ queue('recalculateQueue').process(function (job, done) {
   .catch(function (err) {
     logger.error(err)
     throw err
-  })
-})
-
-queue('updateScoresQueue').process(function (job, done) {
-  TeamScoreController.updateScores(function (err) {
-    if (err) {
-      logger.error(err)
-      throw err
-    } else {
-      done()
-    }
   })
 })
 
@@ -259,46 +248,53 @@ queue('notifyFinishCompetition').process(function (job, done) {
 })
 
 queue('notifyOpenTask').process(function (job, done) {
-  TaskController.get(job.data.taskId, function (err, task) {
-    if (err) {
-      done(err)
-    } else {
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
-        PostController.create(
-          `New task — ${task.title}`,
-          `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
-          function (err, post) {
-            if (err) {
-              logger.error(err)
-            }
-          }
-        )
-      }
+  Promise
+  .all([
+    TaskController.fetchOne(job.data.taskId),
+    TaskValueController.getByTaskId(job.data.taskId)
+  ])
+  .then(function (values) {
+    const task = values[0]
+    const taskValue = values[1]
 
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
-        TwitterController.post(
-          `🚩 New task — ${task.title} — worth ${task.value} pts! ${TaskController.getTaskLink(task.id)}`,
-          function (err) {
-            if (err) {
-              logger.error(err)
-            }
+    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+      PostController.create(
+        `New task — ${task.title}`,
+        `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`,
+        function (err, post) {
+          if (err) {
+            logger.error(err)
           }
-        )
-      }
-
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-        TelegramController.post(
-          `🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${task.value} points!`,
-          function (err) {
-            if (err) {
-              logger.error(err)
-            }
-          }
-        )
-      }
-
-      done()
+        }
+      )
     }
+
+    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+      TwitterController.post(
+        `🚩 New task — ${task.title} — worth ${taskValue.value} pts! ${TaskController.getTaskLink(task.id)}`,
+        function (err) {
+          if (err) {
+            logger.error(err)
+          }
+        }
+      )
+    }
+
+    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+      TelegramController.post(
+        `🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`,
+        function (err) {
+          if (err) {
+            logger.error(err)
+          }
+        }
+      )
+    }
+
+    done()
+  })
+  .catch(function (err) {
+    done(err)
   })
 })
 
@@ -307,7 +303,7 @@ queue('notifyTaskHint').process(function (job, done) {
     if (err) {
       done(err)
     } else {
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
         PostController.create(
           `Task ${task.title} — new hint!`,
           `:triangular_flag_on_post: Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
@@ -319,7 +315,7 @@ queue('notifyTaskHint').process(function (job, done) {
         )
       }
 
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
         TwitterController.post(
           `🚩 Task ${task.title} — new hint! ${TaskController.getTaskLink(task.id)}`,
           function (err) {
@@ -330,7 +326,7 @@ queue('notifyTaskHint').process(function (job, done) {
         )
       }
 
-      if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
         TelegramController.post(
           `🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
           function (err) {
