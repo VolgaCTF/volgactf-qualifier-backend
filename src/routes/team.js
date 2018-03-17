@@ -32,6 +32,9 @@ const teamTaskHitSerializer = require('../serializers/team-task-hit')
 const TeamTaskReviewController = require('../controllers/team-task-review')
 const teamTaskReviewSerializer = require('../serializers/team-task-review')
 
+const teamRankingController = require('../controllers/team-ranking')
+const teamRankingSerializer = require('../serializers/team-ranking')
+
 const emailAddressValidator = require('../controllers/email-address-validator')
 
 const router = express.Router()
@@ -46,6 +49,18 @@ router.get('/index', detectScope, function (request, response, next) {
       response.json(_.map(teams, serializer))
     }
   }, !request.scope.isSupervisor())
+})
+
+router.get('/ranking/index', detectScope, function (request, response, next) {
+  teamRankingController
+  .fetch()
+  .then(function (teamRankings) {
+    response.json(teamRankings.map(teamRankingSerializer))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(new InternalError())
+  })
 })
 
 router.param('teamId', teamParam.id)
