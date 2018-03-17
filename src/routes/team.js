@@ -299,13 +299,17 @@ const multidataParser = busboy({
   limits: {
     fieldSize: 200,
     fields: 10,
-    fileSize: 1 * 1024 * 1024,
+    fileSize: parseInt(process.env.THEMIS_QUALS_POST_MAX_TEAM_LOGO_SIZE, 10) * 1024 * 1024,
     files: 1
   }
 })
 
 router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinished, multidataParser, function (request, response, next) {
-  const teamLogo = tmp.fileSync()
+  const teamLogo = tmp.fileSync({
+    mode: 0o666,
+    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    keep: true
+  })
 
   request.busboy.on('file', function (fieldName, file, filename, encoding, mimetype) {
     file.on('data', function (data) {
@@ -341,7 +345,11 @@ router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinis
 
 router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, multidataParser, function (request, response, next) {
   const teamInfo = {}
-  const teamLogo = tmp.fileSync()
+  const teamLogo = tmp.fileSync({
+    mode: 0o666,
+    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    keep: true
+  })
 
   request.busboy.on('file', function (fieldName, file, filename, encoding, mimetype) {
     file.on('data', function (data) {

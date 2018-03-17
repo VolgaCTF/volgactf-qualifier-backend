@@ -5,6 +5,7 @@ const sub = require('markdown-it-sub')
 const sup = require('markdown-it-sup')
 const ins = require('markdown-it-ins')
 const mark = require('markdown-it-mark')
+const linkAttributes = require('markdown-it-link-attributes')
 
 class MarkdownRenderer {
   constructor () {
@@ -15,6 +16,12 @@ class MarkdownRenderer {
       .use(ins)
       .use(sup)
       .use(sub)
+      .use(linkAttributes, {
+        attrs: {
+          target: '_blank',
+          rel: 'noopener'
+        }
+      })
 
     this.md.renderer.rules.emoji = (token, idx) => {
       return twemoji.parse(token[idx].content)

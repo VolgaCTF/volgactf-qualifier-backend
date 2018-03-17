@@ -172,5 +172,11 @@ module.exports = {
   taskSubtractHitCount: [
     new Assert().Required(),
     new Assert().Range(1, 500)
+  ],
+  uploadName: [
+    new Assert().Required(),
+    new Assert().Callback(is_.string),
+    new Assert().Length({ min: 2, max: 64 }),
+    new Assert().Regexp('^[\\d\\w\\.-]+(\\.[\\d\\w]+)?$', 'g')
   ]
 }

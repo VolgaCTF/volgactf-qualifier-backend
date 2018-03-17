@@ -403,3 +403,17 @@ class TaskRewardSchemeNotFoundError extends BaseError {
   }
 }
 module.exports.TaskRewardSchemeNotFoundError = TaskRewardSchemeNotFoundError
+
+class DuplicateTaskFilenameError extends BaseError {
+  constructor () {
+    super('Task filename should be unique!', 'DuplicateTaskFilenameError', 400)
+  }
+}
+module.exports.DuplicateTaskFilenameError = DuplicateTaskFilenameError
+
+class TaskFileNotFoundError extends BaseError {
+  constructor () {
+    super('Task file not found!', 'TaskFileNotFoundError', 400)
+  }
+}
+module.exports.TaskFileNotFoundError = TaskFileNotFoundError

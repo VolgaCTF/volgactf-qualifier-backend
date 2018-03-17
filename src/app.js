@@ -84,7 +84,8 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_EDIT_TASK_REWARD_SCHEME_PARTIAL, TEMPLATE_EDIT_TASK_CHECK_METHOD_PARTIAL,
   TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD,
   TEMPLATE_REVISE_TASK_STATUS_PARTIAL, TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST,
-  TEMPLATE_REMOTE_CHECKER_BLOCK
+  TEMPLATE_REMOTE_CHECKER_BLOCK, TEMPLATE_TASK_FILE_LIST, TEMPLATE_TASK_FILE_PARTIAL,
+  TEMPLATE_TASK_FILE_LIST_COMPACT, TEMPLATE_TASK_FILE_PARTIAL_COMPACT
 } = require('./constants/template')
 
 const app = express()
@@ -159,7 +160,10 @@ templateStore.register(TEMPLATE_TASK_LIST, 'html/task-list.html')
 templateStore.register(TEMPLATE_TASK_CARD, 'html/task-card.html')
 templateStore.register(TEMPLATE_REVISE_TASK_STATUS_PARTIAL, 'html/revise-task-status-partial.html')
 templateStore.register(TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, 'html/submit-task-status-partial.html')
-
+templateStore.register(TEMPLATE_TASK_FILE_LIST, 'html/task-file-list.html')
+templateStore.register(TEMPLATE_TASK_FILE_PARTIAL, 'html/task-file-partial.html')
+templateStore.register(TEMPLATE_TASK_FILE_LIST_COMPACT, 'html/task-file-list-compact.html')
+templateStore.register(TEMPLATE_TASK_FILE_PARTIAL_COMPACT, 'html/task-file-partial-compact.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKER_LIST, 'html/remote-checker-list.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKER_BLOCK, 'html/remote-checker-block.html')
 
@@ -494,7 +498,11 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       TEMPLATE_TASK_LIST,
       TEMPLATE_TASK_CARD,
       TEMPLATE_REVISE_TASK_STATUS_PARTIAL,
-      TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL
+      TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL,
+      TEMPLATE_TASK_FILE_LIST,
+      TEMPLATE_TASK_FILE_PARTIAL,
+      TEMPLATE_TASK_FILE_LIST_COMPACT,
+      TEMPLATE_TASK_FILE_PARTIAL_COMPACT
     ]),
     identityController.fetch(request),
     contestController.fetch(),

@@ -5,6 +5,7 @@ const { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, nee
 const { getState, contestIsStarted, contestIsFinished, contestNotFinished } = require('../middleware/contest')
 const { getTask } = require('../middleware/task')
 const { getTeam } = require('../middleware/team')
+const { getTaskFile } = require('../middleware/task-file')
 
 const constraints = require('../utils/constraints')
 const logger = require('../utils/logger')
@@ -41,7 +42,16 @@ const LimitController = require('../controllers/limit')
 const when_ = require('when')
 const teamTaskHitSerializer = require('../serializers/team-task-hit')
 
+const busboy = require('connect-busboy')
+const tmp = require('tmp')
+const fs = require('fs')
+const taskFileController = require('../controllers/task-file')
+const taskFileSerializer = require('../serializers/task-file')
+
+const taskFileParam = require('../params/task-file')
+
 router.param('taskId', taskParam.id)
+router.param('taskFileId', taskFileParam.id)
 
 router.get('/index', detectScope, function (request, response, next) {
   TaskController.index(function (err, tasks) {
@@ -871,6 +881,85 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
       }
     }
   })
+})
+
+const multidataParser = busboy({
+  immediate: true,
+  limits: {
+    fieldSize: 256,
+    fields: 10,
+    fileSize: parseInt(process.env.THEMIS_QUALS_POST_MAX_TASK_FILE_SIZE, 10) * 1024 * 1024,
+    files: 1
+  }
+})
+
+router.get('/:taskId/file/index', needsToBeAuthorizedAdmin, getTask, function (request, response, next) {
+  taskFileController
+  .fetchByTask(request.task.id)
+  .then(function (taskFiles) {
+    response.json(taskFiles.map(taskFileSerializer))
+  })
+  .catch(function (err) {
+    next(err)
+  })
+})
+
+router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, multidataParser, function (request, response, next) {
+  const taskFileMetadata = {}
+  const taskFile = tmp.fileSync({
+    mode: 0o666,
+    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    keep: true
+  })
+
+  request.busboy.on('file', function (fieldName, file, filename, encoding, mimetype) {
+    file.on('data', function (data) {
+      if (fieldName === 'uploadFile') {
+        fs.appendFileSync(taskFile.name, data)
+      }
+    })
+  })
+
+  request.busboy.on('field', function (fieldName, val, fieldNameTruncated, valTruncated) {
+    if (fieldName === 'uploadName') {
+      taskFileMetadata[fieldName] = val
+    }
+  })
+
+  request.busboy.on('finish', function () {
+    const uploadConstraints = {
+      uploadName: constraints.uploadName
+    }
+
+    const validationResult = validator.validate(taskFileMetadata, uploadConstraints)
+    if (validationResult === true) {
+      taskFileController
+      .create(request.task.id, taskFile.name, taskFileMetadata.uploadName)
+      .then(function (taskFile) {
+        response.json({ success: true })
+      })
+      .catch(function (err) {
+        next(err)
+      })
+    } else {
+      next(new ValidationError())
+    }
+  })
+})
+
+router.post('/:taskId/file/:taskFileId/delete', needsToBeAuthorizedAdmin, getTaskFile, function (request, response, next) {
+  if (request.taskFile.taskId !== request.taskId) {
+    next(new ValidationError())
+  } else {
+    taskFileController
+    .delete(request.taskFile)
+    .then(function () {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
+  }
 })
 
 module.exports = router
