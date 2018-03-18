@@ -9,6 +9,7 @@ module.exports.TEMPLATE_TASK_STATISTICS_PAGE = 'taskStatisticsPage'
 module.exports.TEMPLATE_ABOUT_PAGE = 'aboutPage'
 module.exports.TEMPLATE_CONTEST_PAGE = 'contestPage'
 module.exports.TEMPLATE_REMOTE_CHECKERS_PAGE = 'remoteCheckersPage'
+module.exports.TEMPLATE_EVENTS_PAGE = 'events'
 module.exports.TEMPLATE_SUPERVISOR_SIGNIN_PAGE = 'supervisorSigninPage'
 module.exports.TEMPLATE_TEAM_SIGNIN_PAGE = 'teamSigninPage'
 module.exports.TEMPLATE_TEAM_RESTORE_PAGE = 'teamRestorePage'
@@ -62,3 +63,56 @@ module.exports.TEMPLATE_TASK_FILE_PARTIAL_COMPACT = 'taskFilePartialCompact'
 
 module.exports.TEMPLATE_REMOTE_CHECKER_LIST = 'remoteCheckerList'
 module.exports.TEMPLATE_REMOTE_CHECKER_BLOCK = 'remoteCheckerBlock'
+
+module.exports.TEMPLATE_EVENT_LOG_UNKNOWN = 'eventLogUnknown'
+
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_CONTEST = 'eventLogUpdateContest'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_CATEGORY = 'eventLogCreateCategory'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_CATEGORY = 'eventLogUpdateCategory'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_CATEGORY = 'eventLogDeleteCategory'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_POST = 'eventLogCreatePost'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_POST = 'eventLogUpdatePost'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_POST = 'eventLogDeletePost'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_SUPERVISOR = 'eventLogCreateSupervisor'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_SUPERVISOR = 'eventLogDeleteSupervisor'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_SUPERVISOR_PASSWORD = 'eventLogUpdateSupervisorPassword'
+module.exports.TEMPLATE_EVENT_LOG_LOGIN_SUPERVISOR = 'eventLogLoginSupervisor'
+module.exports.TEMPLATE_EVENT_LOG_LOGOUT_SUPERVISOR = 'eventLogLogoutSupervisor'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_REMOTE_CHECKER = 'eventLogCreateRemoteChecker'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_REMOTE_CHECKER = 'eventLogUpdateRemoteChecker'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_REMOTE_CHECKER = 'eventLogDeleteRemoteChecker'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TEAM = 'eventLogCreateTeam'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL = 'eventLogUpdateTeamEmail'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE = 'eventLogUpdateTeamProfile'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD = 'eventLogUpdateTeamPassword'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO = 'eventLogUpdateTeamLogo'
+module.exports.TEMPLATE_EVENT_LOG_QUALIFY_TEAM = 'eventLogQualifyTeam'
+module.exports.TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM = 'eventLogDisqualifyTeam'
+module.exports.TEMPLATE_EVENT_LOG_LOGIN_TEAM = 'eventLogLoginTeam'
+module.exports.TEMPLATE_EVENT_LOG_LOGOUT_TEAM = 'eventLogLogoutTeam'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK = 'eventLogCreateTask'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TASK = 'eventLogUpdateTask'
+module.exports.TEMPLATE_EVENT_LOG_OPEN_TASK = 'eventLogOpenTask'
+module.exports.TEMPLATE_EVENT_LOG_CLOSE_TASK = 'eventLogCloseTask'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY = 'eventLogCreateTaskCategory'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY = 'eventLogDeleteTaskCategory'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE = 'eventLogCreateTaskValue'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE = 'eventLogUpdateTaskValue'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME = 'eventLogCreateTaskRewardScheme'
+module.exports.TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME = 'eventLogUpdateTaskRewardScheme'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT = 'eventLogCreateTeamTaskHitAttempt'
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT = 'eventLogCreateTeamTaskHit'
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW = 'eventLogCreateTeamTaskReview'
+
+module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK_FILE = 'eventLogCreateTaskFile'
+module.exports.TEMPLATE_EVENT_LOG_DELETE_TASK_FILE = 'eventLogDeleteTaskFile'

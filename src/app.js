@@ -85,7 +85,24 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD,
   TEMPLATE_REVISE_TASK_STATUS_PARTIAL, TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST,
   TEMPLATE_REMOTE_CHECKER_BLOCK, TEMPLATE_TASK_FILE_LIST, TEMPLATE_TASK_FILE_PARTIAL,
-  TEMPLATE_TASK_FILE_LIST_COMPACT, TEMPLATE_TASK_FILE_PARTIAL_COMPACT
+  TEMPLATE_TASK_FILE_LIST_COMPACT, TEMPLATE_TASK_FILE_PARTIAL_COMPACT, TEMPLATE_EVENTS_PAGE,
+  TEMPLATE_EVENT_LOG_UNKNOWN, TEMPLATE_EVENT_LOG_UPDATE_CONTEST,
+  TEMPLATE_EVENT_LOG_CREATE_CATEGORY, TEMPLATE_EVENT_LOG_UPDATE_CATEGORY, TEMPLATE_EVENT_LOG_DELETE_CATEGORY,
+  TEMPLATE_EVENT_LOG_CREATE_POST, TEMPLATE_EVENT_LOG_UPDATE_POST, TEMPLATE_EVENT_LOG_DELETE_POST,
+  TEMPLATE_EVENT_LOG_CREATE_SUPERVISOR, TEMPLATE_EVENT_LOG_DELETE_SUPERVISOR,
+  TEMPLATE_EVENT_LOG_UPDATE_SUPERVISOR_PASSWORD, TEMPLATE_EVENT_LOG_LOGIN_SUPERVISOR,
+  TEMPLATE_EVENT_LOG_LOGOUT_SUPERVISOR, TEMPLATE_EVENT_LOG_CREATE_REMOTE_CHECKER,
+  TEMPLATE_EVENT_LOG_UPDATE_REMOTE_CHECKER, TEMPLATE_EVENT_LOG_DELETE_REMOTE_CHECKER,
+  TEMPLATE_EVENT_LOG_CREATE_TEAM, TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL, TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE,
+  TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD, TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO, TEMPLATE_EVENT_LOG_QUALIFY_TEAM,
+  TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM, TEMPLATE_EVENT_LOG_LOGIN_TEAM, TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
+  TEMPLATE_EVENT_LOG_CREATE_TASK, TEMPLATE_EVENT_LOG_UPDATE_TASK, TEMPLATE_EVENT_LOG_OPEN_TASK, TEMPLATE_EVENT_LOG_CLOSE_TASK,
+  TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY, TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY,
+  TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE, TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE,
+  TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME, TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME,
+  TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT, TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT,
+  TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW, TEMPLATE_EVENT_LOG_CREATE_TASK_FILE,
+  TEMPLATE_EVENT_LOG_DELETE_TASK_FILE
 } = require('./constants/template')
 
 const app = express()
@@ -115,6 +132,7 @@ templateStore.register(TEMPLATE_TASK_STATISTICS_PAGE, 'html/task/statistics.html
 templateStore.register(TEMPLATE_ABOUT_PAGE, 'html/about.html')
 templateStore.register(TEMPLATE_CONTEST_PAGE, 'html/contest.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKERS_PAGE, 'html/remote_checkers.html')
+templateStore.register(TEMPLATE_EVENTS_PAGE, 'html/events.html')
 templateStore.register(TEMPLATE_SUPERVISOR_SIGNIN_PAGE, 'html/supervisor/signin.html')
 templateStore.register(TEMPLATE_TEAM_SIGNIN_PAGE, 'html/team/signin.html')
 templateStore.register(TEMPLATE_TEAM_RESTORE_PAGE, 'html/team/restore.html')
@@ -166,6 +184,58 @@ templateStore.register(TEMPLATE_TASK_FILE_LIST_COMPACT, 'html/task-file-list-com
 templateStore.register(TEMPLATE_TASK_FILE_PARTIAL_COMPACT, 'html/task-file-partial-compact.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKER_LIST, 'html/remote-checker-list.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKER_BLOCK, 'html/remote-checker-block.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_UNKNOWN, 'html/event-log/unknown.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_CONTEST, 'html/event-log/update-contest.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_CATEGORY, 'html/event-log/create-category.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_CATEGORY, 'html/event-log/update-category.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_CATEGORY, 'html/event-log/delete-category.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_POST, 'html/event-log/create-post.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_POST, 'html/event-log/update-post.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_POST, 'html/event-log/delete-post.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_SUPERVISOR, 'html/event-log/create-supervisor.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_SUPERVISOR, 'html/event-log/delete-supervisor.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_SUPERVISOR_PASSWORD, 'html/event-log/update-supervisor-password.html')
+templateStore.register(TEMPLATE_EVENT_LOG_LOGIN_SUPERVISOR, 'html/event-log/login-supervisor.html')
+templateStore.register(TEMPLATE_EVENT_LOG_LOGOUT_SUPERVISOR, 'html/event-log/logout-supervisor.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_REMOTE_CHECKER, 'html/event-log/create-remote-checker.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_REMOTE_CHECKER, 'html/event-log/update-remote-checker.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_REMOTE_CHECKER, 'html/event-log/delete-remote-checker.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TEAM, 'html/event-log/create-team.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL, 'html/event-log/update-team-email.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE, 'html/event-log/update-team-profile.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD, 'html/event-log/update-team-password.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO, 'html/event-log/update-team-logo.html')
+templateStore.register(TEMPLATE_EVENT_LOG_QUALIFY_TEAM, 'html/event-log/qualify-team.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM, 'html/event-log/disqualify-team.html')
+templateStore.register(TEMPLATE_EVENT_LOG_LOGIN_TEAM, 'html/event-log/login-team.html')
+templateStore.register(TEMPLATE_EVENT_LOG_LOGOUT_TEAM, 'html/event-log/logout-team.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK, 'html/event-log/create-task.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TASK, 'html/event-log/update-task.html')
+templateStore.register(TEMPLATE_EVENT_LOG_OPEN_TASK, 'html/event-log/open-task.html')
+templateStore.register(TEMPLATE_EVENT_LOG_CLOSE_TASK, 'html/event-log/close-task.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY, 'html/event-log/create-task-category.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY, 'html/event-log/delete-task-category.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE, 'html/event-log/create-task-value.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE, 'html/event-log/update-task-value.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME, 'html/event-log/create-task-reward-scheme.html')
+templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME, 'html/event-log/update-task-reward-scheme.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT, 'html/event-log/create-team-task-hit-attempt.html')
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT, 'html/event-log/create-team-task-hit.html')
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW, 'html/event-log/create-team-task-review.html')
+
+templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK_FILE, 'html/event-log/create-task-file.html')
+templateStore.register(TEMPLATE_EVENT_LOG_DELETE_TASK_FILE, 'html/event-log/delete-task-file.html')
 
 app.get('/', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const promises = [
@@ -747,6 +817,112 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       remoteCheckers: remoteCheckers,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE)
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.get('/events', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  if (request.scope.isTeam() || request.scope.isGuest()) {
+    next()
+    return
+  }
+
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_EVENTS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_EVENT_LOG_UNKNOWN,
+      TEMPLATE_EVENT_LOG_UPDATE_CONTEST,
+      TEMPLATE_EVENT_LOG_CREATE_CATEGORY,
+      TEMPLATE_EVENT_LOG_UPDATE_CATEGORY,
+      TEMPLATE_EVENT_LOG_DELETE_CATEGORY,
+      TEMPLATE_EVENT_LOG_CREATE_POST,
+      TEMPLATE_EVENT_LOG_UPDATE_POST,
+      TEMPLATE_EVENT_LOG_DELETE_POST,
+      TEMPLATE_EVENT_LOG_CREATE_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_DELETE_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_UPDATE_SUPERVISOR_PASSWORD,
+      TEMPLATE_EVENT_LOG_LOGIN_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_LOGOUT_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_CREATE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_UPDATE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_DELETE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO,
+      TEMPLATE_EVENT_LOG_QUALIFY_TEAM,
+      TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM,
+      TEMPLATE_EVENT_LOG_LOGIN_TEAM,
+      TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
+      TEMPLATE_EVENT_LOG_CREATE_TASK,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK,
+      TEMPLATE_EVENT_LOG_OPEN_TASK,
+      TEMPLATE_EVENT_LOG_CLOSE_TASK,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY,
+      TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_FILE,
+      TEMPLATE_EVENT_LOG_DELETE_TASK_FILE
+    ]),
+    identityController.fetch(request),
+    contestController.fetch(),
+    categoryController.fetch(),
+    postController.fetch(),
+    taskController.fetch(true),
+    taskCategoryController.fetch(true),
+    taskValueController.fetch(true),
+    taskRewardSchemeController.fetch(true),
+    teamController.fetch(false),
+    remoteCheckerController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const categories = _.map(values[3], categorySerializer)
+    const posts = _.map(values[4], postSerializer)
+    const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+    const taskCategories = _.map(values[6], taskCategorySerializer)
+    const taskValues = _.map(values[7], taskValueSerializer)
+    const taskRewardSchemes = _.map(values[8], taskRewardSchemeSerializer)
+    const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
+    const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
+
+    const pageTemplate = templates[TEMPLATE_EVENTS_PAGE]
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      categories: categories,
+      posts: posts,
+      taskPreviews: taskPreviews,
+      taskCategories: taskCategories,
+      taskValues: taskValues,
+      taskRewardSchemes: taskRewardSchemes,
+      teams: teams,
+      remoteCheckers: remoteCheckers,
+      contestTitle: request.contestTitle,
+      google_tag_id: googleTagId,
+      templates: _.omit(templates, TEMPLATE_EVENTS_PAGE)
     }))
   })
   .catch(function (err) {

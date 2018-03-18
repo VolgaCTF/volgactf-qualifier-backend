@@ -176,18 +176,29 @@ class TaskController {
     let updatedTaskRewardScheme = null
     let deletedTaskCategories = null
     let createdTaskCategories = null
-    let hintNotification = false
+
+    let flagNewDescription = false
+    let flagNewHints = false
+    let flagNewAnswers = false
 
     transaction(Task, TaskCategory, TaskRewardScheme, TaskAnswer, TaskHint, function (Task, TaskCategory, TaskRewardScheme, TaskAnswer, TaskHint) {
       const now = new Date()
       return Task
       .query()
-      .patchAndFetchById(task.id, {
+      .update({
         description: options.description,
         updatedAt: now
       })
-      .then(function (updatedTaskObject) {
-        updatedTask = updatedTaskObject
+      .where('id', task.id)
+      .andWhere('description', '!=', options.description)
+      .returning('*')
+      .then(function (updatedTasks) {
+        if (updatedTasks.length === 1) {
+          updatedTask = updatedTasks[0]
+          flagNewDescription = true
+        } else {
+          updatedTask = task
+        }
 
         return TaskRewardScheme
         .query()
@@ -198,7 +209,14 @@ class TaskController {
           subtractHitCount: options.subtractHitCount,
           updated: now
         })
-        .where('taskId', task.id)
+        .where('taskId', updatedTask.id)
+        .andWhere(function () {
+          this
+          .where('minValue', '!=', options.minValue)
+          .orWhere('maxValue', '!=', options.maxValue)
+          .orWhere('subtractPoints', '!=', options.subtractPoints)
+          .orWhere('subtractHitCount', '!=', options.subtractHitCount)
+        })
         .returning('*')
         .then(function (updatedTaskRewardSchemes) {
           if (updatedTaskRewardSchemes.length === 1) {
@@ -208,7 +226,7 @@ class TaskController {
           .query()
           .delete()
           .whereNotIn('categoryId', options.categories)
-          .andWhere('taskId', task.id)
+          .andWhere('taskId', updatedTask.id)
           .returning('*')
           .then(function (deletedTaskCategoryObjects) {
             deletedTaskCategories = deletedTaskCategoryObjects
@@ -219,7 +237,7 @@ class TaskController {
 
             const values = options.categories.map(function (categoryId) {
               return [
-                task.id,
+                updatedTask.id,
                 categoryId,
                 now
               ]
@@ -239,26 +257,31 @@ class TaskController {
               .query()
               .insert(options.hints.map(function (hint) {
                 return {
-                  taskId: task.id,
+                  taskId: updatedTask.id,
                   hint: hint,
                   createdAt: now
                 }
               }))
               .then(function (newTaskHints) {
                 if (newTaskHints.length > 0) {
-                  hintNotification = true
+                  flagNewHints = true
                 }
                 if (options.checkMethod === 'list') {
                   return TaskAnswer
                   .query()
                   .insert(options.answers.map(function (entry) {
                     return {
-                      taskId: task.id,
+                      taskId: updatedTask.id,
                       answer: entry.answer,
                       caseSensitive: entry.caseSensitive,
                       createdAt: now
                     }
                   }))
+                  .then(function (newTaskAnswers) {
+                    if (newTaskAnswers.length > 0) {
+                      flagNewAnswers = true
+                    }
+                  })
                 }
               })
             })
@@ -267,13 +290,17 @@ class TaskController {
       })
     })
     .then(function () {
-      if (hintNotification) {
+      if (flagNewHints) {
         queue('notifyTaskHint').add({ taskId: updatedTask.id })
       }
-      EventController.push(new UpdateTaskEvent(updatedTask))
+      if (flagNewDescription || flagNewHints || flagNewAnswers) {
+        EventController.push(new UpdateTaskEvent(updatedTask))
+      }
+
       if (updatedTaskRewardScheme) {
         EventController.push(new UpdateTaskRewardSchemeEvent(updatedTask, updatedTaskRewardScheme))
       }
+
       for (const taskCategory of deletedTaskCategories) {
         EventController.push(new DeleteTaskCategoryEvent(updatedTask, taskCategory))
       }
