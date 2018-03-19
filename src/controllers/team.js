@@ -284,6 +284,18 @@ class TeamController {
     })
   }
 
+  static updateEmail2 (id, email) {
+    return new Promise(function (resolve, reject) {
+      TeamController.updateEmail(id, email, function (err) {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }
+
   static updateEmail (id, email, callback) {
     TeamController.get(id, function (err, team) {
       if (err) {

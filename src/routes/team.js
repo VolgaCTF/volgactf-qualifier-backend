@@ -246,12 +246,16 @@ router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFini
     throw new ValidationError()
   }
 
-  TeamController.updateEmail(request.session.identityID, request.body.email, function (err) {
-    if (err) {
-      next(err)
-    } else {
-      response.json({ success: true })
-    }
+  emailAddressValidator
+  .validate(request.body.email)
+  .then(function () {
+    return TeamController.updateEmail2(request.session.identityID, request.body.email)
+  })
+  .then(function () {
+    response.json({ success: true })
+  })
+  .catch(function (err) {
+    next(err)
   })
 })
 
