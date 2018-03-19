@@ -178,5 +178,9 @@ module.exports = {
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 64 }),
     new Assert().Regexp('^[\\d\\w\\.-]+(\\.[\\d\\w]+)?$', 'g')
+  ],
+  supervisorRights: [
+    new Assert().Required(),
+    new Assert().Choice(['manager', 'admin'])
   ]
 }

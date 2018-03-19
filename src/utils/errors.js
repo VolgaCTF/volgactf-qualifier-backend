@@ -417,3 +417,17 @@ class TaskFileNotFoundError extends BaseError {
   }
 }
 module.exports.TaskFileNotFoundError = TaskFileNotFoundError
+
+class SupervisorInvitationLimitError extends BaseError {
+  constructor () {
+    super('Too many supervisor invitations!', 'SupervisorInvitationLimitError', 400)
+  }
+}
+module.exports.SupervisorInvitationLimitError = SupervisorInvitationLimitError
+
+class InvalidCreateSupervisorURLError extends BaseError {
+  constructor () {
+    super('URL is invalid or has expired!', 'InvalidCreateSupervisorURLError', 400)
+  }
+}
+module.exports.InvalidCreateSupervisorURLError = InvalidCreateSupervisorURLError

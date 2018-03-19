@@ -1,9 +1,7 @@
 const _ = require('underscore')
 const async = require('async')
 const { transaction } = require('objection')
-
-const logger = require('../utils/logger')
-
+// const logger = require('../utils/logger')
 const EventController = require('./event')
 
 const Task = require('../models/task')
@@ -290,18 +288,12 @@ class RecalculateController {
             })
           }
         })
-        logger.info('STEP 1')
-        logger.info(entries)
         return this.calculateTeamScores(entries)
       })
       .then((entries) => {
-        logger.info('STEP 2')
-        logger.info(entries)
         return this.sortTeamScores(entries)
       })
       .then((entries) => {
-        logger.info('STEP 3')
-        logger.info(entries)
         return transaction(TeamRanking, (TeamRanking) => {
           return this.saveTeamRankings(entries, TeamRanking)
         })
@@ -326,7 +318,6 @@ class RecalculateController {
         return this.updateTeamRankings()
       })
       .then((entries) => {
-        logger.info(entries)
         return TeamRanking.query()
       })
       .then((teamRankings) => {

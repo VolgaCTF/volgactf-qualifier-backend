@@ -72,8 +72,9 @@ const templateStore = require('./utils/template-store')
 const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_CATEGORIES_PAGE, TEMPLATE_TEAM_PROFILE_PAGE,
   TEMPLATE_SCOREBOARD_PAGE, TEMPLATE_TASKS_PAGE, TEMPLATE_TASK_STATISTICS_PAGE, TEMPLATE_ABOUT_PAGE, TEMPLATE_CONTEST_PAGE,
   TEMPLATE_REMOTE_CHECKERS_PAGE, TEMPLATE_SUPERVISOR_SIGNIN_PAGE, TEMPLATE_TEAM_SIGNIN_PAGE, TEMPLATE_TEAM_RESTORE_PAGE,
-  TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE, TEMPLATE_404_PAGE,
-  TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
+  TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE,
+  TEMPLATE_SUPERVISORS_PAGE, TEMPLATE_SUPERVISOR_CREATE_PAGE,
+  TEMPLATE_404_PAGE, TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
   TEMPLATE_ANALYTICS, TEMPLATE_NAVBAR, TEMPLATE_STREAM_STATE_PARTIAL, TEMPLATE_CONTEST_STATE_PARTIAL,
   TEMPLATE_TEAM_LIST, TEMPLATE_TEAM_CARD, TEMPLATE_POST_LIST,
   TEMPLATE_POST_PARTIAL, TEMPLATE_POST_SIMPLIFIED_PARTIAL, TEMPLATE_CATEGORY_LIST, TEMPLATE_CATEGORY_PARTIAL,
@@ -139,6 +140,8 @@ templateStore.register(TEMPLATE_TEAM_RESTORE_PAGE, 'html/team/restore.html')
 templateStore.register(TEMPLATE_TEAM_SIGNUP_PAGE, 'html/team/signup.html')
 templateStore.register(TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, 'html/team/verify-email.html')
 templateStore.register(TEMPLATE_TEAM_RESET_PASSWORD_PAGE, 'html/team/reset-password.html')
+templateStore.register(TEMPLATE_SUPERVISORS_PAGE, 'html/supervisors.html')
+templateStore.register(TEMPLATE_SUPERVISOR_CREATE_PAGE, 'html/supervisor/create.html')
 templateStore.register(TEMPLATE_404_PAGE, 'html/404.html')
 templateStore.register(TEMPLATE_500_PAGE, 'html/500.html')
 templateStore.register(TEMPLATE_ROBOTS_PAGE, 'html/robots.html')
@@ -779,6 +782,47 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
   })
 })
 
+app.get('/supervisors', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  if (!request.scope.isAdmin()) {
+    next()
+    return
+  }
+
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_SUPERVISORS_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
+    ]),
+    identityController.fetch(request),
+    contestController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const pageTemplate = templates[TEMPLATE_SUPERVISORS_PAGE]
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      google_tag_id: googleTagId,
+      templates: _.omit(templates, TEMPLATE_SUPERVISORS_PAGE)
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
 app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (request, response, next) {
   if (request.scope.isTeam() || request.scope.isGuest()) {
     next()
@@ -960,6 +1004,43 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE)
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.get('/supervisor/create', detectScope, issueToken, getContestTitle, function (request, response, next) {
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_SUPERVISOR_CREATE_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL
+    ]),
+    identityController.fetch(request),
+    contestController.fetch()
+  ]
+
+  Promise
+  .all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const pageTemplate = templates[TEMPLATE_SUPERVISOR_CREATE_PAGE]
+    response.send(pageTemplate({
+      _: _,
+      moment: moment,
+      jsesc: jsesc,
+      identity: identity,
+      contest: contest,
+      contestTitle: request.contestTitle,
+      google_tag_id: googleTagId,
+      templates: _.omit(templates, TEMPLATE_SUPERVISOR_CREATE_PAGE)
     }))
   })
   .catch(function (err) {

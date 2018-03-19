@@ -1,4 +1,5 @@
 const Supervisor = require('../models/supervisor')
+const SupervisorInvitation = require('../models/supervisor-invitation')
 const { getPasswordHash, checkPassword } = require('../utils/security')
 const { InvalidSupervisorCredentialsError, InternalError, SupervisorNotFoundError, SupervisorUsernameTakenError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
@@ -9,9 +10,63 @@ const CreateSupervisorEvent = require('../events/create-supervisor')
 const DeleteSupervisorEvent = require('../events/delete-supervisor')
 const UpdateSupervisorPasswordEvent = require('../events/update-supervisor-password')
 
+const supervisorInvitationController = require('./supervisor-invitation')
+const { transaction } = require('objection')
+
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
     return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
+  }
+
+  static createFromInvitation (code, username, password) {
+    return new Promise(function (resolve, reject) {
+      let newSupervisor = null
+      supervisorInvitationController
+      .find(code)
+      .then(function (supervisorInvitation) {
+        getPasswordHash(password, function (err, hash) {
+          if (err) {
+            logger.error(err)
+            reject(new InternalError())
+          } else {
+            transaction(Supervisor, SupervisorInvitation, function (Supervisor, SupervisorInvitation) {
+              return Supervisor
+              .query()
+              .insert({
+                username: username,
+                passwordHash: hash,
+                rights: supervisorInvitation.rights
+              })
+              .then(function (supervisor) {
+                newSupervisor = supervisor
+                return SupervisorInvitation
+                .query()
+                .patchAndFetchById(supervisorInvitation.id, {
+                  used: true
+                })
+              })
+            })
+            .then(function () {
+              if (newSupervisor) {
+                EventController.push(new CreateSupervisorEvent(newSupervisor))
+              }
+              resolve(newSupervisor)
+            })
+            .catch(function (err) {
+              if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
+                reject(new SupervisorUsernameTakenError())
+              } else {
+                logger.error(err)
+                reject(new InternalError())
+              }
+            })
+          }
+        })
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
   }
 
   static create (options, callback) {

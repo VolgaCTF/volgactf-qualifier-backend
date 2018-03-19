@@ -31,7 +31,10 @@ class EmailGenerator {
           `http://${customizerHost}:${customizerPort}/mail/welcome/html`,
           `http://${customizerHost}:${customizerPort}/mail/restore/subject`,
           `http://${customizerHost}:${customizerPort}/mail/restore/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/restore/html`
+          `http://${customizerHost}:${customizerPort}/mail/restore/html`,
+          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/subject`,
+          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/plain`,
+          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/html`
         ], fetchFunc, (err, results) => {
           if (err) {
             reject(err)
@@ -46,6 +49,11 @@ class EmailGenerator {
               subject: results[3],
               plain: results[4],
               html: results[5]
+            },
+            inviteSupervisor: {
+              subject: results[6],
+              plain: results[7],
+              html: results[8]
             }
           }
           this.loaded = true
@@ -72,6 +80,17 @@ class EmailGenerator {
 
     return {
       subject: this.templates['restore']['subject'],
+      plain: plainMessage,
+      html: htmlMessage
+    }
+  }
+
+  getInviteSupervisorEmail (params) {
+    let plainMessage = mustache.render(this.templates['inviteSupervisor']['plain'], params)
+    let htmlMessage = mustache.render(this.templates['inviteSupervisor']['html'], params)
+
+    return {
+      subject: this.templates['inviteSupervisor']['subject'],
       plain: plainMessage,
       html: htmlMessage
     }

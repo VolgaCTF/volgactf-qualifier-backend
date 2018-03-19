@@ -70,93 +70,101 @@ queue('createLogoQueue').process(function (job, done) {
 
 queue('sendEmailQueue').process(function (job, done) {
   emailGenerator
-    .init()
-    .then(function () {
-      let secureConnection = false
-      if (process.env.THEMIS_QUALS_SECURE) {
-        secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+  .init()
+  .then(function () {
+    let secureConnection = false
+    if (process.env.THEMIS_QUALS_SECURE) {
+      secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+    }
+    let message = null
+    if (job.data.message === 'welcome') {
+      message = emailGenerator.getWelcomeEmail({
+        name: job.data.name,
+        domain: process.env.THEMIS_QUALS_FQDN,
+        secure: secureConnection,
+        team: token.encode(job.data.email),
+        code: token.encode(job.data.token)
+      })
+    } else if (job.data.message === 'restore') {
+      message = emailGenerator.getRestoreEmail({
+        name: job.data.name,
+        domain: process.env.THEMIS_QUALS_FQDN,
+        secure: secureConnection,
+        team: token.encode(job.data.email),
+        code: token.encode(job.data.token)
+      })
+    } else if (job.data.message === 'invite_supervisor') {
+      message = emailGenerator.getInviteSupervisorEmail({
+        domain: process.env.THEMIS_QUALS_FQDN,
+        secure: secureConnection,
+        rights: job.data.rights,
+        code: token.encode(job.data.token)
+      })
+    }
+
+    if (!message) {
+      done()
+      return
+    }
+
+    messageController.create({
+      message: message,
+      recipientEmail: job.data.email,
+      recipientName: job.data.name,
+      teamId: job.data.teamId,
+      supervisorId: job.data.supervisorId
+    })
+    .then(function (messageEntity) {
+      let senderController = null
+      const emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
+
+      if (emailTransport === 'mailgun') {
+        senderController = MailgunController
       }
 
-      let message = null
-      if (job.data.message === 'welcome') {
-        message = emailGenerator.getWelcomeEmail({
-          name: job.data.name,
-          domain: process.env.THEMIS_QUALS_FQDN,
-          secure: secureConnection,
-          team: token.encode(job.data.email),
-          code: token.encode(job.data.token)
-        })
-      } else if (job.data.message === 'restore') {
-        message = emailGenerator.getRestoreEmail({
-          name: job.data.name,
-          domain: process.env.THEMIS_QUALS_FQDN,
-          secure: secureConnection,
-          team: token.encode(job.data.email),
-          code: token.encode(job.data.token)
-        })
-      }
-
-      if (!message) {
+      if (!senderController) {
         done()
         return
       }
 
-      messageController.create({
-        message: message,
-        recipientEmail: job.data.email,
-        recipientName: job.data.name,
-        teamId: job.data.teamId,
-        supervisorId: job.data.supervisorId
-      })
-      .then(function (messageEntity) {
-        let senderController = null
-        const emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
-
-        if (emailTransport === 'mailgun') {
-          senderController = MailgunController
-        }
-
-        if (!senderController) {
-          done()
-          return
-        }
-
-        senderController
-          .sendEmail(message, job.data.email, job.data.name, messageEntity.id)
-          .then(function (response) {
-            messageController.update({
-              id: messageEntity.id,
-              status: response
-            })
-            .then(function () {
-              done()
-            })
-            .catch(function (err3) {
-              logger.error(err3)
-              done()
-            })
+      senderController
+        .sendEmail(message, job.data.email, job.data.name, messageEntity.id)
+        .then(function (response) {
+          messageController.update({
+            id: messageEntity.id,
+            status: response
           })
-          .catch(function (err4) {
-            messageController.update({
-              id: messageEntity.id,
-              status: err4
-            })
-            .then(function () {
-              done(err4)
-            })
-            .catch(function (err5) {
-              logger.error(err5)
-              done(err4)
-            })
+          .then(function () {
+            done()
           })
-      })
-      .catch(function (err2) {
-        done(err2)
-      })
+          .catch(function (err3) {
+            logger.error(err3)
+            done()
+          })
+        })
+        .catch(function (err4) {
+          messageController.update({
+            id: messageEntity.id,
+            status: err4
+          })
+          .then(function () {
+            done(err4)
+          })
+          .catch(function (err5) {
+            logger.error(err5)
+            done(err4)
+          })
+        })
     })
-    .catch(function (err) {
-      done(err)
+    .catch(function (err2) {
+      logger.error(err2)
+      done(err2)
     })
+  })
+  .catch(function (err) {
+    logger.error(err)
+    done(err)
+  })
 })
 
 function getTasksLink () {
