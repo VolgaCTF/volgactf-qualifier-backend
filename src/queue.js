@@ -12,7 +12,7 @@ const TaskController = require('./controllers/task')
 const TaskValueController = require('./controllers/task-value')
 const PostController = require('./controllers/post')
 const TwitterController = require('./controllers/twitter')
-const TelegramController = require('./controllers/telegram')
+const telegramController = require('./controllers/telegram')
 
 const ContestController = require('./controllers/contest')
 
@@ -198,14 +198,13 @@ queue('notifyStartCompetition').process(function (job, done) {
   }
 
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-    TelegramController.post(
-      `🚩 Competition has begun! Check out [tasks](${getTasksLink()}) and good luck!`,
-      function (err) {
-        if (err) {
-          logger.error(err)
-        }
-      }
-    )
+    telegramController
+    .post(`🚩 Competition has begun! Check out [tasks](${getTasksLink()}) and good luck!`)
+    .then(function () {
+    })
+    .catch(function (err) {
+      logger.error(err)
+    })
   }
 
   done()
@@ -242,14 +241,13 @@ queue('notifyFinishCompetition').process(function (job, done) {
   }
 
   if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-    TelegramController.post(
-      `🚩 Competition has ended! Check out the final [scoreboard](${getScoreboardLink()})!`,
-      function (err) {
-        if (err) {
-          logger.error(err)
-        }
-      }
-    )
+    telegramController
+    .post(`🚩 Competition has ended! Check out the final [scoreboard](${getScoreboardLink()})!`)
+    .then(function () {
+    })
+    .catch(function (err) {
+      logger.error(err)
+    })
   }
 
   done()
@@ -289,14 +287,13 @@ queue('notifyOpenTask').process(function (job, done) {
     }
 
     if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-      TelegramController.post(
-        `🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`,
-        function (err) {
-          if (err) {
-            logger.error(err)
-          }
-        }
-      )
+      telegramController
+      .post(`🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`)
+      .then(function () {
+      })
+      .catch(function (err) {
+        logger.error(err)
+      })
     }
 
     done()
@@ -335,14 +332,13 @@ queue('notifyTaskHint').process(function (job, done) {
       }
 
       if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
-        TelegramController.post(
-          `🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
-          function (err) {
-            if (err) {
-              logger.error(err)
-            }
-          }
-        )
+        telegramController
+        .post(`🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`)
+        .then(function () {
+        })
+        .catch(function (err) {
+          logger.error(err)
+        })
       }
 
       done()
