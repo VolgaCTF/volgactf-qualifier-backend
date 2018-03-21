@@ -11,7 +11,8 @@ module.exports = function (task, options = {}) {
     title: task.title,
     createdAt: task.createdAt.getTime(),
     updatedAt: task.updatedAt.getTime(),
-    state: task.state
+    state: task.state,
+    openAt: _.isNull(task.openAt) ? null : task.openAt.getTime()
   }
 
   if (!options.preview) {

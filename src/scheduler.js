@@ -14,6 +14,12 @@ class Scheduler {
     if (process.env.THEMIS_QUALS_SCHEDULER_CHECK_CONTEST_INTERVAL) {
       this.checkContestInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_CHECK_CONTEST_INTERVAL, 10)
     }
+
+    this.checkTasksIntervalId = null
+    this.checkTasksInterval = 20
+    if (process.env.THEMIS_QUALS_SCHEDULER_CHECK_TASKS_INTERVAL) {
+      this.checkTasksInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_CHECK_TASKS_INTERVAL, 10)
+    }
   }
 
   run () {
@@ -28,6 +34,12 @@ class Scheduler {
       logger.info('Triggered recalculateInterval')
       queue('recalculateQueue').add()
     }, this.recalculateInterval * 1000)
+
+    logger.info('Setting checkTasksInterval')
+    this.checkTasksIntervalId = setInterval(function () {
+      logger.info('Triggered checkTasksInterval')
+      queue('checkTasksQueue').add()
+    }, this.checkTasksInterval * 1000)
   }
 
   shutdown () {
@@ -39,6 +51,11 @@ class Scheduler {
     if (this.recalculateIntervalId) {
       logger.info('Cancelling recalculateInterval')
       clearInterval(this.recalculateIntervalId)
+    }
+
+    if (this.checkTasksIntervalId) {
+      logger.info('Cancelling checkTasksInterval')
+      clearInterval(this.checkTasksIntervalId)
     }
   }
 }

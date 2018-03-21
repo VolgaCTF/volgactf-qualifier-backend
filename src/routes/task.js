@@ -582,6 +582,18 @@ function sanitizeCreateTaskParams (params, callback) {
     return deferred.promise
   }
 
+  const sanitizeOpenAt = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.openAt, 10)
+    if (_.isFinite(value)) {
+      deferred.resolve(new Date(value))
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
   when_
   .all([
     sanitizeTitle(),
@@ -595,7 +607,8 @@ function sanitizeCreateTaskParams (params, callback) {
     sanitizeMaxValue(),
     sanitizeMinValue(),
     sanitizeSubtractPoints(),
-    sanitizeSubtractHitCount()
+    sanitizeSubtractHitCount(),
+    sanitizeOpenAt()
   ])
   .then(function (res) {
     callback(null, {
@@ -610,7 +623,8 @@ function sanitizeCreateTaskParams (params, callback) {
       maxValue: res[8],
       minValue: res[9],
       subtractPoints: res[10],
-      subtractHitCount: res[11]
+      subtractHitCount: res[11],
+      openAt: res[12]
     })
   })
   .catch(function (err) {
@@ -630,7 +644,8 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
         rewardScheme: constraints.taskRewardScheme,
-        checkMethod: constraints.taskCheckMethod
+        checkMethod: constraints.taskCheckMethod,
+        openAt: constraints.taskOpenAt
       }
 
       if (taskParams.checkMethod === 'list') {
@@ -808,6 +823,18 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     return deferred.promise
   }
 
+  const sanitizeOpenAt = function () {
+    const deferred = when_.defer()
+    const value = parseInt(params.openAt, 10)
+    if (_.isFinite(value)) {
+      deferred.resolve(new Date(value))
+    } else {
+      deferred.resolve(null)
+    }
+
+    return deferred.promise
+  }
+
   when_
   .all([
     sanitizeDescription(),
@@ -819,7 +846,8 @@ function sanitizeUpdateTaskParams (params, task, callback) {
     sanitizeMaxValue(),
     sanitizeMinValue(),
     sanitizeSubtractPoints(),
-    sanitizeSubtractHitCount()
+    sanitizeSubtractHitCount(),
+    sanitizeOpenAt()
   ])
   .then(function (res) {
     callback(null, {
@@ -832,7 +860,8 @@ function sanitizeUpdateTaskParams (params, task, callback) {
       maxValue: res[6],
       minValue: res[7],
       subtractPoints: res[8],
-      subtractHitCount: res[9]
+      subtractHitCount: res[9],
+      openAt: res[10]
     })
   })
   .catch(function (err) {
@@ -850,7 +879,8 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         hints: constraints.taskHints,
         categories: constraints.taskCategories,
         rewardScheme: constraints.taskRewardScheme,
-        checkMethod: constraints.taskCheckMethod
+        checkMethod: constraints.taskCheckMethod,
+        openAt: constraints.taskOpenAt
       }
 
       if (taskParams.checkMethod === 'list') {

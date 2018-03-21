@@ -182,5 +182,11 @@ module.exports = {
   supervisorRights: [
     new Assert().Required(),
     new Assert().Choice(['manager', 'admin'])
+  ],
+  taskOpenAt: [
+    new Assert().Required(),
+    new Assert().Callback(function (value) {
+      return is_.null(value) || is_.sameType(value, new Date())
+    })
   ]
 }

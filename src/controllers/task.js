@@ -43,6 +43,8 @@ const taskRewardSchemeController = require('./task-reward-scheme')
 const queue = require('../utils/queue')
 const request = require('request')
 
+const async = require('async')
+
 function isTaskRemoteCheckerUniqueConstraintViolation (err) {
   return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_remote_checkers_ndx_remote_checker_unique')
 }
@@ -68,7 +70,8 @@ class TaskController {
         description: options.description,
         createdAt: now,
         updatedAt: now,
-        state: TASK_INITIAL
+        state: TASK_INITIAL,
+        openAt: options.openAt
       })
       .then(function (newTask) {
         task = newTask
@@ -177,7 +180,7 @@ class TaskController {
     let deletedTaskCategories = null
     let createdTaskCategories = null
 
-    let flagNewDescription = false
+    let flagNewAttributes = false
     let flagNewHints = false
     let flagNewAnswers = false
 
@@ -187,15 +190,20 @@ class TaskController {
       .query()
       .update({
         description: options.description,
+        openAt: options.openAt,
         updatedAt: now
       })
       .where('id', task.id)
-      .andWhere('description', '!=', options.description)
+      .andWhere(function () {
+        this
+        .where('description', '!=', options.description)
+        .orWhereRaw('"openAt" IS DISTINCT FROM ?', [options.openAt])
+      })
       .returning('*')
       .then(function (updatedTasks) {
         if (updatedTasks.length === 1) {
           updatedTask = updatedTasks[0]
-          flagNewDescription = true
+          flagNewAttributes = true
         } else {
           updatedTask = task
         }
@@ -212,10 +220,10 @@ class TaskController {
         .where('taskId', updatedTask.id)
         .andWhere(function () {
           this
-          .where('minValue', '!=', options.minValue)
-          .orWhere('maxValue', '!=', options.maxValue)
-          .orWhere('subtractPoints', '!=', options.subtractPoints)
-          .orWhere('subtractHitCount', '!=', options.subtractHitCount)
+          .where('maxValue', '!=', options.maxValue)
+          .orWhereRaw('"minValue" IS DISTINCT FROM ?', [options.minValue])
+          .orWhereRaw('"subtractPoints" IS DISTINCT FROM ?', [options.subtractPoints])
+          .orWhereRaw('"subtractHitCount" IS DISTINCT FROM ?', [options.subtractHitCount])
         })
         .returning('*')
         .then(function (updatedTaskRewardSchemes) {
@@ -293,7 +301,7 @@ class TaskController {
       if (flagNewHints) {
         queue('notifyTaskHint').add({ taskId: updatedTask.id })
       }
-      if (flagNewDescription || flagNewHints || flagNewAnswers) {
+      if (flagNewAttributes || flagNewHints || flagNewAnswers) {
         EventController.push(new UpdateTaskEvent(updatedTask))
       }
 
@@ -483,6 +491,41 @@ class TaskController {
         callback(new InternalError())
       }
     }
+  }
+
+  static internalOpen (task, next) {
+    TaskController.open(task, function (err) {
+      if (err) {
+        next(err, null)
+      } else {
+        next(null, null)
+      }
+    })
+  }
+
+  static checkUnopened () {
+    return new Promise(function (resolve, reject) {
+      const now = new Date()
+      Task
+      .query()
+      .where('state', TASK_INITIAL)
+      .whereNotNull('openAt')
+      .andWhere('openAt', '<', now)
+      .then(function (tasks) {
+        async.mapLimit(tasks, 2, TaskController.internalOpen, function (err2, results) {
+          if (err2) {
+            logger.error(err2)
+            reject(err2)
+          } else {
+            resolve()
+          }
+        })
+      })
+      .catch(function (err) {
+        logger.error(err)
+        reject(err)
+      })
+    })
   }
 
   static close (task, callback) {

@@ -47,6 +47,18 @@ queue('checkContestQueue').process(function (job, done) {
   })
 })
 
+queue('checkTasksQueue').process(function (job, done) {
+  TaskController
+  .checkUnopened()
+  .then(function () {
+    done()
+  })
+  .catch(function (err) {
+    logger.error(err)
+    throw err
+  })
+})
+
 queue('createLogoQueue').process(function (job, done) {
   let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
   gm(job.data.filename)
