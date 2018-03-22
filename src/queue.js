@@ -32,7 +32,7 @@ queue('recalculateQueue').process(function (job, done) {
   })
   .catch(function (err) {
     logger.error(err)
-    throw err
+    done(err)
   })
 })
 
@@ -40,7 +40,7 @@ queue('checkContestQueue').process(function (job, done) {
   ContestController.checkUpdate(function (err, contest) {
     if (err) {
       logger.error(err)
-      throw err
+      done(err)
     } else {
       done()
     }
@@ -55,7 +55,7 @@ queue('checkTasksQueue').process(function (job, done) {
   })
   .catch(function (err) {
     logger.error(err)
-    throw err
+    done(err)
   })
 })
 
@@ -66,7 +66,7 @@ queue('createLogoQueue').process(function (job, done) {
     .write(newFilename, function (err) {
       if (err) {
         logger.error(err)
-        throw err
+        done(err)
       } else {
         TeamController.get(job.data.id, function (err, team) {
           if (err) {
