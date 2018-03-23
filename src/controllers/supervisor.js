@@ -168,32 +168,34 @@ class SupervisorController {
     })
   }
 
-  static login (username, password, callback) {
-    Supervisor
+  static login (opts) {
+    return new Promise(function (resolve, reject) {
+      Supervisor
       .query()
-      .where('username', username)
+      .where('username', opts.username)
       .first()
       .then(function (supervisor) {
         if (supervisor) {
-          checkPassword(password, supervisor.passwordHash, function (err, res) {
+          checkPassword(opts.password, supervisor.passwordHash, function (err, res) {
             if (err) {
-              callback(err, null)
+              reject(err)
             } else {
               if (res) {
-                callback(null, supervisor)
-                EventController.push(new LoginSupervisorEvent(supervisor))
+                EventController.push(new LoginSupervisorEvent(supervisor, opts.countryName, opts.cityName))
+                resolve(supervisor)
               } else {
-                callback(new InvalidSupervisorCredentialsError(), null)
+                reject(new InvalidSupervisorCredentialsError())
               }
             }
           })
         } else {
-          callback(new InvalidSupervisorCredentialsError(), null)
+          reject(new InvalidSupervisorCredentialsError())
         }
       })
       .catch(function (err) {
-        callback(err, null)
+        reject(err)
       })
+    })
   }
 
   static index (callback) {

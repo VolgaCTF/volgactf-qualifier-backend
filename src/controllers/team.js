@@ -158,34 +158,36 @@ class TeamController {
     })
   }
 
-  static signin (name, password, callback) {
-    Team
+  static signin (opts) {
+    return new Promise(function (resolve, reject) {
+      Team
       .query()
-      .where('name', name)
+      .where('name', opts.name)
       .first()
       .then(function (team) {
         if (team) {
-          checkPassword(password, team.passwordHash, function (err, res) {
+          checkPassword(opts.password, team.passwordHash, function (err, res) {
             if (err) {
               logger.error(err)
-              callback(new InvalidTeamCredentialsError(), null)
+              reject(new InvalidTeamCredentialsError())
             } else {
               if (res) {
-                callback(null, team)
-                EventController.push(new LoginTeamEvent(team))
+                EventController.push(new LoginTeamEvent(team, opts.countryName, opts.cityName))
+                resolve(team)
               } else {
-                callback(new InvalidTeamCredentialsError(), null)
+                reject(new InvalidTeamCredentialsError())
               }
             }
           })
         } else {
-          callback(new InvalidTeamCredentialsError(), null)
+          reject(new InvalidTeamCredentialsError())
         }
       })
       .catch(function (err) {
         logger.error(err)
-        callback(new InternalError(), null)
+        reject(new InternalError())
       })
+    })
   }
 
   static resendConfirmationEmail (id, callback) {

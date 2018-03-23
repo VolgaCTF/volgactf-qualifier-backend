@@ -37,6 +37,8 @@ const teamRankingSerializer = require('../serializers/team-ranking')
 
 const emailAddressValidator = require('../controllers/email-address-validator')
 
+const { getGeoIPData } = require('../middleware/geoip')
+
 const router = express.Router()
 
 router.get('/index', detectScope, function (request, response, next) {
@@ -278,7 +280,7 @@ router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, fun
   })
 })
 
-router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, getGeoIPData, function (request, response, next) {
   const signinConstraints = {
     team: constraints.team,
     password: constraints.password
@@ -289,15 +291,21 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, func
     throw new ValidationError()
   }
 
-  TeamController.signin(request.body.team, request.body.password, function (err, team) {
-    if (err) {
-      next(err)
-    } else {
-      request.session.authenticated = true
-      request.session.identityID = team.id
-      request.session.scopeID = SCOPE_TEAM
-      response.json({ success: true })
-    }
+  TeamController
+  .signin({
+    name: request.body.team,
+    password: request.body.password,
+    countryName: request.geoIPData.countryName,
+    cityName: request.geoIPData.cityName
+  })
+  .then(function (team) {
+    request.session.authenticated = true
+    request.session.identityID = team.id
+    request.session.scopeID = SCOPE_TEAM
+    response.json({ success: true })
+  })
+  .catch(function (err) {
+    next(err)
   })
 })
 

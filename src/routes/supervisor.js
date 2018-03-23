@@ -4,7 +4,7 @@ const router = express.Router()
 const bodyParser = require('body-parser')
 const { checkToken } = require('../middleware/security')
 const { needsToBeUnauthorized, needsToBeAuthorizedSupervisor, needsToBeAuthorizedAdmin } = require('../middleware/session')
-const { ValidationError, InvalidSupervisorCredentialsError } = require('../utils/errors')
+const { ValidationError } = require('../utils/errors')
 
 const Validator = require('validator.js')
 const validator = new Validator.Validator()
@@ -15,6 +15,8 @@ const EventController = require('../controllers/event')
 const LogoutSupervisorEvent = require('../events/logout-supervisor')
 const { getSupervisor } = require('../middleware/supervisor')
 const { SCOPE_ADMIN, SCOPE_MANAGER } = require('../utils/constants')
+
+const { getGeoIPData } = require('../middleware/geoip')
 
 const urlencodedParser = bodyParser.urlencoded({ extended: false })
 
@@ -61,7 +63,7 @@ router.post('/create', checkToken, needsToBeUnauthorized, urlencodedParser, func
   })
 })
 
-router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
+router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, getGeoIPData, function (request, response, next) {
   const loginConstraints = {
     username: constraints.username,
     password: constraints.password
@@ -72,23 +74,25 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, func
     throw new ValidationError()
   }
 
-  SupervisorController.login(request.body.username, request.body.password, function (err, supervisor) {
-    if (err) {
-      next(err)
-    } else {
-      if (supervisor) {
-        request.session.authenticated = true
-        request.session.identityID = supervisor.id
-        if (supervisor.rights === 'admin') {
-          request.session.scopeID = SCOPE_ADMIN
-        } else if (supervisor.rights === 'manager') {
-          request.session.scopeID = SCOPE_MANAGER
-        }
-        response.json({ success: true })
-      } else {
-        next(new InvalidSupervisorCredentialsError())
-      }
+  SupervisorController
+  .login({
+    username: request.body.username,
+    password: request.body.password,
+    countryName: request.geoIPData.countryName,
+    cityName: request.geoIPData.cityName
+  })
+  .then(function (supervisor) {
+    request.session.authenticated = true
+    request.session.identityID = supervisor.id
+    if (supervisor.rights === 'admin') {
+      request.session.scopeID = SCOPE_ADMIN
+    } else if (supervisor.rights === 'manager') {
+      request.session.scopeID = SCOPE_MANAGER
     }
+    response.json({ success: true })
+  })
+  .catch(function (err) {
+    next(err)
   })
 })
 
