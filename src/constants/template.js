@@ -27,6 +27,8 @@ module.exports.TEMPLATE_ANALYTICS = 'analytics'
 module.exports.TEMPLATE_NAVBAR = 'navbar'
 module.exports.TEMPLATE_STREAM_STATE_PARTIAL = 'streamStatePartial'
 
+module.exports.TEMPLATE_INDEX_VIEW = 'indexView'
+
 module.exports.TEMPLATE_CONTEST_STATE_PARTIAL = 'contestStatePartial'
 module.exports.TEMPLATE_CONTEST_SCORE = 'contestScore'
 
