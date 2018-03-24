@@ -127,10 +127,10 @@ router.get('/:teamId/review/statistics', function (request, response, next) {
 router.get('/:teamId/logo', function (request, response) {
   TeamController.get(request.teamId, function (err, team) {
     if (team) {
-      const filename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${team.id}.png`)
+      const filename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `${team.id}.png`)
       fs.lstat(filename, function (err, stats) {
         if (err) {
-          const nologoFilename = path.join(__dirname, '..', '..', 'nologo.png')
+          const nologoFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, 'default.png')
           response.sendFile(nologoFilename)
         } else {
           response.sendFile(filename)

@@ -60,7 +60,7 @@ queue('checkTasksQueue').process(function (job, done) {
 })
 
 queue('createLogoQueue').process(function (job, done) {
-  let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `team-${job.data.id}.png`)
+  let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
     .write(newFilename, function (err) {
