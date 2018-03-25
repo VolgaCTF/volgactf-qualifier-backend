@@ -33,6 +33,21 @@ class TaskValueController {
     })
   }
 
+  getByTasks (taskIds) {
+    return new Promise(function (resolve, reject) {
+      TaskValue
+      .query()
+      .whereIn('taskId', taskIds)
+      .then(function (taskValues) {
+        resolve(taskValues)
+      })
+      .catch(function (err) {
+        logger.error(err)
+        reject(new InternalError())
+      })
+    })
+  }
+
   getByTaskId (taskId) {
     return new Promise(function (resolve, reject) {
       TaskValue

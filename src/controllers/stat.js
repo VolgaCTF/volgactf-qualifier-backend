@@ -11,6 +11,7 @@ const TaskProvider = require('./task')
 const CategoryController = require('./category')
 const TaskCategoryController = require('./task-category')
 const { ContestNotFoundError } = require('../utils/errors')
+const taskValueController = require('./task-value')
 
 class StatController {
   static getAllData (callback) {
@@ -59,17 +60,25 @@ class StatController {
                                             if (err10) {
                                               callback(err10, null)
                                             } else {
-                                              callback(null, {
-                                                teams: teams,
-                                                countries: countries,
-                                                contest: contest,
-                                                events: events_,
-                                                categories: categories,
-                                                tasks: tasks,
-                                                taskCategories: taskCategories,
-                                                teamTaskHitAttempts: teamTaskHitAttempts,
-                                                teamTaskHits: teamTaskHits,
-                                                teamTaskReviews: teamTaskReviews
+                                              taskValueController
+                                              .getByTasks(taskIds)
+                                              .then(function (taskValues) {
+                                                callback(null, {
+                                                  teams: teams,
+                                                  countries: countries,
+                                                  contest: contest,
+                                                  events: events_,
+                                                  categories: categories,
+                                                  tasks: tasks,
+                                                  taskValues: taskValues,
+                                                  taskCategories: taskCategories,
+                                                  teamTaskHitAttempts: teamTaskHitAttempts,
+                                                  teamTaskHits: teamTaskHits,
+                                                  teamTaskReviews: teamTaskReviews
+                                                })
+                                              })
+                                              .catch(function (err11) {
+                                                callback(err11, null)
                                               })
                                             }
                                           })
@@ -137,7 +146,11 @@ class StatController {
 
         const setSignedIn = new Set()
         for (const signInEvent of signInEvents) {
-          setSignedIn.add(signInEvent.data.supervisors.id)
+          if (signInEvent.data.supervisors.hasOwnProperty('id')) {
+            setSignedIn.add(signInEvent.data.supervisors.id)
+          } else if (signInEvent.data.supervisors.hasOwnProperty('team') && signInEvent.data.supervisors.team.hasOwnProperty('id')) {
+            setSignedIn.add(signInEvent.data.supervisors.team.id)
+          }
         }
         result.teams.signedInDuringContest = setSignedIn.size
 
@@ -241,7 +254,7 @@ class StatController {
           })
 
           result.tasks[task.title] = {
-            value: task.value,
+            value: _.findWhere(data.taskValues, { taskId: task.id }).value,
             categories: categories,
             opened: opened,
             firstSubmit: firstSubmit,

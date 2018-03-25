@@ -230,13 +230,13 @@ parser
           table3.push(
             ['Value', taskData.value],
             ['Categories', taskData.categories.join(', ')],
-            ['Opened', (taskData.opened === null) ? 'n/a' : moment(taskData.opened).format('lll')],
+            ['Opened', (taskData.opened === null) ? 'n/a' : moment(taskData.opened).utc().format('MMM D [at] HH:mm [UTC]')],
             ['Flags submitted for this task', taskData.flagsSubmitted],
-            ['First flag submitted', (taskData.firstSubmit === null) ? 'n/a' : moment(taskData.firstSubmit).format('lll')],
-            ['Last flag submitted', (taskData.lastSubmit === null) ? 'n/a' : moment(taskData.lastSubmit).format('lll')],
+            ['First flag submitted', (taskData.firstSubmit === null) ? 'n/a' : moment(taskData.firstSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Last flag submitted', (taskData.lastSubmit === null) ? 'n/a' : moment(taskData.lastSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
             ['Teams solved this task', taskData.teamsSolved],
-            ['First solved', (taskData.firstSolved === null) ? 'n/a' : moment(taskData.firstSolved).format('lll')],
-            ['Last solved', (taskData.lastSolved === null) ? 'n/a' : moment(taskData.lastSolved).format('lll')],
+            ['First solved', (taskData.firstSolved === null) ? 'n/a' : moment(taskData.firstSolved).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Last solved', (taskData.lastSolved === null) ? 'n/a' : moment(taskData.lastSolved).utc().format('MMM D [at] HH:mm [UTC]')],
             ['Reviews', taskData.reviews],
             ['Average rating', (taskData.averageRating === null) ? 'n/a' : numeral(taskData.averageRating).format('0.00')]
           )
