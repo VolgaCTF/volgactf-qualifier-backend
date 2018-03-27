@@ -545,6 +545,7 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       teams: teams,
       teamRankings: teamRankings,
       detailed: request.query.hasOwnProperty('detailed'),
+      printLayout: request.query.hasOwnProperty('printLayout'),
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE)
     }))
