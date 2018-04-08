@@ -200,6 +200,81 @@ parser
 
         console.log(`Number of teams\n${table1.toString()}\n\n`)
 
+        const table11 = new Table({
+          head: [
+            'Number of tasks',
+            'Number of teams'
+          ]
+        })
+
+        table11.push.apply(table11, _.map(stats.teamSubmitDistribution, function (entry) {
+          return [
+            entry.numTasks,
+            entry.numTeams
+          ]
+        }))
+        console.log(`Task/team submit attempts distribution\n${table11.toString()}\n\n`)
+
+        const table12 = new Table({
+          head: [
+            'Number of tasks',
+            'Number of teams'
+          ]
+        })
+
+        table12.push.apply(table12, _.map(stats.teamHitDistribution, function (entry) {
+          return [
+            entry.numTasks,
+            entry.numTeams
+          ]
+        }))
+        console.log(`Task/team hit distribution\n${table12.toString()}\n\n`)
+
+        const table13 = new Table({
+          head: [
+            'Number of tasks',
+            'Number of teams'
+          ]
+        })
+
+        table13.push.apply(table13, _.map(stats.teamReviewDistribution, function (entry) {
+          return [
+            entry.numTasks,
+            entry.numTeams
+          ]
+        }))
+        console.log(`Task/team review distribution\n${table13.toString()}\n\n`)
+
+        const table14 = new Table({
+          head: [
+            'Timestamp',
+            'Number of teams'
+          ]
+        })
+
+        table14.push.apply(table14, _.map(stats.signinDistribution, function (entry) {
+          return [
+            moment(entry.timestamp).utc().format('MMM D HH:[00:00]-HH:[59:59] [UTC]'),
+            entry.numTeams
+          ]
+        }))
+        console.log(`Unique team sign in distribution during the competition\n${table14.toString()}\n\n`)
+
+        const table15 = new Table({
+          head: [
+            'Timestamp',
+            'Number of teams'
+          ]
+        })
+
+        table15.push.apply(table15, _.map(stats.signupDistribution, function (entry) {
+          return [
+            moment(entry.timestamp).utc().format('MMM D [UTC]'),
+            entry.numTeams
+          ]
+        }))
+        console.log(`Team sign up distribution\n${table15.toString()}\n\n`)
+
         const table2 = new Table({
           head: [
             '#',
@@ -208,39 +283,104 @@ parser
           ]
         })
 
-        table2.push.apply(table2, _.map(_.sortBy(_.pairs(stats.countries), function (entry) {
-          return entry[1]
-        }).reverse(), function (entry, ndx) {
+        table2.push.apply(table2, _.map(stats.countryDistribution, function (entry, ndx) {
           return [
             ndx + 1,
-            entry[0],
-            entry[1]
+            entry.countryName,
+            entry.numTeams
           ]
         }))
         console.log(`Team/country distribution\n${table2.toString()}\n\n`)
 
-        for (const task in stats.tasks) {
+        const table21 = new Table({
+          head: [
+            '#',
+            'Country',
+            'Number of teams'
+          ]
+        })
+
+        table21.push.apply(table21, _.map(stats.countryDistributionPopular, function (entry, ndx) {
+          return [
+            ndx + 1,
+            entry.countryName,
+            entry.numTeams
+          ]
+        }))
+        console.log(`Top 10 countries: Team/country distribution\n${table21.toString()}\n\n`)
+
+        for (const task of stats.tasks) {
           const table3 = new Table({
             head: [
               'Metric',
               'Value'
             ]
           })
-          const taskData = stats.tasks[task]
           table3.push(
-            ['Value', taskData.value],
-            ['Categories', taskData.categories.join(', ')],
-            ['Opened', (taskData.opened === null) ? 'n/a' : moment(taskData.opened).utc().format('MMM D [at] HH:mm [UTC]')],
-            ['Flags submitted for this task', taskData.flagsSubmitted],
-            ['First flag submitted', (taskData.firstSubmit === null) ? 'n/a' : moment(taskData.firstSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
-            ['Last flag submitted', (taskData.lastSubmit === null) ? 'n/a' : moment(taskData.lastSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
-            ['Teams solved this task', taskData.teamsSolved],
-            ['First solved', (taskData.firstSolved === null) ? 'n/a' : moment(taskData.firstSolved).utc().format('MMM D [at] HH:mm [UTC]')],
-            ['Last solved', (taskData.lastSolved === null) ? 'n/a' : moment(taskData.lastSolved).utc().format('MMM D [at] HH:mm [UTC]')],
-            ['Reviews', taskData.reviews],
-            ['Average rating', (taskData.averageRating === null) ? 'n/a' : numeral(taskData.averageRating).format('0.00')]
+            ['Value', task.value],
+            ['Categories', task.categories.join(', ')],
+            ['Opened', (task.opened === null) ? 'n/a' : moment(task.opened).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Flags submitted for this task', task.flagsSubmitted],
+            ['First flag submitted', (task.firstSubmit === null) ? 'n/a' : moment(task.firstSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Last flag submitted', (task.lastSubmit === null) ? 'n/a' : moment(task.lastSubmit).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Teams solved this task', task.teamsSolved],
+            ['First solved', (task.firstSolved === null) ? 'n/a' : `${task.firstSolvedTeam}\n${moment(task.firstSolved).utc().format('MMM D [at] HH:mm [UTC]')}`],
+            ['Last solved', (task.lastSolved === null) ? 'n/a' : moment(task.lastSolved).utc().format('MMM D [at] HH:mm [UTC]')],
+            ['Reviews', task.reviews],
+            ['Average rating', (task.averageRating === null) ? 'n/a' : numeral(task.averageRating).format('0.00')]
           )
-          console.log(`Task ${task}\n${table3.toString()}\n\n`)
+          console.log(`Task "${task.title}"\n${table3.toString()}\n\n`)
+
+          const table31 = new Table({
+            head: [
+              'Timestamp',
+              'Number of hit attempts'
+            ]
+          })
+
+          table31.push.apply(table31, _.map(task.hitAttemptDistribution, function (entry) {
+            return [
+              moment(entry.timestamp).utc().format('MMM D HH:[00:00]-HH:[59:59] [UTC]'),
+              entry.numHitAttempts
+            ]
+          }))
+          const rawHitAttemptDistribution = _.map(task.hitAttemptDistribution, function (entry) {
+            return entry.numHitAttempts
+          })
+          console.log(`Task "${task.title}" hit attempts distribution\n${table31.toString()}\nRaw data:\n${JSON.stringify(rawHitAttemptDistribution)}\n\n`)
+
+          const table32 = new Table({
+            head: [
+              'Timestamp',
+              'Number of hits'
+            ]
+          })
+
+          table32.push.apply(table32, _.map(task.hitDistribution, function (entry) {
+            return [
+              moment(entry.timestamp).utc().format('MMM D HH:[00:00]-HH:[59:59] [UTC]'),
+              entry.numHits
+            ]
+          }))
+          const rawHitDistribution = _.map(task.hitDistribution, function (entry) {
+            return entry.numHits
+          })
+          console.log(`Task "${task.title}" hits distribution\n${table32.toString()}\nRaw data:\n${JSON.stringify(rawHitDistribution)}\n\n`)
+
+          const table33 = new Table({
+            head: [
+              'Timestamp',
+              'Number of reviews'
+            ]
+          })
+
+          table33.push.apply(table33, _.map(task.reviewDistribution, function (entry) {
+            return [
+              moment(entry.timestamp).utc().format('MMM D HH:[00:00]-HH:[59:59] [UTC]'),
+              entry.numReviews
+            ]
+          }))
+          console.log(`Task "${task.title}" reviews distribution\n${table33.toString()}\n\n`)
         }
         process.exit(0)
       }

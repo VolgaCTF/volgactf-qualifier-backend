@@ -12,6 +12,7 @@ const CategoryController = require('./category')
 const TaskCategoryController = require('./task-category')
 const { ContestNotFoundError } = require('../utils/errors')
 const taskValueController = require('./task-value')
+const moment = require('moment')
 
 class StatController {
   static getAllData (callback) {
@@ -26,6 +27,8 @@ class StatController {
             if (contest && contest.startsAt && contest.finishesAt) {
               Event
                 .query()
+                .where('type', EVENT_LOGIN_TEAM)
+                .orWhere('type', EVENT_OPEN_TASK)
                 .then(function (events_) {
                   TeamTaskHitAttemptController.index(function (err4, teamTaskHitAttempts) {
                     if (err4) {
@@ -118,10 +121,15 @@ class StatController {
         solvedAtLeastOneTask: 0,
         reviewedAtLeastOneTask: 0
       },
-      countries: {
-      },
+      countryDistribution: [],
+      countryDistributionPopular: [],
       tasks: {
-      }
+      },
+      teamSubmitDistribution: [],
+      teamHitDistribution: [],
+      teamReviewDistribution: [],
+      signupDistribution: [],
+      signinDistribution: []
     }
 
     StatController.getAllData(function (err, data) {
@@ -136,6 +144,17 @@ class StatController {
           return team.disqualified
         }).length
 
+        const signupMap = new Map()
+        _.filter(data.teams, function (team) {
+          return team.isQualified()
+        }).forEach(function (entry) {
+          const reducedTimestamp = moment(entry.createdAt).hours(0).minutes(0).seconds(0).milliseconds(0).valueOf()
+          if (!signupMap.has(reducedTimestamp)) {
+            signupMap.set(reducedTimestamp, new Set())
+          }
+          signupMap.get(reducedTimestamp).add(entry.id)
+        })
+
         const contestStartTimestamp = data.contest.startsAt.getTime()
         const contestFinishTimestamp = data.contest.finishesAt.getTime()
 
@@ -144,42 +163,171 @@ class StatController {
           return event.type === EVENT_LOGIN_TEAM && timestamp >= contestStartTimestamp && timestamp <= contestFinishTimestamp
         })
 
+        const signinMap = new Map()
         const setSignedIn = new Set()
+
         for (const signInEvent of signInEvents) {
+          const reducedTimestamp = moment(signInEvent.createdAt).minutes(0).seconds(0).milliseconds(0).valueOf()
+          if (!signinMap.has(reducedTimestamp)) {
+            signinMap.set(reducedTimestamp, new Set())
+          }
+
+          let teamId = null
           if (signInEvent.data.supervisors.hasOwnProperty('id')) {
-            setSignedIn.add(signInEvent.data.supervisors.id)
+            teamId = signInEvent.data.supervisors.id
           } else if (signInEvent.data.supervisors.hasOwnProperty('team') && signInEvent.data.supervisors.team.hasOwnProperty('id')) {
-            setSignedIn.add(signInEvent.data.supervisors.team.id)
+            teamId = signInEvent.data.supervisors.team.id
+          }
+
+          if (teamId) {
+            setSignedIn.add(teamId)
+            signinMap.get(reducedTimestamp).add(teamId)
           }
         }
         result.teams.signedInDuringContest = setSignedIn.size
 
+        const teamSubmitMap = new Map()
+        const teamHitMap = new Map()
+
         const setHitAttempt = new Set()
         for (const teamTaskHitAttempt of data.teamTaskHitAttempts) {
           setHitAttempt.add(teamTaskHitAttempt.teamId)
+          if (!teamSubmitMap.has(teamTaskHitAttempt.teamId)) {
+            teamSubmitMap.set(teamTaskHitAttempt.teamId, new Set())
+          }
+          teamSubmitMap.get(teamTaskHitAttempt.teamId).add(teamTaskHitAttempt.taskId)
         }
 
         const setHit = new Set()
         for (const teamTaskHit of data.teamTaskHits) {
           setHitAttempt.add(teamTaskHit.teamId)
           setHit.add(teamTaskHit.teamId)
+
+          if (!teamSubmitMap.has(teamTaskHit.teamId)) {
+            teamSubmitMap.set(teamTaskHit.teamId, new Set())
+          }
+          teamSubmitMap.get(teamTaskHit.teamId).add(teamTaskHit.taskId)
+
+          if (!teamHitMap.has(teamTaskHit.teamId)) {
+            teamHitMap.set(teamTaskHit.teamId, new Set())
+          }
+          teamHitMap.get(teamTaskHit.teamId).add(teamTaskHit.taskId)
         }
         result.teams.attemptedToSolveTasks = setHitAttempt.size
         result.teams.solvedAtLeastOneTask = setHit.size
 
         const setReview = new Set()
+        const teamReviewMap = new Map()
+
         for (const teamTaskReview of data.teamTaskReviews) {
           setReview.add(teamTaskReview.teamId)
+
+          if (!teamReviewMap.has(teamTaskReview.teamId)) {
+            teamReviewMap.set(teamTaskReview.teamId, new Set())
+          }
+          teamReviewMap.get(teamTaskReview.teamId).add(teamTaskReview.taskId)
         }
         result.teams.reviewedAtLeastOneTask = setReview.size
 
         const qualifiedTeams = _.filter(data.teams, function (team) {
           return team.isQualified()
         })
-        result.countries = _.countBy(qualifiedTeams, function (team) {
-          return _.findWhere(data.countries, { id: team.countryId }).name
+
+        const countryMap = new Map(_.pairs(_.countBy(qualifiedTeams, function (team) {
+          return team.countryId
+        })))
+
+        const countryDistribution = []
+        countryMap.forEach(function (value, key, map) {
+          const countryId = parseInt(key, 10)
+          countryDistribution.push({
+            countryId: countryId,
+            countryName: _.findWhere(data.countries, { id: countryId }).name,
+            numTeams: value
+          })
         })
 
+        result.countryDistribution = _.sortBy(countryDistribution, 'numTeams').reverse()
+
+        const topCountries = _.map(_.first(result.countryDistribution, 15), function (entry) {
+          return entry.countryId
+        })
+        const countryDistributionPopular = []
+        const otherCountries = {
+          countryId: -1,
+          countryName: 'Other',
+          numTeams: 0
+        }
+        countryMap.forEach(function (value, key, map) {
+          const countryId = parseInt(key, 10)
+          if (topCountries.indexOf(countryId) !== -1) {
+            countryDistributionPopular.push({
+              countryId: countryId,
+              countryName: _.findWhere(data.countries, { id: countryId }).name,
+              numTeams: value
+            })
+          } else {
+            otherCountries.numTeams += value
+          }
+        })
+        countryDistributionPopular.push(otherCountries)
+        result.countryDistributionPopular = _.sortBy(countryDistributionPopular, 'numTeams').reverse()
+
+        const teamSubmitDistributionMap = new Map()
+        for (const [teamId, taskIds] of teamSubmitMap) {
+          const numTasks = taskIds.size
+          if (!teamSubmitDistributionMap.has(numTasks)) {
+            teamSubmitDistributionMap.set(numTasks, new Set())
+          }
+          teamSubmitDistributionMap.get(numTasks).add(teamId)
+        }
+        const teamSubmitDistribution = []
+        teamSubmitDistributionMap.forEach(function (value, key, map) {
+          teamSubmitDistribution.push({ numTasks: key, numTeams: value.size })
+        })
+        result.teamSubmitDistribution = _.sortBy(teamSubmitDistribution, 'numTasks')
+
+        const teamHitDistributionMap = new Map()
+        for (const [teamId, taskIds] of teamHitMap) {
+          const numTasks = taskIds.size
+          if (!teamHitDistributionMap.has(numTasks)) {
+            teamHitDistributionMap.set(numTasks, new Set())
+          }
+          teamHitDistributionMap.get(numTasks).add(teamId)
+        }
+        const teamHitDistribution = []
+        teamHitDistributionMap.forEach(function (value, key, map) {
+          teamHitDistribution.push({ numTasks: key, numTeams: value.size })
+        })
+        result.teamHitDistribution = _.sortBy(teamHitDistribution, 'numTasks')
+
+        const teamReviewDistributionMap = new Map()
+        for (const [teamId, taskIds] of teamReviewMap) {
+          const numTasks = taskIds.size
+          if (!teamReviewDistributionMap.has(numTasks)) {
+            teamReviewDistributionMap.set(numTasks, new Set())
+          }
+          teamReviewDistributionMap.get(numTasks).add(teamId)
+        }
+        const teamReviewDistribution = []
+        teamReviewDistributionMap.forEach(function (value, key, map) {
+          teamReviewDistribution.push({ numTasks: key, numTeams: value.size })
+        })
+        result.teamReviewDistribution = _.sortBy(teamReviewDistribution, 'numTasks')
+
+        const signinDistribution = []
+        signinMap.forEach(function (value, key, map) {
+          signinDistribution.push({ timestamp: key, numTeams: value.size })
+        })
+        result.signinDistribution = _.sortBy(signinDistribution, 'timestamp')
+
+        const signupDistribution = []
+        signupMap.forEach(function (value, key, map) {
+          signupDistribution.push({ timestamp: key, numTeams: value.size })
+        })
+        result.signupDistribution = _.sortBy(signupDistribution, 'timestamp')
+
+        const tasks = []
         for (const task of data.tasks) {
           const taskReviews = _.filter(data.teamTaskReviews, function (review) {
             return review.taskId === task.id
@@ -212,6 +360,34 @@ class StatController {
 
           flagsSubmitted += teamsSolved
 
+          const taskHitAttemptDistribution = new Map()
+          const taskHitDistribution = new Map()
+          const taskReviewDistribution = new Map()
+
+          let iterDate = moment(data.contest.startsAt).minutes(0).seconds(0).milliseconds(0).valueOf()
+          while (iterDate < contestFinishTimestamp) {
+            taskHitAttemptDistribution.set(iterDate, new Set())
+            taskHitDistribution.set(iterDate, new Set())
+            taskReviewDistribution.set(iterDate, new Set())
+            iterDate = moment(iterDate).add(1, 'hours').valueOf()
+          }
+
+          for (const hitAttempt of hitAttempts) {
+            const reducedTimestamp = moment(hitAttempt.createdAt).minutes(0).seconds(0).milliseconds(0).valueOf()
+            taskHitAttemptDistribution.get(reducedTimestamp).add(`ha-${hitAttempt.id}`)
+          }
+
+          for (const hit of hits) {
+            const reducedTimestamp = moment(hit.createdAt).minutes(0).seconds(0).milliseconds(0).valueOf()
+            taskHitAttemptDistribution.get(reducedTimestamp).add(`h-${hit.id}`)
+            taskHitDistribution.get(reducedTimestamp).add(`h-${hit.id}`)
+          }
+
+          for (const review of taskReviews) {
+            const reducedTimestamp = moment(review.createdAt).minutes(0).seconds(0).milliseconds(0).valueOf()
+            taskReviewDistribution.get(reducedTimestamp).add(review.id)
+          }
+
           let firstSubmit = null
           let lastSubmit = null
           if (hitAttempts.length > 0) {
@@ -224,20 +400,23 @@ class StatController {
           }
 
           let firstSolved = null
+          let firstSolvedTeam = null
           let lastSolved = null
           if (hits.length > 0) {
-            firstSolved = _.min(hits, function (hit) {
+            const firstSolvedEntry = _.min(hits, function (hit) {
               return hit.createdAt.getTime()
-            }).createdAt
+            })
+            firstSolved = firstSolvedEntry.createdAt
+            firstSolvedTeam = _.findWhere(data.teams, { id: firstSolvedEntry.teamId }).name
             lastSolved = _.max(hits, function (hit) {
               return hit.createdAt.getTime()
             }).createdAt
 
-            if (firstSubmit !== null && firstSolved.getTime() < firstSubmit.getTime()) {
+            if (!_.isNull(firstSubmit) && firstSolved.getTime() < firstSubmit.getTime()) {
               firstSubmit = firstSolved
             }
 
-            if (lastSubmit !== null && lastSubmit.getTime() > lastSubmit.getTime()) {
+            if (!_.isNull(lastSubmit) && lastSolved.getTime() > lastSubmit.getTime()) {
               lastSubmit = lastSolved
             }
           }
@@ -253,7 +432,23 @@ class StatController {
             }
           })
 
-          result.tasks[task.title] = {
+          const taskHitAttemptDistributionList = []
+          taskHitAttemptDistribution.forEach(function (value, key) {
+            taskHitAttemptDistributionList.push({ timestamp: key, numHitAttempts: value.size })
+          })
+
+          const taskHitDistributionList = []
+          taskHitDistribution.forEach(function (value, key) {
+            taskHitDistributionList.push({ timestamp: key, numHits: value.size })
+          })
+
+          const taskReviewDistributionList = []
+          taskReviewDistribution.forEach(function (value, key) {
+            taskReviewDistributionList.push({ timestamp: key, numReviews: value.size })
+          })
+
+          tasks.push({
+            title: task.title,
             value: _.findWhere(data.taskValues, { taskId: task.id }).value,
             categories: categories,
             opened: opened,
@@ -262,11 +457,18 @@ class StatController {
             flagsSubmitted: flagsSubmitted,
             teamsSolved: teamsSolved,
             firstSolved: firstSolved,
+            firstSolvedTeam: firstSolvedTeam,
             lastSolved: lastSolved,
             reviews: taskReviews.length,
-            averageRating: averageRating
-          }
+            averageRating: averageRating,
+            hitAttemptDistribution: _.sortBy(taskHitAttemptDistributionList, 'timestamp'),
+            hitDistribution: _.sortBy(taskHitDistributionList, 'timestamp'),
+            reviewDistribution: _.sortBy(taskReviewDistributionList, 'timestamp')
+          })
         }
+
+        result.tasks = _.sortBy(tasks, 'opened')
+
         callback(null, result)
       }
     })
