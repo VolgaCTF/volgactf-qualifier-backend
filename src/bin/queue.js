@@ -9,16 +9,19 @@ function getNumProcesses () {
 if (cluster.isMaster) {
   logger.info(`Master ${process.pid} is running`)
 
-  // Fork workers.
   for (let i=0; i<getNumProcesses(); i++) {
     cluster.fork()
   }
 
-  cluster.on('exit', (worker, code, signal) => {
+  cluster.on('online', function (worker) {
+    logger.info(`Worker ${worker.process.pid} started`)
+  })
+
+  cluster.on('exit', function (worker, code, signal) {
     logger.info(`Worker ${worker.process.pid} died`)
+    cluster.fork()
   })
 } else {
   require('../queue')
   eventStream.run()
-  logger.info(`Worker ${process.pid} started`)
 }

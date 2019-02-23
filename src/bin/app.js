@@ -22,13 +22,17 @@ if (cluster.isMaster) {
     cluster.fork()
   }
 
-  cluster.on('exit', (worker, code, signal) => {
+  cluster.on('online', function (worker) {
+    logger.info(`Worker ${worker.process.pid} started`)
+  })
+
+  cluster.on('exit', function (worker, code, signal) {
     logger.info(`Worker ${worker.process.pid} died`)
+    cluster.fork()
   })
 } else {
   let server = app.listen(getServerPort(), getServerHost(), function () {
     logger.info(`Worker ${process.pid}, server listening on ${server.address().address}:${server.address().port}`)
     eventStream.run()
   })
-  logger.info(`Worker ${process.pid} started`)
 }
