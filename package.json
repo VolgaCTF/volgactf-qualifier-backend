@@ -54,6 +54,7 @@
     "prompt": "^1.0.0",
     "redis": "~0.12.1",
     "request": "^2.81.0",
+    "socks5-https-client": "^1.2.1",
     "tmp": "0.0.25",
     "twemoji": "^2.5.0",
     "twit": "^2.2.5",
