@@ -16,24 +16,42 @@ class TemplateStore {
     this.metadata[templateId] = path.join(this.distFrontendDir, templateSrcPath)
   }
 
+  updateTemplate (templateId, resolve, reject) {
+    fs.readFile(this.metadata[templateId], 'utf8', (err, data) => {
+      if (err) {
+        logger.error(err)
+        reject(new InternalError())
+      } else {
+        this.cache[templateId] = {
+          template: _.template(data),
+          lastUpdated: new Date()
+        }
+        resolve(this.cache[templateId].template)
+      }
+    })
+  }
+
   resolveOne (templateId) {
     return new Promise((resolve, reject) => {
       if (!this.cache.hasOwnProperty(templateId)) {
         if (!this.metadata.hasOwnProperty(templateId)) {
           reject(new TemplateNotRegisteredError(`Template "${templateId}" is not available!`))
         } else {
-          fs.readFile(this.metadata[templateId], 'utf8', (err, data) => {
-            if (err) {
-              logger.error(err)
-              reject(new InternalError())
-            } else {
-              this.cache[templateId] = _.template(data)
-              resolve(this.cache[templateId])
-            }
-          })
+          this.updateTemplate(templateId, resolve, reject)
         }
       } else {
-        resolve(this.cache[templateId])
+        fs.stat(this.metadata[templateId], (err, stat) => {
+          if (err) {
+            logger.error(err)
+            reject(new InternalError())
+          } else {
+            if (stat.mtime > this.cache[templateId].lastUpdated) {
+              this.updateTemplate(templateId, resolve, reject)
+            } else {
+              resolve(this.cache[templateId].template)
+            }
+          }
+        })
       }
     })
   }
