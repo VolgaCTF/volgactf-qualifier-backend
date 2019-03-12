@@ -54,6 +54,13 @@ class SupervisorUsernameTakenError extends BaseError {
 }
 module.exports.SupervisorUsernameTakenError = SupervisorUsernameTakenError
 
+class SupervisorEmailTakenError extends BaseError {
+  constructor () {
+    super('Supervisor with this email already exists!', 'SupervisorEmailTakenError', 400)
+  }
+}
+module.exports.SupervisorEmailTakenError = SupervisorEmailTakenError
+
 class NotAuthenticatedError extends BaseError {
   constructor () {
     super('Not authenticated', 'NotAuthenticatedError', 400)

@@ -14,6 +14,7 @@ parser
   .description('Create supervisor')
   .option('-u, --username <username>', 'username')
   .option('-r, --rights <rights>', 'rights (admin, manager)')
+  .option('-e --email <email>', 'email')
   .action(function (options) {
     prompt.start()
     prompt.message = ''
@@ -41,7 +42,8 @@ parser
         let supervisorOpts = {
           username: options.username,
           password: result.password,
-          rights: options.rights
+          rights: options.rights,
+          email: options.email
         }
         SupervisorController.create(supervisorOpts, function (err, supervisor) {
           if (err) {

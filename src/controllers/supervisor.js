@@ -1,7 +1,7 @@
 const Supervisor = require('../models/supervisor')
 const SupervisorInvitation = require('../models/supervisor-invitation')
 const { getPasswordHash, checkPassword } = require('../utils/security')
-const { InvalidSupervisorCredentialsError, InternalError, SupervisorNotFoundError, SupervisorUsernameTakenError } = require('../utils/errors')
+const { InvalidSupervisorCredentialsError, InternalError, SupervisorNotFoundError, SupervisorUsernameTakenError, SupervisorEmailTakenError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
 const logger = require('../utils/logger')
 const EventController = require('./event')
@@ -16,6 +16,10 @@ const { transaction } = require('objection')
 class SupervisorController {
   static isSupervisorUsernameUniqueConstraintViolation (err) {
     return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_username_unique')
+  }
+
+  static isSupervisorEmailUniqueConstraintViolation (err) {
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'supervisors_ndx_email_unique')
   }
 
   static createFromInvitation (code, username, password) {
@@ -35,7 +39,8 @@ class SupervisorController {
               .insert({
                 username: username,
                 passwordHash: hash,
-                rights: supervisorInvitation.rights
+                rights: supervisorInvitation.rights,
+                email: supervisorInvitation.email
               })
               .then(function (supervisor) {
                 newSupervisor = supervisor
@@ -55,6 +60,8 @@ class SupervisorController {
             .catch(function (err) {
               if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
                 reject(new SupervisorUsernameTakenError())
+              } else if (SupervisorController.isSupervisorEmailUniqueConstraintViolation(err)) {
+                reject(new SupervisorEmailTakenError())
               } else {
                 logger.error(err)
                 reject(new InternalError())
@@ -80,7 +87,8 @@ class SupervisorController {
           .insert({
             username: options.username,
             passwordHash: hash,
-            rights: options.rights
+            rights: options.rights,
+            email: options.email
           })
           .then(function (supervisor) {
             EventController.push(new CreateSupervisorEvent(supervisor), function (err, event) {
@@ -94,6 +102,8 @@ class SupervisorController {
           .catch(function (err) {
             if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
               callback(new SupervisorUsernameTakenError(), null)
+            } else if (SupervisorController.isSupervisorEmailUniqueConstraintViolation(err)) {
+                callback(new SupervisorEmailTakenError(), null)
             } else {
               logger.error(err)
               callback(new InternalError(), null)
