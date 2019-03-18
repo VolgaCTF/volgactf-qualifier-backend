@@ -1,5 +1,6 @@
 const Supervisor = require('../models/supervisor')
 const SupervisorInvitation = require('../models/supervisor-invitation')
+const SupervisorTaskSubscription = require('../models/supervisor-task-subscription')
 const { getPasswordHash, checkPassword } = require('../utils/security')
 const { InvalidSupervisorCredentialsError, InternalError, SupervisorNotFoundError, SupervisorUsernameTakenError, SupervisorEmailTakenError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
@@ -154,26 +155,26 @@ class SupervisorController {
         logger.error(err)
         callback(err)
       } else {
-        Supervisor
-          .query()
-          .delete()
-          .where('id', supervisor.id)
-          .then(function (numDeleted) {
-            if (numDeleted === 0) {
-              callback(new SupervisorNotFoundError())
-            } else {
-              EventController.push(new DeleteSupervisorEvent(supervisor), function (err, event) {
-                if (err) {
-                  callback(err)
-                } else {
-                  callback(null)
-                }
-              })
-            }
+        transaction(Supervisor, SupervisorTaskSubscription, function (Supervisor, SupervisorTaskSubscription) {
+          return SupervisorTaskSubscription
+            .query()
+            .delete()
+            .where('supervisorId', supervisor.id)
+            .then(function () {
+              return Supervisor
+                .query()
+                .delete()
+                .where('id', supervisor.id)
+            })
+        })
+        .then(function () {
+          EventController.push(new DeleteSupervisorEvent(supervisor), function () {
+            callback(null)
           })
-          .catch(function (err) {
-            callback(err)
-          })
+        })
+        .catch(function (err) {
+          callback(err)
+        })
       }
     })
   }
@@ -217,6 +218,20 @@ class SupervisorController {
       .catch(function (err) {
         callback(err, null)
       })
+  }
+
+  static fetchByIdList (idList) {
+    return new Promise(function (resolve, reject) {
+      Supervisor
+      .query()
+      .whereIn('id', idList)
+      .then(function (supervisors) {
+        resolve(supervisors)
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
   }
 
   static getByUsername (username, callback) {

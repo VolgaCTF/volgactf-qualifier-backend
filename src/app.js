@@ -64,6 +64,9 @@ const taskValueSerializer = require('./serializers/task-value')
 const taskRewardSchemeController = require('./controllers/task-reward-scheme')
 const taskRewardSchemeSerializer = require('./serializers/task-reward-scheme')
 
+const supervisorTaskSubscriptionController = require('./controllers/supervisor-task-subscription')
+const supervisorTaskSubscriptionSerializer = require('./serializers/supervisor-task-subscription')
+
 const taskParam = require('./params/task')
 
 const jsesc = require('jsesc')
@@ -595,6 +598,10 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     promises.push(teamTaskHitController.fetchForTeam(request.session.identityID))
   }
 
+  if (request.scope.isSupervisor()) {
+    promises.push(supervisorTaskSubscriptionController.fetchForSupervisor(request.session.identityID))
+  }
+
   if (request.scope.isAdmin()) {
     promises.push(remoteCheckerController.fetch())
     promises.push(taskRemoteCheckerController.fetch())
@@ -617,11 +624,16 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       teamTaskHits = _.map(values[8], teamTaskHitSerializer)
     }
 
+    let supervisorTaskSubscriptions = []
+    if (request.scope.isSupervisor()) {
+      supervisorTaskSubscriptions = _.map(values[8], supervisorTaskSubscriptionSerializer)
+    }
+
     let remoteCheckers = []
     let taskRemoteCheckers = []
     if (request.scope.isAdmin()) {
-      remoteCheckers = _.map(values[8], remoteCheckerSerializer)
-      taskRemoteCheckers = _.map(values[9], taskRemoteCheckerSerializer)
+      remoteCheckers = _.map(values[9], remoteCheckerSerializer)
+      taskRemoteCheckers = _.map(values[10], taskRemoteCheckerSerializer)
     }
     const pageTemplate = templates[TEMPLATE_TASKS_PAGE]
     response.send(pageTemplate({
@@ -637,6 +649,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       taskValues: taskValues,
       taskRewardSchemes: taskRewardSchemes,
       teamTaskHits: teamTaskHits,
+      supervisorTaskSubscriptions: supervisorTaskSubscriptions,
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
       google_tag_id: googleTagId,

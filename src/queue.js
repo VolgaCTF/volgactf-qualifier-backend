@@ -1,3 +1,5 @@
+const _ = require('underscore')
+
 const queue = require('./utils/queue')
 const logger = require('./utils/logger')
 const gm = require('gm')
@@ -23,6 +25,10 @@ const emailGenerator = new EmailGenerator()
 const messageController = require('./controllers/message')
 
 const recalculateController = require('./controllers/recalculate')
+
+const TeamTaskReviewController = require('./controllers/team-task-review')
+const SupervisorController = require('./controllers/supervisor')
+const supervisorTaskSubscriptionController = require('./controllers/supervisor-task-subscription')
 
 queue('recalculateQueue').process(function (job, done) {
   recalculateController
@@ -80,6 +86,74 @@ queue('createLogoQueue').process(function (job, done) {
     })
 })
 
+function getTeamLink (teamId) {
+  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.THEMIS_QUALS_FQDN
+  return `${prefix}://${fqdn}/team/${teamId}/profile`
+}
+
+function getTaskStatisticsLink (taskId) {
+  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.THEMIS_QUALS_FQDN
+  return `${prefix}://${fqdn}/task/${taskId}/statistics`
+}
+
+queue('newTaskReviewQueue').process(function (job, done) {
+  let teamTaskReview = null
+  let task = null
+  let supervisorTaskSubscriptions = []
+  let supervisors = []
+  let team = null
+
+  TeamTaskReviewController
+  .get(job.data.reviewId)
+  .then(function (model) {
+    teamTaskReview = model
+    return TaskController.fetchOne(teamTaskReview.taskId)
+  })
+  .then(function (model) {
+    task = model
+    return supervisorTaskSubscriptionController.fetchForTask(task.id)
+  })
+  .then(function (models) {
+    supervisorTaskSubscriptions = models
+    return SupervisorController.fetchByIdList(supervisorTaskSubscriptions.map(function (x) {
+      return x.supervisorId
+    }))
+  })
+  .then(function (models) {
+    supervisors = models
+    return TeamController.fetchOne(teamTaskReview.teamId)
+  })
+  .then(function (model) {
+    team = model
+    const teamLink = getTeamLink(team.id)
+    const taskLink = TaskController.getTaskLink(task.id)
+    const taskStatisticsLink = getTaskStatisticsLink(task.id)
+    for (const item of supervisorTaskSubscriptions) {
+      const supervisor = _.findWhere(supervisors, { id: item.supervisorId })
+      queue('sendEmailQueue').add({
+        message: 'new_task_review',
+        name: supervisor.username,
+        email: supervisor.email,
+        supervisorId: supervisor.id,
+        team_name: team.name,
+        team_link: teamLink,
+        task_title: task.title,
+        task_link: taskLink,
+        task_statistics_link: taskStatisticsLink,
+        review_rating: teamTaskReview.rating,
+        review_comment: teamTaskReview.comment,
+      })
+    }
+    done()
+  })
+  .catch(function (err) {
+    logger.error(err)
+    done(err)
+  })
+})
+
 queue('sendEmailQueue').process(function (job, done) {
   emailGenerator
   .init()
@@ -111,6 +185,17 @@ queue('sendEmailQueue').process(function (job, done) {
         secure: secureConnection,
         rights: job.data.rights,
         code: token.encode(job.data.token)
+      })
+    } else if (job.data.message === 'new_task_review') {
+      message = emailGenerator.getNewTaskReviewEmail({
+        name: job.data.name,
+        team_name: job.data.team_name,
+        team_link: job.data.team_link,
+        task_title: job.data.task_title,
+        task_link: job.data.task_link,
+        task_statistics_link: job.data.task_statistics_link,
+        review_rating: job.data.review_rating,
+        review_comment: job.data.review_comment
       })
     }
 

@@ -34,7 +34,10 @@ class EmailGenerator {
           `http://${customizerHost}:${customizerPort}/mail/restore/html`,
           `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/subject`,
           `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/html`
+          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/html`,
+          `http://${customizerHost}:${customizerPort}/mail/new_task_review/subject`,
+          `http://${customizerHost}:${customizerPort}/mail/new_task_review/plain`,
+          `http://${customizerHost}:${customizerPort}/mail/new_task_review/html`,
         ], fetchFunc, (err, results) => {
           if (err) {
             reject(err)
@@ -54,6 +57,11 @@ class EmailGenerator {
               subject: results[6],
               plain: results[7],
               html: results[8]
+            },
+            newTaskReview: {
+              subject: results[9],
+              plain: results[10],
+              html: results[11]
             }
           }
           this.loaded = true
@@ -93,6 +101,15 @@ class EmailGenerator {
       subject: this.templates['inviteSupervisor']['subject'],
       plain: plainMessage,
       html: htmlMessage
+    }
+  }
+
+  getNewTaskReviewEmail (params) {
+    const entry = this.templates.newTaskReview
+    return {
+      subject: mustache.render(entry.subject, params),
+      plain: mustache.render(entry.plain, params),
+      html: mustache.render(entry.html, params)
     }
   }
 }

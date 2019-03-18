@@ -1,10 +1,11 @@
 const TeamTaskReview = require('../models/team-task-review')
 const TeamTaskHit = require('../models/team-task-hit')
 const logger = require('../utils/logger')
-const { InternalError, TaskReviewAlreadyGivenError, TaskReviewNotEligibleError } = require('../utils/errors')
+const { InternalError, TaskReviewAlreadyGivenError, TaskReviewNotEligibleError, TaskReviewNotFoundError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
 const EventController = require('./event')
 const CreateTeamTaskReviewEvent = require('../events/create-team-task-review')
+const queue = require('../utils/queue')
 
 class TeamTaskReviewController {
   static isTeamTaskUniqueConstraintViolation (err) {
@@ -111,6 +112,9 @@ class TeamTaskReviewController {
             })
             .then(function (teamTaskReview) {
               callback(null, teamTaskReview)
+              queue('newTaskReviewQueue').add({
+                reviewId: teamTaskReview.id
+              })
               EventController.push(new CreateTeamTaskReviewEvent(teamTaskReview))
             })
             .catch(function (err) {
@@ -129,6 +133,25 @@ class TeamTaskReviewController {
         logger.error(err)
         callback(new InternalError(), null)
       })
+  }
+
+  static get (id) {
+    return new Promise(function (resolve, reject) {
+      TeamTaskReview
+      .query()
+      .where('id', id)
+      .first()
+      .then(function (teamTaskReview) {
+        if (teamTaskReview) {
+          resolve(teamTaskReview)
+        } else {
+          reject(new TaskReviewNotFoundError())
+        }
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
   }
 }
 

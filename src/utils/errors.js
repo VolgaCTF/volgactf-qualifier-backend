@@ -438,3 +438,24 @@ class InvalidCreateSupervisorURLError extends BaseError {
   }
 }
 module.exports.InvalidCreateSupervisorURLError = InvalidCreateSupervisorURLError
+
+class SupervisorTaskSubscriptionAlreadyExistsError extends BaseError {
+  constructor () {
+    super('Subscription already created!', 'SupervisorTaskSubscriptionAlreadyExistsError', 400)
+  }
+}
+module.exports.SupervisorTaskSubscriptionAlreadyExistsError = SupervisorTaskSubscriptionAlreadyExistsError
+
+class SupervisorTaskSubscriptionNotFoundError extends BaseError {
+  constructor () {
+    super('Subscription not found!', 'SupervisorTaskSubscriptionNotFoundError', 400)
+  }
+}
+module.exports.SupervisorTaskSubscriptionNotFoundError = SupervisorTaskSubscriptionNotFoundError
+
+class TaskReviewNotFoundError extends BaseError {
+  constructor () {
+    super('Task review not found!', 'TaskReviewNotFoundError', 400)
+  }
+}
+module.exports.TaskReviewNotFoundError = TaskReviewNotFoundError

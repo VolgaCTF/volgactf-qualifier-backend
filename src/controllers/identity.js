@@ -17,6 +17,7 @@ class IdentityController {
               id: request.session.identityID,
               role: supervisor.rights,
               name: supervisor.username,
+              email: supervisor.email,
               token: token
             })
           }

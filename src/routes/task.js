@@ -50,6 +50,8 @@ const taskFileSerializer = require('../serializers/task-file')
 
 const taskFileParam = require('../params/task-file')
 
+const supervisorTaskSubscriptionController = require('../controllers/supervisor-task-subscription')
+
 router.param('taskId', taskParam.id)
 router.param('taskFileId', taskFileParam.id)
 
@@ -363,6 +365,28 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
         next(new WrongTaskAnswerError())
       }
     }
+  })
+})
+
+router.post('/:taskId/subscribe', checkToken, needsToBeAuthorizedSupervisor, getTask, function (request, response, next) {
+  supervisorTaskSubscriptionController
+  .create(request.session.identityID, request.task)
+  .then(function (supervisorTaskSubscription) {
+    response.json({ success: true })
+  })
+  .catch(function (err) {
+    next(err)
+  })
+})
+
+router.post('/:taskId/unsubscribe', checkToken, needsToBeAuthorizedSupervisor, getTask, function (request, response, next) {
+  supervisorTaskSubscriptionController
+  .delete(request.session.identityID, request.task)
+  .then(function () {
+    response.json({ success: true })
+  })
+  .catch(function (err) {
+    next(err)
   })
 })
 
