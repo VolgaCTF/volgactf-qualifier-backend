@@ -9,7 +9,8 @@ module.exports.TEMPLATE_TASK_STATISTICS_PAGE = 'taskStatisticsPage'
 module.exports.TEMPLATE_ABOUT_PAGE = 'aboutPage'
 module.exports.TEMPLATE_CONTEST_PAGE = 'contestPage'
 module.exports.TEMPLATE_REMOTE_CHECKERS_PAGE = 'remoteCheckersPage'
-module.exports.TEMPLATE_EVENTS_LIVE_PAGE = 'eventsLivePage'
+module.exports.TEMPLATE_EVENT_LIVE_PAGE = 'eventLivePage'
+module.exports.TEMPLATE_EVENT_HISTORY_PAGE = 'eventHistoryPage'
 module.exports.TEMPLATE_SUPERVISOR_SIGNIN_PAGE = 'supervisorSigninPage'
 module.exports.TEMPLATE_TEAM_SIGNIN_PAGE = 'teamSigninPage'
 module.exports.TEMPLATE_TEAM_RESTORE_PAGE = 'teamRestorePage'
@@ -120,3 +121,5 @@ module.exports.TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW = 'eventLogCreateTeamT
 
 module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK_FILE = 'eventLogCreateTaskFile'
 module.exports.TEMPLATE_EVENT_LOG_DELETE_TASK_FILE = 'eventLogDeleteTaskFile'
+
+module.exports.TEMPLATE_EVENT_HISTORY_PAGINATION_PARTIAL = 'eventHistoryPaginationPartial'

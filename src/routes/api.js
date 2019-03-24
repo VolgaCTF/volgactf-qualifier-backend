@@ -29,6 +29,7 @@ const webhookRouter = require('../routes/webhook')
 const { BaseError } = require('../utils/errors')
 
 const remoteCheckerRouter = require('../routes/remote-checker')
+const eventRouter = require('../routes/event')
 
 const router = express.Router()
 
@@ -42,6 +43,7 @@ router.use('/country', countryRouter)
 router.use('/supervisor', supervisorRouter)
 router.use('/webhook', webhookRouter)
 router.use('/remote_checker', remoteCheckerRouter)
+router.use('/event', eventRouter)
 
 router.get('/identity', detectScope, issueToken, function (request, response, next) {
   const token = request.session.token

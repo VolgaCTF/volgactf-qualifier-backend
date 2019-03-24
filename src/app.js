@@ -90,7 +90,8 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_TASK_LIST, TEMPLATE_TASK_CARD,
   TEMPLATE_REVISE_TASK_STATUS_PARTIAL, TEMPLATE_SUBMIT_TASK_STATUS_PARTIAL, TEMPLATE_REMOTE_CHECKER_LIST,
   TEMPLATE_REMOTE_CHECKER_BLOCK, TEMPLATE_TASK_FILE_LIST, TEMPLATE_TASK_FILE_PARTIAL,
-  TEMPLATE_TASK_FILE_LIST_COMPACT, TEMPLATE_TASK_FILE_PARTIAL_COMPACT, TEMPLATE_EVENTS_LIVE_PAGE,
+  TEMPLATE_TASK_FILE_LIST_COMPACT, TEMPLATE_TASK_FILE_PARTIAL_COMPACT,
+  TEMPLATE_EVENT_LIVE_PAGE, TEMPLATE_EVENT_HISTORY_PAGE, TEMPLATE_EVENT_HISTORY_PAGINATION_PARTIAL,
   TEMPLATE_EVENT_LOG_UNKNOWN, TEMPLATE_EVENT_LOG_UPDATE_CONTEST,
   TEMPLATE_EVENT_LOG_CREATE_CATEGORY, TEMPLATE_EVENT_LOG_UPDATE_CATEGORY, TEMPLATE_EVENT_LOG_DELETE_CATEGORY,
   TEMPLATE_EVENT_LOG_CREATE_POST, TEMPLATE_EVENT_LOG_UPDATE_POST, TEMPLATE_EVENT_LOG_DELETE_POST,
@@ -137,7 +138,8 @@ templateStore.register(TEMPLATE_TASK_STATISTICS_PAGE, 'html/task/statistics.html
 templateStore.register(TEMPLATE_ABOUT_PAGE, 'html/about.html')
 templateStore.register(TEMPLATE_CONTEST_PAGE, 'html/contest.html')
 templateStore.register(TEMPLATE_REMOTE_CHECKERS_PAGE, 'html/remote_checkers.html')
-templateStore.register(TEMPLATE_EVENTS_LIVE_PAGE, 'html/event/live.html')
+templateStore.register(TEMPLATE_EVENT_LIVE_PAGE, 'html/event/live.html')
+templateStore.register(TEMPLATE_EVENT_HISTORY_PAGE, 'html/event/history.html')
 templateStore.register(TEMPLATE_SUPERVISOR_SIGNIN_PAGE, 'html/supervisor/signin.html')
 templateStore.register(TEMPLATE_TEAM_SIGNIN_PAGE, 'html/team/signin.html')
 templateStore.register(TEMPLATE_TEAM_RESTORE_PAGE, 'html/team/restore.html')
@@ -245,6 +247,8 @@ templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW, 'html/event/c
 
 templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK_FILE, 'html/event/create-task-file.html')
 templateStore.register(TEMPLATE_EVENT_LOG_DELETE_TASK_FILE, 'html/event/delete-task-file.html')
+
+templateStore.register(TEMPLATE_EVENT_HISTORY_PAGINATION_PARTIAL, 'html/event/pagination.html')
 
 app.get('/', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const promises = [
@@ -887,7 +891,7 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
   })
 })
 
-app.get('/events/live', detectScope, issueToken, getContestTitle, function (request, response, next) {
+app.get('/event/live', detectScope, issueToken, getContestTitle, function (request, response, next) {
   if (request.scope.isTeam() || request.scope.isGuest()) {
     next()
     return
@@ -895,7 +899,7 @@ app.get('/events/live', detectScope, issueToken, getContestTitle, function (requ
 
   const promises = [
     templateStore.resolveAll([
-      TEMPLATE_EVENTS_LIVE_PAGE,
+      TEMPLATE_EVENT_LIVE_PAGE,
       TEMPLATE_ANALYTICS,
       TEMPLATE_NAVBAR,
       TEMPLATE_STREAM_STATE_PARTIAL,
@@ -967,7 +971,7 @@ app.get('/events/live', detectScope, issueToken, getContestTitle, function (requ
     const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
     const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
 
-    const pageTemplate = templates[TEMPLATE_EVENTS_LIVE_PAGE]
+    const pageTemplate = templates[TEMPLATE_EVENT_LIVE_PAGE]
     response.send(pageTemplate({
       _: _,
       jsesc: jsesc,
@@ -984,7 +988,115 @@ app.get('/events/live', detectScope, issueToken, getContestTitle, function (requ
       remoteCheckers: remoteCheckers,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_EVENTS_LIVE_PAGE)
+      templates: _.omit(templates, TEMPLATE_EVENT_LIVE_PAGE)
+    }))
+  })
+  .catch(function (err) {
+    logger.error(err)
+    next(err)
+  })
+})
+
+app.get('/event/history', detectScope, issueToken, getContestTitle,  function (request, response, next) {
+  if (request.scope.isTeam() || request.scope.isGuest()) {
+    next()
+    return
+  }
+
+  const promises = [
+    templateStore.resolveAll([
+      TEMPLATE_EVENT_HISTORY_PAGE,
+      TEMPLATE_ANALYTICS,
+      TEMPLATE_NAVBAR,
+      TEMPLATE_STREAM_STATE_PARTIAL,
+      TEMPLATE_CONTEST_STATE_PARTIAL,
+      TEMPLATE_EVENT_LOG_UNKNOWN,
+      TEMPLATE_EVENT_LOG_UPDATE_CONTEST,
+      TEMPLATE_EVENT_LOG_CREATE_CATEGORY,
+      TEMPLATE_EVENT_LOG_UPDATE_CATEGORY,
+      TEMPLATE_EVENT_LOG_DELETE_CATEGORY,
+      TEMPLATE_EVENT_LOG_CREATE_POST,
+      TEMPLATE_EVENT_LOG_UPDATE_POST,
+      TEMPLATE_EVENT_LOG_DELETE_POST,
+      TEMPLATE_EVENT_LOG_CREATE_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_DELETE_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_UPDATE_SUPERVISOR_PASSWORD,
+      TEMPLATE_EVENT_LOG_LOGIN_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_LOGOUT_SUPERVISOR,
+      TEMPLATE_EVENT_LOG_CREATE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_UPDATE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_DELETE_REMOTE_CHECKER,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD,
+      TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO,
+      TEMPLATE_EVENT_LOG_QUALIFY_TEAM,
+      TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM,
+      TEMPLATE_EVENT_LOG_LOGIN_TEAM,
+      TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
+      TEMPLATE_EVENT_LOG_CREATE_TASK,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK,
+      TEMPLATE_EVENT_LOG_OPEN_TASK,
+      TEMPLATE_EVENT_LOG_CLOSE_TASK,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY,
+      TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME,
+      TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT,
+      TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW,
+      TEMPLATE_EVENT_LOG_CREATE_TASK_FILE,
+      TEMPLATE_EVENT_LOG_DELETE_TASK_FILE,
+      TEMPLATE_EVENT_HISTORY_PAGINATION_PARTIAL
+    ]),
+    identityController.fetch(request),
+    contestController.fetch(),
+    categoryController.fetch(),
+    postController.fetch(),
+    taskController.fetch(true),
+    taskCategoryController.fetch(true),
+    taskValueController.fetch(true),
+    taskRewardSchemeController.fetch(true),
+    teamController.fetch(false),
+    remoteCheckerController.fetch()
+  ]
+
+  Promise.all(promises)
+  .then(function (values) {
+    const templates = values[0]
+    const identity = values[1]
+    const contest = contestSerializer(values[2])
+    const categories = _.map(values[3], categorySerializer)
+    const posts = _.map(values[4], postSerializer)
+    const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+    const taskCategories = _.map(values[6], taskCategorySerializer)
+    const taskValues = _.map(values[7], taskValueSerializer)
+    const taskRewardSchemes = _.map(values[8], taskRewardSchemeSerializer)
+    const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
+    const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
+
+    const pageTemplate = templates[TEMPLATE_EVENT_HISTORY_PAGE]
+    response.send(pageTemplate({
+      _: _,
+      jsesc: jsesc,
+      moment: moment,
+      identity: identity,
+      contest: contest,
+      categories: categories,
+      posts: posts,
+      taskPreviews: taskPreviews,
+      taskCategories: taskCategories,
+      taskValues: taskValues,
+      taskRewardSchemes: taskRewardSchemes,
+      teams: teams,
+      remoteCheckers: remoteCheckers,
+      contestTitle: request.contestTitle,
+      google_tag_id: googleTagId,
+      templates: _.omit(templates, TEMPLATE_EVENT_HISTORY_PAGE),
+      fetchThreshold: (new Date()).getTime()
     }))
   })
   .catch(function (err) {
