@@ -26,7 +26,7 @@ class TeamController {
   static restore (email, callback) {
     Team
       .query()
-      .where('email', email.toLowerCase())
+      .where('email', email)
       .first()
       .then(function (team) {
         if (team) {
