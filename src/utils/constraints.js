@@ -16,7 +16,7 @@ module.exports = {
     new Assert().Required(),
     new Assert().Callback(is_.string),
     new Assert().Length({ min: 2, max: 100 }),
-    new Assert().Regexp('^[\u0020-\u007E\u00A1-\u024F]{2,100}$', 'g')
+    new Assert().Regexp('^[\u0020-\u007E\u00A1-\u024F\u21AF]{2,100}$', 'g')
   ],
   password: [
     new Assert().Required(),
