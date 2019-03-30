@@ -111,6 +111,8 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_EVENT_LOG_DELETE_TASK_FILE
 } = require('./constants/template')
 
+const { TASK_MIN_VALUE, TASK_MAX_VALUE } = require('./utils/constants')
+
 const app = express()
 app.set('x-powered-by', false)
 app.set('trust proxy', true)
@@ -657,6 +659,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       remoteCheckers: remoteCheckers,
       taskRemoteCheckers: taskRemoteCheckers,
       google_tag_id: googleTagId,
+      taskMinValue: TASK_MIN_VALUE,
+      taskMaxValue: TASK_MAX_VALUE,
       templates: _.omit(templates, TEMPLATE_TASKS_PAGE)
     }))
   })

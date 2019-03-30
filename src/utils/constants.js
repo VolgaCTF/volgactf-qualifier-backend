@@ -12,7 +12,7 @@ module.exports.CONTEST_STARTED = 2
 module.exports.CONTEST_PAUSED = 3
 module.exports.CONTEST_FINISHED = 4
 
-module.exports.TASK_MIN_VALUE = 10
+module.exports.TASK_MIN_VALUE = 1
 module.exports.TASK_MAX_VALUE = 1000
 module.exports.TASK_MAX_HINTS = 10
 module.exports.TASK_MAX_CATEGORIES = 5
