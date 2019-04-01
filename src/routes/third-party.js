@@ -23,7 +23,7 @@ function rank (a, b) {
   }
 }
 
-router.get('/ctftime', function (request, response, next) {
+router.get('/ctftime.json', function (request, response, next) {
   TeamController.index(function (err, teams) {
     if (err) {
       logger.error(err)
@@ -64,7 +64,7 @@ router.get('/ctftime', function (request, response, next) {
   }, true)
 })
 
-router.get('/teams', needsToBeAuthorizedSupervisor, function (request, response, next) {
+router.get('/teams.csv', needsToBeAuthorizedSupervisor, function (request, response, next) {
   CountryController.index(function (err, countries) {
     if (err) {
       next(new InternalError(), null)
@@ -97,7 +97,9 @@ router.get('/teams', needsToBeAuthorizedSupervisor, function (request, response,
                   institution: entry.team.institution,
                   score: entry.score
                 }
-              }), true)
+              }), true, {
+                'Content-Type': 'text/csv'
+              })
             })
             .catch(function (err) {
               logger.error(err)
