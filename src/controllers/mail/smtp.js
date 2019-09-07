@@ -1,9 +1,19 @@
 const logger = require('../../utils/logger')
-const mailgun = require('mailgun-js')
+const nodemailer = require('nodemailer')
 
-class MailgunController {
+class SMTPController {
   static sendEmail (message, recipientEmail, recipientName, messageId) {
     return new Promise(function (resolve, reject) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT, 10),
+        secure: process.env.SMTP_SECURE === 'yes',
+        auth: {
+          user: process.env.SMTP_USERNAME,
+          pass: process.env.SMTP_PASSWORD
+        }
+      })
+
       const data = {
         from: `${process.env.VOLGACTF_QUALIFIER_EMAIL_SENDER_NAME} <${process.env.VOLGACTF_QUALIFIER_EMAIL_SENDER_ADDRESS}>`,
         to: `${recipientName} <${recipientEmail}>`,
@@ -12,23 +22,16 @@ class MailgunController {
         html: message.html
       }
 
-      data['v:themis_quals_message_id'] = messageId
-
-      const client = mailgun({
-        apiKey: process.env.MAILGUN_API_KEY,
-        domain: process.env.MAILGUN_DOMAIN
-      })
-
-      client.messages().send(data, function (err, body) {
+      transporter.sendMail(data, function (err, info) {
         if (err) {
           logger.error(err)
           reject(err)
         } else {
-          resolve(body)
+          resolve(info)
         }
       })
     })
   }
 }
 
-module.exports = MailgunController
+module.exports = SMTPController

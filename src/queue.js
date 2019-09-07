@@ -5,7 +5,10 @@ const logger = require('./utils/logger')
 const gm = require('gm')
 const path = require('path')
 const token = require('./utils/token')
+
 const MailgunController = require('./controllers/mail/mailgun')
+const SMTPController = require('./controllers/mail/smtp')
+
 const TeamController = require('./controllers/team')
 const EventController = require('./controllers/event')
 const UpdateTeamLogoEvent = require('./events/update-team-logo')
@@ -213,10 +216,12 @@ queue('sendEmailQueue').process(function (job, done) {
     })
     .then(function (messageEntity) {
       let senderController = null
-      const emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
+      const emailTransport = process.env.VOLGACTF_QUALIFIER_EMAIL_TRANSPORT
 
       if (emailTransport === 'mailgun') {
         senderController = MailgunController
+      } else if (emailTransport === 'smtp') {
+        senderController = SMTPController
       }
 
       if (!senderController) {

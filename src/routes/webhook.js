@@ -10,7 +10,7 @@ const mailgun = require('mailgun-js')
 
 const webhookResponseController = require('../controllers/webhook-response')
 
-const emailTransport = process.env.THEMIS_QUALS_EMAIL_TRANSPORT
+const emailTransport = process.env.VOLGACTF_QUALIFIER_EMAIL_TRANSPORT
 
 if (emailTransport === 'mailgun') {
   const mailgunClient = mailgun({
