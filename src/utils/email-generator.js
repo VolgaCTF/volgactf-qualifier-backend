@@ -23,8 +23,8 @@ class EmailGenerator {
             })
         }
 
-        const customizerHost = process.env.THEMIS_QUALS_CUSTOMIZER_HOST
-        const customizerPort = parseInt(process.env.THEMIS_QUALS_CUSTOMIZER_PORT, 10)
+        const customizerHost = process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_HOST
+        const customizerPort = parseInt(process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_PORT, 10)
         async.map([
           `http://${customizerHost}:${customizerPort}/mail/welcome/subject`,
           `http://${customizerHost}:${customizerPort}/mail/welcome/plain`,
@@ -37,7 +37,7 @@ class EmailGenerator {
           `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/html`,
           `http://${customizerHost}:${customizerPort}/mail/new_task_review/subject`,
           `http://${customizerHost}:${customizerPort}/mail/new_task_review/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/new_task_review/html`,
+          `http://${customizerHost}:${customizerPort}/mail/new_task_review/html`
         ], fetchFunc, (err, results) => {
           if (err) {
             reject(err)

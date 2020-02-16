@@ -9,7 +9,7 @@ const TeamRanking = require('../models/team-ranking')
 
 const _ = require('underscore')
 const jsesc = require('jsesc')
-const csv = require('csv-express')
+require('csv-express')
 
 const { needsToBeAuthorizedSupervisor } = require('../middleware/session')
 

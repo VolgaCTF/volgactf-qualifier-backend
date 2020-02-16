@@ -9,7 +9,7 @@ class TemplateStore {
   constructor () {
     this.cache = {}
     this.metadata = {}
-    this.distFrontendDir = process.env.THEMIS_QUALS_DIST_FRONTEND_DIR
+    this.distFrontendDir = process.env.VOLGACTF_QUALIFIER_DIST_FRONTEND_DIR
   }
 
   register (templateId, templateSrcPath) {

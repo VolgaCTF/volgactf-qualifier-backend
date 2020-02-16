@@ -100,20 +100,20 @@ function detectScope (request, response, next) {
 module.exports.detectScope = detectScope
 
 let secureConnection = false
-if (process.env.THEMIS_QUALS_SECURE) {
-  secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+if (process.env.VOLGACTF_QUALIFIER_SECURE) {
+  secureConnection = process.env.VOLGACTF_QUALIFIER_SECURE === 'yes'
 }
 
 module.exports.session = session({
   store: new RedisStore({
     client: redis.createClient()
   }),
-  secret: process.env.THEMIS_QUALS_SESSION_SECRET,
+  secret: process.env.VOLGACTF_QUALIFIER_SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  name: 'themis-quals-session',
+  name: 'volgactf-qualifier-session',
   cookie: {
-    domain: process.env.THEMIS_QUALS_FQDN,
+    domain: process.env.VOLGACTF_QUALIFIER_FQDN,
     path: '/',
     httpOnly: true,
     secure: secureConnection,

@@ -21,8 +21,8 @@ function getContestTitle (request, response, next) {
     request.contestTitle = contestTitle
     next()
   } else {
-    const customizerHost = process.env.THEMIS_QUALS_CUSTOMIZER_HOST
-    const customizerPort = parseInt(process.env.THEMIS_QUALS_CUSTOMIZER_PORT, 10)
+    const customizerHost = process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_HOST
+    const customizerPort = parseInt(process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_PORT, 10)
     const url = `http://${customizerHost}:${customizerPort}/event-title`
     axios.get(url)
       .then(function (response) {

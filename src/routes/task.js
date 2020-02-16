@@ -297,7 +297,7 @@ router.post('/:taskId/submit', needsToBeAuthorizedTeam, contestIsStarted, checkT
     throw new TaskNotAvailableError()
   }
 
-  const limiter = new LimitController(`themis__team${request.session.identityID}__task${request.taskId}__submit`, {
+  const limiter = new LimitController(`volgactf_qualifier__team${request.session.identityID}__task${request.taskId}__submit`, {
     timeout: TASK_SUBMIT_LIMIT_TIME,
     maxAttempts: TASK_SUBMIT_LIMIT_ATTEMPTS
   })
@@ -942,7 +942,7 @@ const multidataParser = busboy({
   limits: {
     fieldSize: 256,
     fields: 10,
-    fileSize: parseInt(process.env.THEMIS_QUALS_POST_MAX_TASK_FILE_SIZE, 10) * 1024 * 1024,
+    fileSize: parseInt(process.env.VOLGACTF_QUALIFIER_POST_MAX_TASK_FILE_SIZE, 10) * 1024 * 1024,
     files: 1
   }
 })
@@ -962,7 +962,7 @@ router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAut
   const taskFileMetadata = {}
   const taskFile = tmp.fileSync({
     mode: 0o666,
-    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    dir: process.env.VOLGACTF_QUALIFIER_UPLOAD_TMP_DIR,
     keep: true
   })
 

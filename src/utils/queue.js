@@ -12,7 +12,7 @@ class QueueManager {
       this.redisDatabase = parseInt(process.env.REDIS_DB, 10)
     }
 
-    this.prefix = process.env.THEMIS_QUALS_QUEUE_PREFIX || 'themis-quals'
+    this.prefix = process.env.VOLGACTF_QUALIFIER_QUEUE_PREFIX || 'volgactf-qualifier'
 
     this.cache = {}
   }

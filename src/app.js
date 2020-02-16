@@ -1001,7 +1001,7 @@ app.get('/event/live', detectScope, issueToken, getContestTitle, function (reque
   })
 })
 
-app.get('/event/history', detectScope, issueToken, getContestTitle,  function (request, response, next) {
+app.get('/event/history', detectScope, issueToken, getContestTitle, function (request, response, next) {
   if (request.scope.isTeam() || request.scope.isGuest()) {
     next()
     return
@@ -1431,8 +1431,8 @@ app.get('/robots.txt', function (request, response, next) {
     response
     .set('content-type', 'text/plain')
     .send(pageTemplate({
-      fqdn: process.env.THEMIS_QUALS_FQDN,
-      secure: (process.env.THEMIS_QUALS_SECURE === 'yes')
+      fqdn: process.env.VOLGACTF_QUALIFIER_FQDN,
+      secure: (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes')
     }))
   })
   .catch(function (err) {

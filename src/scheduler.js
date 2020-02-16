@@ -5,20 +5,20 @@ class Scheduler {
   constructor () {
     this.recalculateIntervalId = null
     this.recalculateInterval = 60
-    if (process.env.THEMIS_QUALS_SCHEDULER_RECALCULATE_INTERVAL) {
-      this.recalculateInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_RECALCULATE_INTERVAL, 10)
+    if (process.env.VOLGACTF_QUALIFIER_SCHEDULER_RECALCULATE_INTERVAL) {
+      this.recalculateInterval = parseInt(process.env.VOLGACTF_QUALIFIER_SCHEDULER_RECALCULATE_INTERVAL, 10)
     }
 
     this.checkContestIntervalId = null
     this.checkContestInterval = 10
-    if (process.env.THEMIS_QUALS_SCHEDULER_CHECK_CONTEST_INTERVAL) {
-      this.checkContestInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_CHECK_CONTEST_INTERVAL, 10)
+    if (process.env.VOLGACTF_QUALIFIER_SCHEDULER_CHECK_CONTEST_INTERVAL) {
+      this.checkContestInterval = parseInt(process.env.VOLGACTF_QUALIFIER_SCHEDULER_CHECK_CONTEST_INTERVAL, 10)
     }
 
     this.checkTasksIntervalId = null
     this.checkTasksInterval = 20
-    if (process.env.THEMIS_QUALS_SCHEDULER_CHECK_TASKS_INTERVAL) {
-      this.checkTasksInterval = parseInt(process.env.THEMIS_QUALS_SCHEDULER_CHECK_TASKS_INTERVAL, 10)
+    if (process.env.VOLGACTF_QUALIFIER_SCHEDULER_CHECK_TASKS_INTERVAL) {
+      this.checkTasksInterval = parseInt(process.env.VOLGACTF_QUALIFIER_SCHEDULER_CHECK_TASKS_INTERVAL, 10)
     }
   }
 

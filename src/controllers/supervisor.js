@@ -104,7 +104,7 @@ class SupervisorController {
             if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
               callback(new SupervisorUsernameTakenError(), null)
             } else if (SupervisorController.isSupervisorEmailUniqueConstraintViolation(err)) {
-                callback(new SupervisorEmailTakenError(), null)
+              callback(new SupervisorEmailTakenError(), null)
             } else {
               logger.error(err)
               callback(new InternalError(), null)

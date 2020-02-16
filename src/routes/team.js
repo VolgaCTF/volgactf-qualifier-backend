@@ -127,10 +127,10 @@ router.get('/:teamId/review/statistics', function (request, response, next) {
 router.get('/:teamId/logo', function (request, response) {
   TeamController.get(request.teamId, function (err, team) {
     if (team) {
-      const filename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `${team.id}.png`)
+      const filename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, `${team.id}.png`)
       fs.lstat(filename, function (err, stats) {
         if (err) {
-          const nologoFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, 'default.png')
+          const nologoFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, 'default.png')
           response.sendFile(nologoFilename)
         } else {
           response.sendFile(filename)
@@ -326,7 +326,7 @@ const multidataParser = busboy({
   limits: {
     fieldSize: 200,
     fields: 10,
-    fileSize: parseInt(process.env.THEMIS_QUALS_POST_MAX_TEAM_LOGO_SIZE, 10) * 1024 * 1024,
+    fileSize: parseInt(process.env.VOLGACTF_QUALIFIER_POST_MAX_TEAM_LOGO_SIZE, 10) * 1024 * 1024,
     files: 1
   }
 })
@@ -334,7 +334,7 @@ const multidataParser = busboy({
 router.post('/update-logo', checkToken, needsToBeAuthorizedTeam, contestNotFinished, multidataParser, function (request, response, next) {
   const teamLogo = tmp.fileSync({
     mode: 0o666,
-    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    dir: process.env.VOLGACTF_QUALIFIER_UPLOAD_TMP_DIR,
     keep: true
   })
 
@@ -374,7 +374,7 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
   const teamInfo = {}
   const teamLogo = tmp.fileSync({
     mode: 0o666,
-    dir: process.env.THEMIS_QUALS_UPLOAD_TMP_DIR,
+    dir: process.env.VOLGACTF_QUALIFIER_UPLOAD_TMP_DIR,
     keep: true
   })
 

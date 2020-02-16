@@ -68,10 +68,10 @@ class EventStream extends EventEmitter {
 }
 
 let streamMaxConnections = 1024
-if (process.env.THEMIS_QUALS_STREAM_MAX_CONNECTIONS) {
-  streamMaxConnections = parseInt(process.env.THEMIS_QUALS_STREAM_MAX_CONNECTIONS, 10)
+if (process.env.VOLGACTF_QUALIFIER_STREAM_MAX_CONNECTIONS) {
+  streamMaxConnections = parseInt(process.env.VOLGACTF_QUALIFIER_STREAM_MAX_CONNECTIONS, 10)
 }
 
-const redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
+const redisChannel = process.env.VOLGACTF_QUALIFIER_STREAM_REDIS_CHANNEL || 'volgactf_qualifier_realtime'
 
 module.exports = new EventStream(streamMaxConnections, redisChannel)

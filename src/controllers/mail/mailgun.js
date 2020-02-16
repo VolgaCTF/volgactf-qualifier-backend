@@ -12,7 +12,7 @@ class MailgunController {
         html: message.html
       }
 
-      data['v:themis_quals_message_id'] = messageId
+      data['v:volgactf_qualifier_message_id'] = messageId
 
       const client = mailgun({
         apiKey: process.env.MAILGUN_API_KEY,

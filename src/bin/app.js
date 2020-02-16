@@ -4,21 +4,21 @@ const logger = require('../utils/logger')
 const eventStream = require('../controllers/event-stream')
 
 function getNumProcesses () {
-  return parseInt(process.env.THEMIS_QUALS_NUM_PROCESSES || '2', 10)
+  return parseInt(process.env.VOLGACTF_QUALIFIER_NUM_PROCESSES || '2', 10)
 }
 
 function getServerPort () {
-  return parseInt(process.env.THEMIS_QUALS_PORT || '8000', 10)
+  return parseInt(process.env.VOLGACTF_QUALIFIER_PORT || '8000', 10)
 }
 
 function getServerHost () {
-  return process.env.THEMIS_QUALS_HOST || '127.0.0.1'
+  return process.env.VOLGACTF_QUALIFIER_HOST || '127.0.0.1'
 }
 
 if (cluster.isMaster) {
   logger.info(`Master ${process.pid} is running`)
 
-  for (let i=0; i<getNumProcesses(); i++) {
+  for (let i = 0; i < getNumProcesses(); i++) {
     cluster.fork()
   }
 

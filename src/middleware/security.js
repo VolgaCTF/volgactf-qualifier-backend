@@ -3,8 +3,8 @@ const tokenUtil = require('../utils/token')
 const moment = require('moment')
 
 let tokenExpirationDate = 1000 * 60 * 60  // 1 hour
-if (process.env.THEMIS_TOKEN_EXPIRATION_DATE) {
-  tokenExpirationDate = parseInt(process.env.THEMIS_TOKEN_EXPIRATION_DATE, 10)
+if (process.env.VOLGACTF_QUALIFIER_TOKEN_EXPIRATION_DATE) {
+  tokenExpirationDate = parseInt(process.env.VOLGACTF_QUALIFIER_TOKEN_EXPIRATION_DATE, 10)
 }
 
 function checkToken (request, response, next) {

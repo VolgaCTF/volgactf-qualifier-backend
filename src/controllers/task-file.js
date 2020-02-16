@@ -13,7 +13,7 @@ const DeleteTaskFileEvent = require('../events/delete-task-file')
 
 class TaskFileController {
   constructor () {
-    this.taskFileBaseDir = process.env.THEMIS_QUALS_TASK_FILES_DIR
+    this.taskFileBaseDir = process.env.VOLGACTF_QUALIFIER_TASK_FILES_DIR
   }
 
   fetchById (id) {

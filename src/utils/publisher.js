@@ -17,6 +17,6 @@ class EventPublisher {
   }
 }
 
-const redisChannel = process.env.THEMIS_QUALS_STREAM_REDIS_CHANNEL || 'themis_quals_realtime'
+const redisChannel = process.env.VOLGACTF_QUALIFIER_STREAM_REDIS_CHANNEL || 'volgactf_qualifier_realtime'
 
 module.exports = new EventPublisher(redisChannel)

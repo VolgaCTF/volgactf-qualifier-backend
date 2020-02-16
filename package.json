@@ -1,6 +1,6 @@
 {
   "name": "volgactf-qualifier-backend",
-  "version": "2.9.9",
+  "version": "3.0.0",
   "description": "VolgaCTF Qualifier platform backend",
   "main": "index.js",
   "scripts": {
@@ -37,7 +37,6 @@
     "jsesc": "^2.5.1",
     "knex": "^0.9.0",
     "mailgun-js": "^0.22.0",
-    "mandrill-api": "~1.0.41",
     "markdown-it": "^8.4.1",
     "markdown-it-emoji": "^1.4.0",
     "markdown-it-ins": "^2.0.0",

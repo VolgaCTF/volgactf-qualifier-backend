@@ -69,7 +69,7 @@ queue('checkTasksQueue').process(function (job, done) {
 })
 
 queue('createLogoQueue').process(function (job, done) {
-  let newFilename = path.join(process.env.THEMIS_QUALS_TEAM_LOGOS_DIR, `${job.data.id}.png`)
+  let newFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, `${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
     .write(newFilename, function (err) {
@@ -90,14 +90,14 @@ queue('createLogoQueue').process(function (job, done) {
 })
 
 function getTeamLink (teamId) {
-  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_QUALS_FQDN
+  const prefix = (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.VOLGACTF_QUALIFIER_FQDN
   return `${prefix}://${fqdn}/team/${teamId}/profile`
 }
 
 function getTaskStatisticsLink (taskId) {
-  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_QUALS_FQDN
+  const prefix = (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.VOLGACTF_QUALIFIER_FQDN
   return `${prefix}://${fqdn}/task/${taskId}/statistics`
 }
 
@@ -146,7 +146,7 @@ queue('newTaskReviewQueue').process(function (job, done) {
         task_link: taskLink,
         task_statistics_link: taskStatisticsLink,
         review_rating: teamTaskReview.rating,
-        review_comment: teamTaskReview.comment,
+        review_comment: teamTaskReview.comment
       })
     }
     done()
@@ -162,14 +162,14 @@ queue('sendEmailQueue').process(function (job, done) {
   .init()
   .then(function () {
     let secureConnection = false
-    if (process.env.THEMIS_QUALS_SECURE) {
-      secureConnection = process.env.THEMIS_QUALS_SECURE === 'yes'
+    if (process.env.VOLGACTF_QUALIFIER_SECURE) {
+      secureConnection = process.env.VOLGACTF_QUALIFIER_SECURE === 'yes'
     }
     let message = null
     if (job.data.message === 'welcome') {
       message = emailGenerator.getWelcomeEmail({
         name: job.data.name,
-        domain: process.env.THEMIS_QUALS_FQDN,
+        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
         secure: secureConnection,
         team: token.encode(job.data.email),
         code: token.encode(job.data.token)
@@ -177,14 +177,14 @@ queue('sendEmailQueue').process(function (job, done) {
     } else if (job.data.message === 'restore') {
       message = emailGenerator.getRestoreEmail({
         name: job.data.name,
-        domain: process.env.THEMIS_QUALS_FQDN,
+        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
         secure: secureConnection,
         team: token.encode(job.data.email),
         code: token.encode(job.data.token)
       })
     } else if (job.data.message === 'invite_supervisor') {
       message = emailGenerator.getInviteSupervisorEmail({
-        domain: process.env.THEMIS_QUALS_FQDN,
+        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
         secure: secureConnection,
         rights: job.data.rights,
         code: token.encode(job.data.token)
@@ -270,13 +270,13 @@ queue('sendEmailQueue').process(function (job, done) {
 })
 
 function getTasksLink () {
-  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_QUALS_FQDN
+  const prefix = (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.VOLGACTF_QUALIFIER_FQDN
   return `${prefix}://${fqdn}/tasks`
 }
 
 queue('notifyStartCompetition').process(function (job, done) {
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_NEWS === 'yes') {
     PostController.create(
       `Competition has begun!`,
       `:triangular_flag_on_post: Check out [tasks](${getTasksLink()}) and good luck!`,
@@ -288,7 +288,7 @@ queue('notifyStartCompetition').process(function (job, done) {
     )
   }
 
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TWITTER === 'yes') {
     TwitterController.post(
       `🚩 Competition has begun! Good luck! ${getTasksLink()}`,
       function (err) {
@@ -299,7 +299,7 @@ queue('notifyStartCompetition').process(function (job, done) {
     )
   }
 
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TELEGRAM === 'yes') {
     telegramController
     .post(`🚩 Competition has begun! Check out [tasks](${getTasksLink()}) and good luck!`)
     .then(function () {
@@ -313,13 +313,13 @@ queue('notifyStartCompetition').process(function (job, done) {
 })
 
 function getScoreboardLink () {
-  const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-  const fqdn = process.env.THEMIS_QUALS_FQDN
+  const prefix = (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'
+  const fqdn = process.env.VOLGACTF_QUALIFIER_FQDN
   return `${prefix}://${fqdn}/scoreboard`
 }
 
 queue('notifyFinishCompetition').process(function (job, done) {
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_NEWS === 'yes') {
     PostController.create(
       `Competition has ended!`,
       `:triangular_flag_on_post: Check out the final [scoreboard](${getScoreboardLink()})!`,
@@ -331,7 +331,7 @@ queue('notifyFinishCompetition').process(function (job, done) {
     )
   }
 
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TWITTER === 'yes') {
     TwitterController.post(
       `🚩 Competition has ended! Check out the final scoreboard! ${getScoreboardLink()}`,
       function (err) {
@@ -342,7 +342,7 @@ queue('notifyFinishCompetition').process(function (job, done) {
     )
   }
 
-  if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+  if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TELEGRAM === 'yes') {
     telegramController
     .post(`🚩 Competition has ended! Check out the final [scoreboard](${getScoreboardLink()})!`)
     .then(function () {
@@ -365,7 +365,7 @@ queue('notifyOpenTask').process(function (job, done) {
     const task = values[0]
     const taskValue = values[1]
 
-    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+    if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_NEWS === 'yes') {
       PostController.create(
         `New task — ${task.title}`,
         `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`,
@@ -377,7 +377,7 @@ queue('notifyOpenTask').process(function (job, done) {
       )
     }
 
-    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+    if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TWITTER === 'yes') {
       TwitterController.post(
         `🚩 New task — ${task.title} — worth ${taskValue.value} pts! ${TaskController.getTaskLink(task.id)}`,
         function (err) {
@@ -388,7 +388,7 @@ queue('notifyOpenTask').process(function (job, done) {
       )
     }
 
-    if (process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+    if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TELEGRAM === 'yes') {
       telegramController
       .post(`🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`)
       .then(function () {
@@ -410,7 +410,7 @@ queue('notifyTaskHint').process(function (job, done) {
     if (err) {
       done(err)
     } else {
-      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_NEWS === 'yes') {
+      if (task.isOpened() && process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_NEWS === 'yes') {
         PostController.create(
           `Task ${task.title} — new hint!`,
           `:triangular_flag_on_post: Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`,
@@ -422,7 +422,7 @@ queue('notifyTaskHint').process(function (job, done) {
         )
       }
 
-      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_TWITTER === 'yes') {
+      if (task.isOpened() && process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TWITTER === 'yes') {
         TwitterController.post(
           `🚩 Task ${task.title} — new hint! ${TaskController.getTaskLink(task.id)}`,
           function (err) {
@@ -433,7 +433,7 @@ queue('notifyTaskHint').process(function (job, done) {
         )
       }
 
-      if (task.isOpened() && process.env.THEMIS_QUALS_NOTIFICATION_POST_TELEGRAM === 'yes') {
+      if (task.isOpened() && process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TELEGRAM === 'yes') {
         telegramController
         .post(`🚩 Check out a new hint for [${task.title}](${TaskController.getTaskLink(task.id)})!`)
         .then(function () {

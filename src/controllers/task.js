@@ -423,8 +423,8 @@ class TaskController {
   }
 
   static getTaskLink (taskId) {
-    const prefix = (process.env.THEMIS_QUALS_SECURE === 'yes') ? 'https' : 'http'
-    const fqdn = process.env.THEMIS_QUALS_FQDN
+    const prefix = (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'
+    const fqdn = process.env.VOLGACTF_QUALIFIER_FQDN
     return `${prefix}://${fqdn}/tasks?action=show&taskId=${taskId}`
   }
 
