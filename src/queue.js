@@ -33,6 +33,8 @@ const TeamTaskReviewController = require('./controllers/team-task-review')
 const SupervisorController = require('./controllers/supervisor')
 const supervisorTaskSubscriptionController = require('./controllers/supervisor-task-subscription')
 
+const requestretry = require('requestretry')
+
 queue('recalculateQueue').process(function (job, done) {
   recalculateController
   .recalculate()
@@ -444,6 +446,26 @@ queue('notifyTaskHint').process(function (job, done) {
       }
 
       done()
+    }
+  })
+})
+
+queue('subscribeAwsSns').process(function (job, done) {
+  requestretry({
+    method: 'GET',
+    url: job.data.url,
+    maxAttempts: 3,
+    retryDelay: 100,
+    timeout: 3000
+  }, function (err, res) {
+    if (err) {
+      done(err)
+    } else {
+      if (res.statusCode === 200) {
+        done()
+      } else {
+        done(new Error(`expected 200 status code, received: ${res.statusCode}`))
+      }
     }
   })
 })

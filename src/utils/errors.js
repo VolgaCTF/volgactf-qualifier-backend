@@ -459,3 +459,10 @@ class TaskReviewNotFoundError extends BaseError {
   }
 }
 module.exports.TaskReviewNotFoundError = TaskReviewNotFoundError
+
+class InvalidAWSSignatureError extends BaseError {
+  constructor () {
+    super('AWS Signature is invalid', 'InvalidAWSSignatureError', 400)
+  }
+}
+module.exports.InvalidAWSSignatureError = InvalidAWSSignatureError

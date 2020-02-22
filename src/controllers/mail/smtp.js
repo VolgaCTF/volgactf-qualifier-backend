@@ -14,12 +14,16 @@ class SMTPController {
         }
       })
 
+      const headers = JSON.parse(process.env.SMTP_HEADERS_JSON || '{}')
+      headers['X-VolgaCTF-Qualifier-Message-Id'] = messageId
+
       const data = {
         from: `${process.env.VOLGACTF_QUALIFIER_EMAIL_SENDER_NAME} <${process.env.VOLGACTF_QUALIFIER_EMAIL_SENDER_ADDRESS}>`,
         to: `${recipientName} <${recipientEmail}>`,
         subject: message.subject,
         text: message.plain,
-        html: message.html
+        html: message.html,
+        headers: headers
       }
 
       transporter.sendMail(data, function (err, info) {
