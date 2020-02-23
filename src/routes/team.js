@@ -420,7 +420,7 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
             next(new ImageAspectRatioError())
           } else {
             emailAddressValidator
-              .validate(teamInfo.email)
+              .validate(teamInfo.email, request.ip)
               .then(function () {
                 TeamController.create(teamInfo, function (err, team) {
                   if (err) {
