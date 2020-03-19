@@ -65,6 +65,7 @@ class EventController {
       .where('createdAt', '<', fetchThreshold)
       .whereNot('type', EVENT_UPDATE_TEAM_RANKINGS)
       .whereRaw("json_typeof(data -> 'supervisors') != 'null'")
+      .orderBy('createdAt')
       .limit(pageSize)
       .offset((page - 1) * pageSize)
       .then(function (entries) {
