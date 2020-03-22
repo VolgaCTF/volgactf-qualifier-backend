@@ -281,7 +281,8 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_INDEX_PAGE)
+      templates: _.omit(templates, TEMPLATE_INDEX_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -326,7 +327,8 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
       countries: countries,
       teams: teams,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAMS_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAMS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -370,7 +372,8 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
       contestTitle: request.contestTitle,
       posts: posts,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_NEWS_PAGE)
+      templates: _.omit(templates, TEMPLATE_NEWS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -417,7 +420,8 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
       contestTitle: request.contestTitle,
       categories: categories,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE)
+      templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -506,7 +510,8 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
       teamTaskReviews: teamTaskReviews,
       teamTaskReviewStatistics: teamTaskReviewStatistics,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -556,7 +561,8 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
       detailed: request.query.hasOwnProperty('detailed'),
       printLayout: request.query.hasOwnProperty('printLayout'),
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE)
+      templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -661,7 +667,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       google_tag_id: googleTagId,
       taskMinValue: TASK_MIN_VALUE,
       taskMaxValue: TASK_MAX_VALUE,
-      templates: _.omit(templates, TEMPLATE_TASKS_PAGE)
+      templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -721,7 +728,8 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
       teamTaskHits: teamTaskHits,
       teamTaskReviews: teamTaskReviews,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE)
+      templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -758,7 +766,8 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_ABOUT_PAGE)
+      templates: _.omit(templates, TEMPLATE_ABOUT_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -799,7 +808,8 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_CONTEST_PAGE)
+      templates: _.omit(templates, TEMPLATE_CONTEST_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -840,7 +850,8 @@ app.get('/supervisors', detectScope, issueToken, getContestTitle, function (requ
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISORS_PAGE)
+      templates: _.omit(templates, TEMPLATE_SUPERVISORS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -886,7 +897,8 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
       contestTitle: request.contestTitle,
       remoteCheckers: remoteCheckers,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE)
+      templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -992,7 +1004,8 @@ app.get('/event/live', detectScope, issueToken, getContestTitle, function (reque
       remoteCheckers: remoteCheckers,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_EVENT_LIVE_PAGE)
+      templates: _.omit(templates, TEMPLATE_EVENT_LIVE_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1100,6 +1113,7 @@ app.get('/event/history', detectScope, issueToken, getContestTitle, function (re
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
       templates: _.omit(templates, TEMPLATE_EVENT_HISTORY_PAGE),
+      runtimeStorage: {},
       fetchThreshold: (new Date()).getTime()
     }))
   })
@@ -1137,7 +1151,8 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE)
+      templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1174,7 +1189,8 @@ app.get('/supervisor/create', detectScope, issueToken, getContestTitle, function
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISOR_CREATE_PAGE)
+      templates: _.omit(templates, TEMPLATE_SUPERVISOR_CREATE_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1211,7 +1227,8 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1248,7 +1265,8 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1289,7 +1307,8 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
       countries: countries,
       geoIPData: request.geoIPData,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1355,7 +1374,8 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         success: true,
         text: 'Email verified. Thank you!',
         google_tag_id: googleTagId,
-        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE)
+        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
+        runtimeStorage: {}
       }))
     })
     .catch(function (err2) {
@@ -1369,7 +1389,8 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
         success: false,
         text: err2.message,
         google_tag_id: googleTagId,
-        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE)
+        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
+        runtimeStorage: {}
       }))
     })
   })
@@ -1407,7 +1428,8 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
       contest: contest,
       contestTitle: request.contestTitle,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE)
+      templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1470,7 +1492,8 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
       contestTitle: request.contestTitle,
       urlPath: request.path,
       google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_404_PAGE)
+      templates: _.omit(templates, TEMPLATE_404_PAGE),
+      runtimeStorage: {}
     }))
   })
   .catch(function (err) {
@@ -1510,7 +1533,8 @@ app.use(function (err, request, response, next) {
           contest: contest,
           contestTitle: request.contestTitle,
           google_tag_id: googleTagId,
-          templates: _.omit(templates, TEMPLATE_500_PAGE)
+          templates: _.omit(templates, TEMPLATE_500_PAGE),
+          runtimeStorage: {}
         }))
       })
       .catch(function (err2) {
