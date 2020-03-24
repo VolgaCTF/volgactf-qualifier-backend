@@ -4,8 +4,25 @@ const { InternalError, EmailAddressValidationError } = require('../utils/errors'
 const request = require('request')
 
 class EmailAddressValidator {
+  constructor () {
+    const ignoreListStr = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR_IGNORE_LIST || ''
+    this.ignoreList = ignoreListStr.split(',').filter(function (x) {
+      return x.length > 0
+    })
+  }
+
+  ignored (email) {
+    return this.ignoreList.indexOf(email) !== -1
+  }
+
   validate (email, ip) {
+    const that = this
     return new Promise(function (resolve, reject) {
+      if (that.ignored(email)) {
+        resolve(email)
+        return
+      }
+
       const emailValidator = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR
       if (emailValidator === 'mailgun') {
         const client = mailgun({
