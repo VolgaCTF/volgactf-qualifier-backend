@@ -249,7 +249,7 @@ router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFini
   }
 
   emailAddressValidator
-  .validate(request.body.email)
+  .validate(request.body.email, request.ip)
   .then(function () {
     return TeamController.updateEmail2(request.session.identityID, request.body.email)
   })
