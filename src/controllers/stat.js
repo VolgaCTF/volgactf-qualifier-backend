@@ -365,7 +365,7 @@ class StatController {
           const taskReviewDistribution = new Map()
 
           let iterDate = moment(data.contest.startsAt).minutes(0).seconds(0).milliseconds(0).valueOf()
-          while (iterDate < contestFinishTimestamp) {
+          while (iterDate <= contestFinishTimestamp) {
             taskHitAttemptDistribution.set(iterDate, new Set())
             taskHitDistribution.set(iterDate, new Set())
             taskReviewDistribution.set(iterDate, new Set())
