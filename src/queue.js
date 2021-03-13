@@ -6,7 +6,6 @@ const gm = require('gm')
 const path = require('path')
 const token = require('./utils/token')
 
-const MailgunController = require('./controllers/mail/mailgun')
 const SMTPController = require('./controllers/mail/smtp')
 
 const TeamController = require('./controllers/team')
@@ -208,9 +207,7 @@ queue('sendEmailQueue').process(function (job, done) {
       let senderController = null
       const emailTransport = process.env.VOLGACTF_QUALIFIER_EMAIL_TRANSPORT
 
-      if (emailTransport === 'mailgun') {
-        senderController = MailgunController
-      } else if (emailTransport === 'smtp') {
+      if (emailTransport === 'smtp') {
         senderController = SMTPController
       }
 

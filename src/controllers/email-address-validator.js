@@ -1,6 +1,6 @@
 const logger = require('../utils/logger')
-const mailgun = require('mailgun-js')
 const { InternalError, EmailAddressValidationError } = require('../utils/errors')
+const { validate: deepEmailValidate } = require('deep-email-validator')
 
 class EmailAddressValidator {
   constructor () {
@@ -23,40 +23,35 @@ class EmailAddressValidator {
       }
 
       const emailValidator = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR
-      if (emailValidator === 'mailgun') {
-        const client = mailgun({
-          apiKey: process.env.MAILGUN_API_KEY,
-          domain: process.env.MAILGUN_DOMAIN
+      if (emailValidator === 'default') {
+        deepEmailValidate({
+          email: email,
+          sender: email,
+          validateRegex: false,
+          validateMx: true,
+          validateTypo: true,
+          validateDisposable: true,
+          validateSMTP: false
         })
-
-        client.validate(email, true, { mailbox_verification: true }, function (err, body) {
-          if (err) {
-            logger.error(err)
-            reject(new InternalError())
+        .then(function (res) {
+          if (res.valid) {
+            resolve(email)
           } else {
-            if (body) {
-              if (body.is_valid) {
-                if (body.mailbox_verification === 'true' || body.mailbox_verification === 'unknown') {
-                  if (body.is_disposable_address) {
-                    reject(new EmailAddressValidationError('The use of a disposable email address is not allowed'))
-                  } else {
-                    resolve(email)
-                  }
-                } else {
-                  reject(new EmailAddressValidationError('This email address seems to be undeliverable. Please check the spelling'))
-                }
-              } else {
-                let msg = 'This email address seems to be invalid'
-                if (body.did_you_mean) {
-                  msg = `${msg}. Did you mean ${body.did_you_mean}?`
-                }
-                reject(new EmailAddressValidationError(msg))
-              }
+            if (!res.validators.typo.valid) {
+              const suggested = res.validators.typo.reason.substring('Likely typo, suggested email: '.length)
+              reject(new EmailAddressValidationError(`This email address seems to be invalid. Did you mean ${suggested}?`))
+            } else if (!res.validators.disposable.valid) {
+              reject(new EmailAddressValidationError('The use of a disposable email address is not allowed'))
+            } else if (!res.validators.mx.valid) {
+              reject(new EmailAddressValidationError('This email address seems to be undeliverable. Please check the spelling'))
             } else {
-              logger.error('Body not present')
               reject(new InternalError())
             }
           }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
         })
       } else {
         resolve(email)
