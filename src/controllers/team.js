@@ -8,7 +8,7 @@ const token = require('../utils/token')
 const logger = require('../utils/logger')
 const { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError,
   EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError,
-  ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError } = require('../utils/errors')
+  ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError, CTFtimeProfileAlreadyLinkedError } = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
 const moment = require('moment')
 const { transaction } = require('objection')
@@ -86,6 +86,10 @@ class TeamController {
     return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ndx_email_unique')
   }
 
+  static isTeamCtftimeTeamIdUniqueConstraintViolation (err) {
+    return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'teams_ctftime_team_id_uniq')
+  }
+
   static create (options, callback) {
     getPasswordHash(options.password, function (err, hash) {
       if (err) {
@@ -107,7 +111,8 @@ class TeamController {
               countryId: options.countryId,
               locality: options.locality,
               institution: '',
-              disqualified: false
+              disqualified: false,
+              ctftimeTeamId: null
             })
             .then(function (newTeam) {
               team = newTeam
@@ -158,6 +163,100 @@ class TeamController {
     })
   }
 
+  static createFromCTFtime (options, ctftime) {
+    return new Promise(function (resolve, reject) {
+      let team = null
+      let teamEmailVerificationToken = null
+
+      transaction(Team, TeamEmailVerificationToken, function (Team, TeamEmailVerificationToken) {
+        return Team
+          .query()
+          .insert({
+            name: options.team,
+            email: options.email,
+            createdAt: new Date(),
+            emailConfirmed: false,
+            passwordHash: '',
+            countryId: options.countryId,
+            locality: options.locality,
+            institution: '',
+            disqualified: false,
+            ctftimeTeamId: options.ctftimeTeamId
+          })
+          .then(function (newTeam) {
+            team = newTeam
+            return TeamEmailVerificationToken
+              .query()
+              .insert({
+                teamId: newTeam.id,
+                token: token.generate(),
+                used: false,
+                createdAt: new Date(),
+                expiresAt: moment().add(2, 'h').toDate()
+              })
+              .then(function (newTeamEmailVerificationToken) {
+                teamEmailVerificationToken = newTeamEmailVerificationToken
+              })
+          })
+      })
+      .then(function () {
+        queue('sendEmailQueue').add({
+          message: 'welcome',
+          name: team.name,
+          email: team.email,
+          token: teamEmailVerificationToken.token,
+          teamId: team.id
+        })
+
+        resolve(team)
+        EventController.push(new CreateTeamEvent(team, ctftime))
+      })
+      .catch(function (err) {
+        if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
+          reject(new TeamCredentialsTakenError())
+        } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
+          reject(new TeamCredentialsTakenError())
+        } else if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
+          reject(new CTFtimeProfileAlreadyLinkedError())
+        } else {
+          logger.error(err)
+          reject(new InternalError())
+        }
+      })
+    })
+  }
+
+  static updateFromCTFtime (id, ctftimeTeamId) {
+    return new Promise(function(resolve, reject) {
+      TeamController.get(id, function (err, team) {
+        if (err) {
+          reject(err)
+        } else {
+          if (team.ctftimeTeamId) {
+            reject(new InternalError())
+          } else {
+            Team
+            .query()
+            .patchAndFetchById(team.id, {
+              ctftimeTeamId: ctftimeTeamId
+            })
+            .then(function (updatedTeam) {
+              resolve(updatedTeam)
+            })
+            .catch(function (err) {
+              if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
+                reject(new CTFtimeProfileAlreadyLinkedError())
+              } else {
+                logger.error(err)
+                reject(new InternalError())
+              }
+            })
+          }
+        }
+      })
+    })
+  }
+
   static signin (opts) {
     return new Promise(function (resolve, reject) {
       Team
@@ -172,7 +271,7 @@ class TeamController {
               reject(new InvalidTeamCredentialsError())
             } else {
               if (res) {
-                EventController.push(new LoginTeamEvent(team, opts.countryName, opts.cityName))
+                EventController.push(new LoginTeamEvent(team, opts.countryName, opts.cityName, null))
                 resolve(team)
               } else {
                 reject(new InvalidTeamCredentialsError())
@@ -457,6 +556,39 @@ class TeamController {
     })
   }
 
+  static createPassword (id, newPassword, callback) {
+    TeamController.get(id, function (err, team) {
+      if (err) {
+        callback(err)
+      } else {
+        if (team.passwordHash === '') {
+          getPasswordHash(newPassword, function (err, hash) {
+            if (err) {
+              logger.error(err)
+              callback(new InternalError())
+            } else {
+              Team
+                .query()
+                .patchAndFetchById(team.id, {
+                  passwordHash: hash
+                })
+                .then(function (updatedTeam) {
+                  callback(null)
+                  EventController.push(new UpdateTeamPasswordEvent(updatedTeam))
+                })
+                .catch(function (err) {
+                  logger.error(err)
+                  callback(new InternalError())
+                })
+            }
+          })
+        } else {
+          callback(new InternalError())
+        }
+      }
+    })
+  }
+
   static index (callback, qualifiedOnly = false) {
     let query = Team.query()
     if (qualifiedOnly) {
@@ -653,6 +785,22 @@ class TeamController {
           } else {
             reject(new TeamNotFoundError())
           }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
+
+  static fetchByCTFtimeTeamId (ctftimeTeamId) {
+    return new Promise(function (resolve, reject) {
+      Team
+        .query()
+        .where('ctftimeTeamId', ctftimeTeamId)
+        .first()
+        .then(function (team) {
+          resolve(team)
         })
         .catch(function (err) {
           logger.error(err)

@@ -26,7 +26,7 @@ router.get('/index', needsToBeAuthorizedSupervisor, getSupervisor, function (req
     }
   }
 
-  const pageSize = request.supervisor.event_history_page_size || 250
+  const pageSize = request.supervisor.eventHistoryPageSize || 250
 
   Promise
   .all([

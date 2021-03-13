@@ -17,7 +17,7 @@ const _ = require('underscore')
 const is_ = require('is_js')
 
 const { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } = require('../middleware/session')
-const { checkToken } = require('../middleware/security')
+const { checkToken, issueToken } = require('../middleware/security')
 const { contestNotFinished } = require('../middleware/contest')
 
 const teamSerializer = require('../serializers/team')
@@ -148,8 +148,8 @@ router.get('/:teamId/logo', function (request, response) {
 router.get('/:teamId/profile', detectScope, function (request, response) {
   TeamController.get(request.teamId, function (err, team) {
     if (team) {
-      const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === team.id)
-      response.json(teamSerializer(team, { exposeEmail: exposeEmail }))
+      const exposeSensitiveData = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === team.id)
+      response.json(teamSerializer(team, { exposeEmail: exposeSensitiveData, exposePasswordAvailability: exposeSensitiveData }))
     } else {
       if (err) {
         logger.error(err)
@@ -192,6 +192,25 @@ router.post('/update-password', checkToken, needsToBeAuthorizedTeam, urlencodedP
   }
 
   TeamController.updatePassword(request.session.identityID, request.body.currentPassword, request.body.newPassword, function (err) {
+    if (err) {
+      next(err)
+    } else {
+      response.json({ success: true })
+    }
+  })
+})
+
+router.post('/create-password', checkToken, needsToBeAuthorizedTeam, urlencodedParser, function (request, response, next) {
+  const setConstraints = {
+    newPassword: constraints.password
+  }
+
+  const validationResult = validator.validate(request.body, setConstraints)
+  if (validationResult !== true) {
+    throw new ValidationError()
+  }
+
+  TeamController.createPassword(request.session.identityID, request.body.newPassword, function (err) {
     if (err) {
       next(err)
     } else {

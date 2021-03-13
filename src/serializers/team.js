@@ -2,7 +2,8 @@ const _ = require('underscore')
 
 module.exports = function (team, options = {}) {
   let defaultOptions = {
-    exposeEmail: false
+    exposeEmail: false,
+    exposePasswordAvailability: false
   }
   options = _.extend(defaultOptions, options)
 
@@ -13,12 +14,17 @@ module.exports = function (team, options = {}) {
     locality: team.locality,
     institution: team.institution,
     createdAt: team.createdAt.getTime(),
-    disqualified: team.disqualified
+    disqualified: team.disqualified,
+    ctftimeTeamId: team.ctftimeTeamId
   }
 
   if (options.exposeEmail) {
     obj.email = team.email
     obj.emailConfirmed = team.emailConfirmed
+  }
+
+  if (options.exposePasswordAvailability) {
+    obj.passwordSet = team.passwordHash !== ''
   }
 
   return obj

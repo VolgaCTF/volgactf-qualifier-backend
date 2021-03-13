@@ -1,14 +1,14 @@
 const SupervisorEvent = require('./supervisor')
-const { EVENT_CREATE_TEAM } = require('../utils/constants')
+const { EVENT_LINK_TEAM_CTFTIME } = require('../utils/constants')
 const teamSerializer = require('../serializers/team')
 
-class CreateTeamEvent extends SupervisorEvent {
+class LinkTeamCTFtimeEvent extends SupervisorEvent {
   constructor (team, ctftime) {
-    super(EVENT_CREATE_TEAM, {
+    super(EVENT_LINK_TEAM_CTFTIME, {
       team: teamSerializer(team, { exposeEmail: true }),
       ctftime: ctftime
     })
   }
 }
 
-module.exports = CreateTeamEvent
+module.exports = LinkTeamCTFtimeEvent

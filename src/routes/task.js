@@ -2,7 +2,7 @@ const express = require('express')
 
 const { checkToken } = require('../middleware/security')
 const { detectScope, needsToBeAuthorizedSupervisor, needsToBeAuthorizedTeam, needsToBeAuthorizedAdmin } = require('../middleware/session')
-const { getState, contestIsStarted, contestIsFinished, contestNotFinished } = require('../middleware/contest')
+const { getContest, contestIsStarted, contestIsFinished, contestNotFinished } = require('../middleware/contest')
 const { getTask } = require('../middleware/task')
 const { getTeam } = require('../middleware/team')
 const { getTaskFile } = require('../middleware/task-file')
@@ -112,7 +112,7 @@ router.get('/:taskId/answer', needsToBeAuthorizedAdmin, function (request, respo
   })
 })
 
-router.get('/:taskId/hint', detectScope, getTask, getState, function (request, response, next) {
+router.get('/:taskId/hint', detectScope, getTask, getContest, function (request, response, next) {
   const guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
   const teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
   const supervisorsEligible = request.scope.isSupervisor()
@@ -166,7 +166,7 @@ router.get('/:taskId/hit/index', needsToBeAuthorizedSupervisor, function (reques
   })
 })
 
-router.get('/:taskId', detectScope, getState, getTask, function (request, response, next) {
+router.get('/:taskId', detectScope, getContest, getTask, function (request, response, next) {
   const guestsEligible = (request.scope.isGuest() && request.contest && request.contest.isFinished() && request.task.isOpened())
   const teamsEligible = (request.scope.isTeam() && request.contest && !request.contest.isInitial() && request.task.isOpened())
   const supervisorsEligible = request.scope.isSupervisor()

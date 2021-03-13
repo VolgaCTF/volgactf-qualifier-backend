@@ -13,6 +13,10 @@ module.exports.TEMPLATE_EVENT_LIVE_PAGE = 'eventLivePage'
 module.exports.TEMPLATE_EVENT_HISTORY_PAGE = 'eventHistoryPage'
 module.exports.TEMPLATE_SUPERVISOR_SIGNIN_PAGE = 'supervisorSigninPage'
 module.exports.TEMPLATE_TEAM_SIGNIN_PAGE = 'teamSigninPage'
+
+module.exports.TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE = 'teamCtftimeOauthStartPage'
+module.exports.TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE = 'teamCtftimeOauthCompletePage'
+
 module.exports.TEMPLATE_TEAM_RESTORE_PAGE = 'teamRestorePage'
 module.exports.TEMPLATE_TEAM_SIGNUP_PAGE = 'teamSignupPage'
 module.exports.TEMPLATE_TEAM_VERIFY_EMAIL_PAGE = 'teamVerifyEmailPage'
@@ -100,6 +104,7 @@ module.exports.TEMPLATE_EVENT_LOG_QUALIFY_TEAM = 'eventLogQualifyTeam'
 module.exports.TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM = 'eventLogDisqualifyTeam'
 module.exports.TEMPLATE_EVENT_LOG_LOGIN_TEAM = 'eventLogLoginTeam'
 module.exports.TEMPLATE_EVENT_LOG_LOGOUT_TEAM = 'eventLogLogoutTeam'
+module.exports.TEMPLATE_EVENT_LOG_LINK_TEAM_CTFTIME = 'eventLogLinkTeamCTFtime'
 
 module.exports.TEMPLATE_EVENT_LOG_CREATE_TASK = 'eventLogCreateTask'
 module.exports.TEMPLATE_EVENT_LOG_UPDATE_TASK = 'eventLogUpdateTask'

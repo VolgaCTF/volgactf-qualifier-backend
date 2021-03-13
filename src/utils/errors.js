@@ -466,3 +466,24 @@ class InvalidAWSSignatureError extends BaseError {
   }
 }
 module.exports.InvalidAWSSignatureError = InvalidAWSSignatureError
+
+class InvalidCTFtimeOAuthStateError extends BaseError {
+  constructor () {
+    super('OAuth state is invalid', 'InvalidCTFtimeOAuthStateError', 400)
+  }
+}
+module.exports.InvalidCTFtimeOAuthStateError = InvalidCTFtimeOAuthStateError
+
+class CTFtimeProfileEmailMismatchError extends BaseError {
+  constructor () {
+    super('Your CTFtime.org account email differs from the one specified in your team profile', 'CTFtimeProfileEmailMismatchError', 400)
+  }
+}
+module.exports.CTFtimeProfileEmailMismatchError = CTFtimeProfileEmailMismatchError
+
+class CTFtimeProfileAlreadyLinkedError extends BaseError {
+  constructor () {
+    super('CTFtime.org account is already associated with another team', 'CTFtimeProfileAlreadyLinkedError', 400)
+  }
+}
+module.exports.CTFtimeProfileAlreadyLinkedError = CTFtimeProfileAlreadyLinkedError

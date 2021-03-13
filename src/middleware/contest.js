@@ -2,7 +2,7 @@ const ContestController = require('../controllers/contest')
 const { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } = require('../utils/errors')
 const axios = require('axios')
 
-function getState (request, response, next) {
+function getContest (request, response, next) {
   ContestController.get(function (err, contest) {
     if (err) {
       next(err)
@@ -12,7 +12,7 @@ function getState (request, response, next) {
     }
   })
 }
-module.exports.getState = getState
+module.exports.getContest = getContest
 
 let contestTitle = null
 

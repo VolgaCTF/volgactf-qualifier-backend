@@ -54,6 +54,7 @@ module.exports.EVENT_QUALIFY_TEAM = 107
 module.exports.EVENT_DISQUALIFY_TEAM = 108
 module.exports.EVENT_LOGIN_TEAM = 109
 module.exports.EVENT_LOGOUT_TEAM = 110
+module.exports.EVENT_LINK_TEAM_CTFTIME = 111
 
 module.exports.EVENT_CREATE_TASK_CATEGORY = 121
 module.exports.EVENT_DELETE_TASK_CATEGORY = 122

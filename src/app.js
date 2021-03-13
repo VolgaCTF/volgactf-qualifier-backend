@@ -1,10 +1,12 @@
 const express = require('express')
 const logger = require('./utils/logger')
+const token =  require('./utils/token')
 
 const apiRouter = require('./routes/api')
 
 const { session, detectScope } = require('./middleware/session')
 const { issueToken } = require('./middleware/security')
+const { getTeamSafe } = require('./middleware/team')
 
 const _ = require('underscore')
 const moment = require('moment')
@@ -17,12 +19,12 @@ const countrySerializer = require('./serializers/country')
 const teamRankingController = require('./controllers/team-ranking')
 const teamRankingSerializer = require('./serializers/team-ranking')
 
-const { contestNotFinished, getContestTitle } = require('./middleware/contest')
+const { contestNotFinished, getContestTitle, getContest } = require('./middleware/contest')
 const constraints = require('./utils/constraints')
 const teamController = require('./controllers/team')
 const Validator = require('validator.js')
 const validator = new Validator.Validator()
-const { ValidationError } = require('./utils/errors')
+const { ValidationError, BaseError, CTFtimeProfileEmailMismatchError, CTFtimeProfileAlreadyLinkedError, ContestFinishedError } = require('./utils/errors')
 
 const teamSerializer = require('./serializers/team')
 
@@ -69,12 +71,20 @@ const supervisorTaskSubscriptionSerializer = require('./serializers/supervisor-t
 
 const taskParam = require('./params/task')
 
+const ctftimeOAuthController =  require('./controllers/ctftime-oauth')
+const emailAddressValidator = require('./controllers/email-address-validator')
+const { SCOPE_TEAM } = require('./utils/constants')
+const EventController = require('./controllers/event')
+const LoginTeamEvent = require('./events/login-team')
+const LinkTeamCTFtimeEvent = require('./events/link-team-ctftime')
+
 const jsesc = require('jsesc')
 
 const templateStore = require('./utils/template-store')
 const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_CATEGORIES_PAGE, TEMPLATE_TEAM_PROFILE_PAGE,
   TEMPLATE_SCOREBOARD_PAGE, TEMPLATE_TASKS_PAGE, TEMPLATE_TASK_STATISTICS_PAGE, TEMPLATE_ABOUT_PAGE, TEMPLATE_CONTEST_PAGE,
   TEMPLATE_REMOTE_CHECKERS_PAGE, TEMPLATE_SUPERVISOR_SIGNIN_PAGE, TEMPLATE_TEAM_SIGNIN_PAGE, TEMPLATE_TEAM_RESTORE_PAGE,
+  TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE,
   TEMPLATE_TEAM_SIGNUP_PAGE, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, TEMPLATE_TEAM_RESET_PASSWORD_PAGE,
   TEMPLATE_SUPERVISORS_PAGE, TEMPLATE_SUPERVISOR_CREATE_PAGE,
   TEMPLATE_404_PAGE, TEMPLATE_500_PAGE, TEMPLATE_ROBOTS_PAGE,
@@ -102,13 +112,13 @@ const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_C
   TEMPLATE_EVENT_LOG_CREATE_TEAM, TEMPLATE_EVENT_LOG_UPDATE_TEAM_EMAIL, TEMPLATE_EVENT_LOG_UPDATE_TEAM_PROFILE,
   TEMPLATE_EVENT_LOG_UPDATE_TEAM_PASSWORD, TEMPLATE_EVENT_LOG_UPDATE_TEAM_LOGO, TEMPLATE_EVENT_LOG_QUALIFY_TEAM,
   TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM, TEMPLATE_EVENT_LOG_LOGIN_TEAM, TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
-  TEMPLATE_EVENT_LOG_CREATE_TASK, TEMPLATE_EVENT_LOG_UPDATE_TASK, TEMPLATE_EVENT_LOG_OPEN_TASK, TEMPLATE_EVENT_LOG_CLOSE_TASK,
-  TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY, TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY,
-  TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE, TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE,
-  TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME, TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME,
-  TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT, TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT,
-  TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW, TEMPLATE_EVENT_LOG_CREATE_TASK_FILE,
-  TEMPLATE_EVENT_LOG_DELETE_TASK_FILE
+  TEMPLATE_EVENT_LOG_LINK_TEAM_CTFTIME, TEMPLATE_EVENT_LOG_CREATE_TASK, TEMPLATE_EVENT_LOG_UPDATE_TASK,
+  TEMPLATE_EVENT_LOG_OPEN_TASK, TEMPLATE_EVENT_LOG_CLOSE_TASK, TEMPLATE_EVENT_LOG_CREATE_TASK_CATEGORY,
+  TEMPLATE_EVENT_LOG_DELETE_TASK_CATEGORY, TEMPLATE_EVENT_LOG_CREATE_TASK_VALUE,
+  TEMPLATE_EVENT_LOG_UPDATE_TASK_VALUE, TEMPLATE_EVENT_LOG_CREATE_TASK_REWARD_SCHEME,
+  TEMPLATE_EVENT_LOG_UPDATE_TASK_REWARD_SCHEME, TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT_ATTEMPT,
+  TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_HIT, TEMPLATE_EVENT_LOG_CREATE_TEAM_TASK_REVIEW,
+  TEMPLATE_EVENT_LOG_CREATE_TASK_FILE, TEMPLATE_EVENT_LOG_DELETE_TASK_FILE
 } = require('./constants/template')
 
 const { TASK_MIN_VALUE, TASK_MAX_VALUE } = require('./utils/constants')
@@ -144,6 +154,10 @@ templateStore.register(TEMPLATE_EVENT_LIVE_PAGE, 'html/event/live.html')
 templateStore.register(TEMPLATE_EVENT_HISTORY_PAGE, 'html/event/history.html')
 templateStore.register(TEMPLATE_SUPERVISOR_SIGNIN_PAGE, 'html/supervisor/signin.html')
 templateStore.register(TEMPLATE_TEAM_SIGNIN_PAGE, 'html/team/signin.html')
+if (ctftimeOAuthController.isEnabled()) {
+  templateStore.register(TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE, 'html/team/ctftime/oauth/start.html')
+  templateStore.register(TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE, 'html/team/ctftime/oauth/complete.html')
+}
 templateStore.register(TEMPLATE_TEAM_RESTORE_PAGE, 'html/team/restore.html')
 templateStore.register(TEMPLATE_TEAM_SIGNUP_PAGE, 'html/team/signup.html')
 templateStore.register(TEMPLATE_TEAM_VERIFY_EMAIL_PAGE, 'html/team/verify-email.html')
@@ -228,6 +242,7 @@ templateStore.register(TEMPLATE_EVENT_LOG_QUALIFY_TEAM, 'html/event/qualify-team
 templateStore.register(TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM, 'html/event/disqualify-team.html')
 templateStore.register(TEMPLATE_EVENT_LOG_LOGIN_TEAM, 'html/event/login-team.html')
 templateStore.register(TEMPLATE_EVENT_LOG_LOGOUT_TEAM, 'html/event/logout-team.html')
+templateStore.register(TEMPLATE_EVENT_LOG_LINK_TEAM_CTFTIME, 'html/event/link-team-ctftime.html')
 
 templateStore.register(TEMPLATE_EVENT_LOG_CREATE_TASK, 'html/event/create-task.html')
 templateStore.register(TEMPLATE_EVENT_LOG_UPDATE_TASK, 'html/event/update-task.html')
@@ -466,8 +481,8 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
     const templates = values[0]
     const identity = values[1]
     const contest = contestSerializer(values[2])
-    const exposeEmail = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[3].id)
-    const team = teamSerializer(values[3], { exposeEmail: exposeEmail })
+    const exposeSensitiveData = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[3].id)
+    const team = teamSerializer(values[3], { exposeEmail: exposeSensitiveData, exposePasswordAvailability: exposeSensitiveData })
     const countries = _.map(values[4], countrySerializer)
 
     let tasks = []
@@ -945,6 +960,7 @@ app.get('/event/live', detectScope, issueToken, getContestTitle, function (reque
       TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM,
       TEMPLATE_EVENT_LOG_LOGIN_TEAM,
       TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
+      TEMPLATE_EVENT_LOG_LINK_TEAM_CTFTIME,
       TEMPLATE_EVENT_LOG_CREATE_TASK,
       TEMPLATE_EVENT_LOG_UPDATE_TASK,
       TEMPLATE_EVENT_LOG_OPEN_TASK,
@@ -1052,6 +1068,7 @@ app.get('/event/history', detectScope, issueToken, getContestTitle, function (re
       TEMPLATE_EVENT_LOG_DISQUALIFY_TEAM,
       TEMPLATE_EVENT_LOG_LOGIN_TEAM,
       TEMPLATE_EVENT_LOG_LOGOUT_TEAM,
+      TEMPLATE_EVENT_LOG_LINK_TEAM_CTFTIME,
       TEMPLATE_EVENT_LOG_CREATE_TASK,
       TEMPLATE_EVENT_LOG_UPDATE_TASK,
       TEMPLATE_EVENT_LOG_OPEN_TASK,
@@ -1236,6 +1253,231 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
     next(err)
   })
 })
+
+if (ctftimeOAuthController.isEnabled()) {
+  app.get('/team/ctftime/oauth/start', detectScope, issueToken, getContestTitle, getTeamSafe, function (request, response, next) {
+    if (request.scope.isGuest() || (request.team && !request.team.ctftimeTeamId)) {
+      ctftimeOAuthController.setupState(request)
+      response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+      response.redirect(ctftimeOAuthController.getRedirectLink(request))
+    } else {
+      const promises = [
+        templateStore.resolveAll([
+          TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE,
+          TEMPLATE_ANALYTICS,
+          TEMPLATE_NAVBAR,
+          TEMPLATE_STREAM_STATE_PARTIAL,
+          TEMPLATE_CONTEST_STATE_PARTIAL
+        ]),
+        identityController.fetch(request),
+        contestController.fetch()
+      ]
+
+      Promise
+      .all(promises)
+      .then(function (values) {
+        const templates = values[0]
+        const identity = values[1]
+        const contest = contestSerializer(values[2])
+        const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE]
+
+        response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+        response.send(pageTemplate({
+          _: _,
+          moment: moment,
+          jsesc: jsesc,
+          identity: identity,
+          contest: contest,
+          contestTitle: request.contestTitle,
+          google_tag_id: googleTagId,
+          templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE),
+          runtimeStorage: {}
+        }))
+      })
+      .catch(function (err) {
+        logger.error(err)
+        next(err)
+      })
+    }
+  })
+
+  function loginWithCTFtime (request) {
+    return new Promise(function (resolve, reject) {
+      let ctftimeData = null
+
+      ctftimeOAuthController
+      .processCallback(request)
+      .then(function (data) {
+        ctftimeData = data
+        return teamController.fetchByCTFtimeTeamId((data.team || { id: -1})['id'])
+      })
+      .then(function (existingTeam) {
+        if (existingTeam) {
+          if (!request.team || (request.team && request.team.id === existingTeam.id)) {
+            resolve({
+              action: 'signin',
+              team: existingTeam,
+              ctftimeData: ctftimeData
+            })
+          } else {
+            reject(new CTFtimeProfileAlreadyLinkedError())
+          }
+        } else {
+          if (request.team && !request.team.ctftimeTeamId) {
+            const claimEmail = ctftimeData.email || ''
+            const claimCtftimeTeamId = (ctftimeData.team || { id: -1})['id']
+            if (claimEmail.toLowerCase() === request.team.email.toLowerCase()) {
+              teamController
+              .updateFromCTFtime(request.team.id, claimCtftimeTeamId)
+              .then(function (existingTeam) {
+                resolve({
+                  action: 'nothing',
+                  team: existingTeam,
+                  ctftimeData: ctftimeData
+                })
+              })
+              .catch(function (err3) {
+                reject(err3)
+              })
+            } else {
+              reject(new CTFtimeProfileEmailMismatchError())
+            }
+          } else {
+            if (request.contest && request.contest.isFinished()) {
+              reject(new ContestFinishedError())
+            }
+
+            let teamInfo = null
+            countryController
+            .findByCodeOrDefault((ctftimeData.team || { country: ''})['country'])
+            .then(function (country) {
+              const signupConstraints = {
+                team: constraints.team,
+                email: constraints.email,
+                countryId: constraints.countryId,
+                locality: constraints.locality
+              }
+
+              teamInfo = {
+                team: (ctftimeData.team || { name: ''})['name'],
+                email: ctftimeData.email || '',
+                countryId: country.id,
+                locality: '',
+                ctftimeTeamId: (ctftimeData.team || { id: -1})['id']
+              }
+
+              const validationResult = validator.validate(teamInfo, signupConstraints)
+              if (validationResult === true) {
+                return emailAddressValidator.validate(teamInfo.email, request.ip)
+              } else {
+                throw new ValidationError()
+              }
+            })
+            .then(function () {
+              return teamController.createFromCTFtime(teamInfo, ctftimeData)
+            })
+            .then(function (newTeam) {
+              resolve({
+                action: 'signup',
+                team: newTeam,
+                ctftimeData: ctftimeData
+              })
+            })
+            .catch(function (err2) {
+              reject(err2)
+            })
+          }
+        }
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+    })
+  }
+
+  app.get('/team/ctftime/oauth/complete', detectScope, issueToken, getContestTitle, getTeamSafe, getContest, getGeoIPData, function (request, response, next) {
+    const promises = [
+      templateStore.resolveAll([
+        TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE,
+        TEMPLATE_ANALYTICS,
+        TEMPLATE_NAVBAR,
+        TEMPLATE_STREAM_STATE_PARTIAL,
+        TEMPLATE_CONTEST_STATE_PARTIAL
+      ]),
+      identityController.fetch(request),
+      contestController.fetch()
+    ]
+
+    Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE]
+
+      if (request.scope.isGuest() || (request.team && !request.team.ctftimeTeamId)) {
+        loginWithCTFtime(request)
+        .then(function (result) {
+          ctftimeOAuthController.clearState(request)
+          response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+          if (!request.team) {
+            EventController.push(new LoginTeamEvent(
+              result.team,
+              request.geoIPData.countryName,
+              request.geoIPData.cityName,
+              result.ctftimeData
+            ))
+            request.session.authenticated = true
+            request.session.identityID = result.team.id
+            request.session.scopeID = SCOPE_TEAM
+            response.redirect('/')
+          } else {
+            EventController.push(new LinkTeamCTFtimeEvent(
+              result.team,
+              result.ctftimeData
+            ))
+            response.redirect(`/team/${result.team.id}/profile`)
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          ctftimeOAuthController.clearState(request)
+          response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+          response.send(pageTemplate({
+            _: _,
+            moment: moment,
+            jsesc: jsesc,
+            identity: identity,
+            contest: contest,
+            contestTitle: request.contestTitle,
+            google_tag_id: googleTagId,
+            templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
+            runtimeStorage: {},
+            errorMsg: err instanceof BaseError ? err.message : 'Internal Server Error'
+          }))
+        })
+      } else {
+        response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+        response.send(pageTemplate({
+          _: _,
+          moment: moment,
+          jsesc: jsesc,
+          identity: identity,
+          contest: contest,
+          contestTitle: request.contestTitle,
+          google_tag_id: googleTagId,
+          templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
+          runtimeStorage: {}
+        }))
+      }
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
+  })
+}
 
 app.get('/team/restore', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const promises = [
