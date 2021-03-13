@@ -163,33 +163,21 @@ queue('sendEmailQueue').process(function (job, done) {
   emailGenerator
   .init()
   .then(function () {
-    let secureConnection = false
-    if (process.env.VOLGACTF_QUALIFIER_SECURE) {
-      secureConnection = process.env.VOLGACTF_QUALIFIER_SECURE === 'yes'
-    }
     let message = null
     if (job.data.message === 'welcome') {
       message = emailGenerator.getWelcomeEmail({
         name: job.data.name,
-        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
-        secure: secureConnection,
-        team: token.encode(job.data.email),
-        code: token.encode(job.data.token)
+        email_confirm_link: job.data.email_confirm_link
       })
     } else if (job.data.message === 'restore') {
       message = emailGenerator.getRestoreEmail({
         name: job.data.name,
-        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
-        secure: secureConnection,
-        team: token.encode(job.data.email),
-        code: token.encode(job.data.token)
+        password_reset_link: job.data.password_reset_link
       })
     } else if (job.data.message === 'invite_supervisor') {
       message = emailGenerator.getInviteSupervisorEmail({
-        domain: process.env.VOLGACTF_QUALIFIER_FQDN,
-        secure: secureConnection,
-        rights: job.data.rights,
-        code: token.encode(job.data.token)
+        create_account_link: job.data.create_account_link,
+        rights: job.data.rights
       })
     } else if (job.data.message === 'new_task_review') {
       message = emailGenerator.getNewTaskReviewEmail({
@@ -212,7 +200,7 @@ queue('sendEmailQueue').process(function (job, done) {
     messageController.create({
       message: message,
       recipientEmail: job.data.email,
-      recipientName: job.data.name,
+      recipientName: job.data.name || '',
       teamId: job.data.teamId,
       supervisorId: job.data.supervisorId
     })

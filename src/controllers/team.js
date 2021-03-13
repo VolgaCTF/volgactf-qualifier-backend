@@ -23,6 +23,24 @@ const UpdateTeamPasswordEvent = require('../events/update-team-password')
 const DisqualifyTeamEvent = require('../events/disqualify-team')
 
 class TeamController {
+  static getBaseLink () {
+    return `http${process.env.VOLGACTF_QUALIFIER_SECURE === 'yes' ? 's' : ''}://${process.env.VOLGACTF_QUALIFIER_FQDN}`
+  }
+
+  static getEmailConfirmLink (email, code) {
+    const u = new URL(`${TeamController.getBaseLink()}/team/verify-email`)
+    u.searchParams.append('team', token.encode(email))
+    u.searchParams.append('code', token.encode(code))
+    return u.toString()
+  }
+
+  static getPasswordResetLink (email, code) {
+    const u = new URL(`${TeamController.getBaseLink()}/team/reset-password`)
+    u.searchParams.append('team', token.encode(email))
+    u.searchParams.append('code', token.encode(code))
+    return u.toString()
+  }
+
   static restore (email, callback) {
     Team
       .query()
@@ -53,7 +71,7 @@ class TeamController {
                       message: 'restore',
                       name: team.name,
                       email: team.email,
-                      token: teamResetPasswordToken.token,
+                      password_reset_link: TeamController.getPasswordResetLink(team.email, teamResetPasswordToken.token),
                       teamId: team.id
                     })
                     callback(null)
@@ -142,7 +160,7 @@ class TeamController {
             message: 'welcome',
             name: team.name,
             email: team.email,
-            token: teamEmailVerificationToken.token,
+            email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
             teamId: team.id
           })
 
@@ -204,7 +222,7 @@ class TeamController {
           message: 'welcome',
           name: team.name,
           email: team.email,
-          token: teamEmailVerificationToken.token,
+          email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
           teamId: team.id
         })
 
@@ -320,7 +338,7 @@ class TeamController {
                       message: 'welcome',
                       name: team.name,
                       email: team.email,
-                      token: teamEmailVerificationToken.token,
+                      email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
                       teamId: team.id
                     })
 
@@ -452,7 +470,7 @@ class TeamController {
                     message: 'welcome',
                     name: updatedTeam.name,
                     email: updatedTeam.email,
-                    token: updatedTeamEmailVerificationToken.token,
+                    email_confirm_link: TeamController.getEmailConfirmLink(updatedTeam.email, updatedTeamEmailVerificationToken.token),
                     teamId: updatedTeam.id
                   })
 

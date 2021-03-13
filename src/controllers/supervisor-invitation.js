@@ -6,7 +6,18 @@ const token = require('../utils/token')
 const moment = require('moment')
 
 class SupervisorInvitationController {
+  getBaseLink () {
+    return `http${process.env.VOLGACTF_QUALIFIER_SECURE === 'yes' ? 's' : ''}://${process.env.VOLGACTF_QUALIFIER_FQDN}`
+  }
+
+  getCreateAccountLink (code) {
+    const u = new URL(`${this.getBaseLink()}/supervisor/create`)
+    u.searchParams.append('code', token.encode(code))
+    return u.toString()
+  }
+
   create (email, rights) {
+    const that = this
     return new Promise(function (resolve, reject) {
       SupervisorInvitation
       .query()
@@ -30,13 +41,11 @@ class SupervisorInvitationController {
         }
       })
       .then(function (supervisorInvitation) {
-        logger.info(supervisorInvitation)
         queue('sendEmailQueue').add({
           message: 'invite_supervisor',
-          name: '',
+          create_account_link: that.getCreateAccountLink(supervisorInvitation.token),
           email: supervisorInvitation.email,
-          rights: supervisorInvitation.rights,
-          token: supervisorInvitation.token
+          rights: supervisorInvitation.rights
         })
         resolve(supervisorInvitation)
       })
