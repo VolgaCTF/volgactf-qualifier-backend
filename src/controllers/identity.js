@@ -31,6 +31,7 @@ class IdentityController {
               id: request.session.identityID,
               role: 'team',
               name: team.name,
+              logoChecksum: team.logoChecksum || 'deadbeef',
               emailConfirmed: team.emailConfirmed,
               token: token
             })

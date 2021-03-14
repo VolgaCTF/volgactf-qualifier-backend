@@ -15,7 +15,8 @@ module.exports = function (team, options = {}) {
     institution: team.institution,
     createdAt: team.createdAt.getTime(),
     disqualified: team.disqualified,
-    ctftimeTeamId: team.ctftimeTeamId
+    ctftimeTeamId: team.ctftimeTeamId,
+    logoChecksum: team.logoChecksum || 'deadbeef'
   }
 
   if (options.exposeEmail) {

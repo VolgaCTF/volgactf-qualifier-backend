@@ -16,6 +16,8 @@ const { transaction } = require('objection')
 const EventController = require('./event')
 const CreateTeamEvent = require('../events/create-team')
 const UpdateTeamEmailEvent = require('../events/update-team-email')
+const UpdateTeamLogoEvent = require('../events/update-team-logo')
+
 const UpdateTeamProfileEvent = require('../events/update-team-profile')
 const QualifyTeamEvent = require('../events/qualify-team')
 const LoginTeamEvent = require('../events/login-team')
@@ -130,7 +132,8 @@ class TeamController {
               locality: options.locality,
               institution: '',
               disqualified: false,
-              ctftimeTeamId: null
+              ctftimeTeamId: null,
+              logoChecksum: null
             })
             .then(function (newTeam) {
               team = newTeam
@@ -199,7 +202,8 @@ class TeamController {
             locality: options.locality,
             institution: '',
             disqualified: false,
-            ctftimeTeamId: options.ctftimeTeamId
+            ctftimeTeamId: options.ctftimeTeamId,
+            logoChecksum: null
           })
           .then(function (newTeam) {
             team = newTeam
@@ -531,6 +535,27 @@ class TeamController {
         })
         callback(null)
       }
+    })
+  }
+
+  static updateLogoChecksum (id, checksum) {
+    return new Promise(function (resolve, reject) {
+      TeamController
+      .fetchOne(id)
+      .then(function (team) {
+        return Team
+          .query()
+          .patchAndFetchById(team.id, {
+            logoChecksum: checksum
+          })
+      })
+      .then(function (updatedTeam) {
+        EventController.push(new UpdateTeamLogoEvent(updatedTeam))
+        resolve(updatedTeam)
+      })
+      .catch(function (err2) {
+        reject(err2)
+      })
     })
   }
 

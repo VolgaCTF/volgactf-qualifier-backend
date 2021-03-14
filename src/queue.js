@@ -1,3 +1,5 @@
+const crypto = require('crypto')
+const fs = require('fs')
 const _ = require('underscore')
 
 const queue = require('./utils/queue')
@@ -9,9 +11,6 @@ const token = require('./utils/token')
 const SMTPController = require('./controllers/mail/smtp')
 
 const TeamController = require('./controllers/team')
-const EventController = require('./controllers/event')
-const UpdateTeamLogoEvent = require('./events/update-team-logo')
-
 const TaskController = require('./controllers/task')
 const TaskValueController = require('./controllers/task-value')
 const PostController = require('./controllers/post')
@@ -69,25 +68,44 @@ queue('checkTasksQueue').process(function (job, done) {
   })
 })
 
-queue('createLogoQueue').process(function (job, done) {
-  let newFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, `${job.data.id}.png`)
-  gm(job.data.filename)
-    .resize(48, 48)
-    .write(newFilename, function (err) {
-      if (err) {
-        logger.error(err)
-        done(err)
-      } else {
-        TeamController.get(job.data.id, function (err, team) {
-          if (err) {
-            logger.error(err)
-          } else {
-            EventController.push(new UpdateTeamLogoEvent(team))
-          }
-        })
-        done()
-      }
+function getChecksum (path) {
+  return new Promise(function (resolve, reject) {
+    const hash = crypto.createHash('md5')
+    const input = fs.createReadStream(path)
+
+    input.on('error', reject)
+
+    input.on('data', function (chunk) {
+      hash.update(chunk)
     })
+
+    input.on('close', function () {
+      resolve(hash.digest('hex'))
+    })
+  })
+}
+
+queue('createLogoQueue').process(function (job, done) {
+  const newFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, `${job.data.id}.png`)
+  gm(job.data.filename)
+  .resize(48, 48)
+  .write(newFilename, function (err) {
+    if (err) {
+      logger.error(err)
+      done(err)
+    } else {
+      getChecksum(newFilename)
+      .then(function (checksum) {
+        return TeamController.updateLogoChecksum(job.data.id, checksum)
+      })
+      .then(function (team) {
+        done()
+      })
+      .catch(function (err2) {
+        done(err2)
+      })
+    }
+  })
 })
 
 function getTeamLink (teamId) {
