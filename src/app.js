@@ -1468,7 +1468,8 @@ if (ctftimeOAuthController.isEnabled()) {
           contestTitle: request.contestTitle,
           google_tag_id: googleTagId,
           templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
-          runtimeStorage: {}
+          runtimeStorage: {},
+          errorMsg: null
         }))
       }
     })
