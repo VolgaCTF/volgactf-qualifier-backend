@@ -24,7 +24,7 @@ const constraints = require('./utils/constraints')
 const teamController = require('./controllers/team')
 const Validator = require('validator.js')
 const validator = new Validator.Validator()
-const { ValidationError, BaseError, CTFtimeProfileEmailMismatchError, CTFtimeProfileAlreadyLinkedError, ContestFinishedError } = require('./utils/errors')
+const { ValidationError, BaseError, CTFtimeProfileEmailMismatchError, CTFtimeProfileTeamMismatchError, CTFtimeProfileAlreadyLinkedError, ContestFinishedError } = require('./utils/errors')
 
 const teamSerializer = require('./serializers/team')
 
@@ -1325,8 +1325,14 @@ if (ctftimeOAuthController.isEnabled()) {
         } else {
           if (request.team && !request.team.ctftimeTeamId) {
             const claimEmail = ctftimeData.email || ''
+            const claimTeamName = (ctftimeData.team || { name: ''})['name']
             const claimCtftimeTeamId = (ctftimeData.team || { id: -1})['id']
-            if (claimEmail.toLowerCase() === request.team.email.toLowerCase()) {
+
+            if (claimEmail.toLowerCase() !== request.team.email.toLowerCase()) {
+              reject(new CTFtimeProfileEmailMismatchError())
+            } else if (claimTeamName !== request.team.name) {
+              reject(new CTFtimeProfileTeamMismatchError())
+            } else {
               teamController
               .updateFromCTFtime(request.team.id, claimCtftimeTeamId)
               .then(function (existingTeam) {
@@ -1339,8 +1345,6 @@ if (ctftimeOAuthController.isEnabled()) {
               .catch(function (err3) {
                 reject(err3)
               })
-            } else {
-              reject(new CTFtimeProfileEmailMismatchError())
             }
           } else {
             if (request.contest && request.contest.isFinished()) {

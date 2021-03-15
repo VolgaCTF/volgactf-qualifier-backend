@@ -481,6 +481,13 @@ class CTFtimeProfileEmailMismatchError extends BaseError {
 }
 module.exports.CTFtimeProfileEmailMismatchError = CTFtimeProfileEmailMismatchError
 
+class CTFtimeProfileTeamMismatchError extends BaseError {
+  constructor () {
+    super('Your CTFtime.org team name differs from the one specified in your team profile. Login on behalf of another team or create an alias for the existing one.', 'CTFtimeProfileTeamMismatchError', 400)
+  }
+}
+module.exports.CTFtimeProfileTeamMismatchError = CTFtimeProfileTeamMismatchError
+
 class CTFtimeProfileAlreadyLinkedError extends BaseError {
   constructor () {
     super('CTFtime.org account is already associated with another team', 'CTFtimeProfileAlreadyLinkedError', 400)
