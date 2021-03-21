@@ -10,6 +10,7 @@ class TemplateStore {
     this.cache = {}
     this.metadata = {}
     this.distFrontendDir = process.env.VOLGACTF_QUALIFIER_DIST_FRONTEND_DIR
+    this.checkTemplateMtime = process.env.VOLGACTF_QUALIFIER_CHECK_TEMPLATE_MTIME === 'yes'
   }
 
   register (templateId, templateSrcPath) {
@@ -40,18 +41,22 @@ class TemplateStore {
           this.updateTemplate(templateId, resolve, reject)
         }
       } else {
-        fs.stat(this.metadata[templateId], (err, stat) => {
-          if (err) {
-            logger.error(err)
-            reject(new InternalError())
-          } else {
-            if (stat.mtime > this.cache[templateId].lastUpdated) {
-              this.updateTemplate(templateId, resolve, reject)
+        if (this.checkTemplateMtime) {
+          fs.stat(this.metadata[templateId], (err, stat) => {
+            if (err) {
+              logger.error(err)
+              reject(new InternalError())
             } else {
-              resolve(this.cache[templateId].template)
+              if (stat.mtime > this.cache[templateId].lastUpdated) {
+                this.updateTemplate(templateId, resolve, reject)
+              } else {
+                resolve(this.cache[templateId].template)
+              }
             }
-          }
-        })
+          })
+        } else {
+          resolve(this.cache[templateId].template)
+        }
       }
     })
   }
