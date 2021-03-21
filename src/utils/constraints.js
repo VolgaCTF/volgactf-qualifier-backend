@@ -163,7 +163,7 @@ module.exports = {
   ],
   taskRewardScheme: [
     new Assert().Required(),
-    new Assert().Choice(['fixed', 'variable'])
+    new Assert().Choice(['fixed', 'variable', 'dynlog'])
   ],
   taskSubtractPoints: [
     new Assert().Required(),

@@ -586,6 +586,13 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
   })
 })
 
+const scoringDynlog = {
+  min: parseInt(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_MIN, 10),
+  max: parseInt(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_MAX, 10),
+  k: parseFloat(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_K).toFixed(4),
+  v: parseFloat(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_V).toFixed(4)
+}
+
 app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, response, next) {
   const promises = [
     templateStore.resolveAll([
@@ -644,7 +651,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
     const taskPreviews = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[5], taskCategorySerializer)
     const taskValues = _.map(values[6], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[7], taskRewardSchemeSerializer)
+    const taskRewardSchemes = _.map(values[7], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: request.scope.isSupervisor() }))
 
     let teamTaskHits = []
     if (request.scope.isTeam()) {
@@ -682,6 +689,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
       google_tag_id: googleTagId,
       taskMinValue: TASK_MIN_VALUE,
       taskMaxValue: TASK_MAX_VALUE,
+      scoringDynlog: scoringDynlog,
       templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
       runtimeStorage: {}
     }))
@@ -999,7 +1007,7 @@ app.get('/event/live', detectScope, issueToken, getContestTitle, function (reque
     const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[6], taskCategorySerializer)
     const taskValues = _.map(values[7], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[8], taskRewardSchemeSerializer)
+    const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
     const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
     const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
 
@@ -1108,7 +1116,7 @@ app.get('/event/history', detectScope, issueToken, getContestTitle, function (re
     const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
     const taskCategories = _.map(values[6], taskCategorySerializer)
     const taskValues = _.map(values[7], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[8], taskRewardSchemeSerializer)
+    const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
     const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
     const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
 

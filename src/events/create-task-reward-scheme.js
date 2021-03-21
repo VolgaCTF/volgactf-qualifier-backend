@@ -4,7 +4,7 @@ const taskRewardSchemeSerializer = require('../serializers/task-reward-scheme')
 
 class CreateTaskRewardSchemeEvent extends SupervisorEvent {
   constructor (taskRewardScheme) {
-    super(EVENT_CREATE_TASK_REWARD_SCHEME, taskRewardSchemeSerializer(taskRewardScheme))
+    super(EVENT_CREATE_TASK_REWARD_SCHEME, taskRewardSchemeSerializer(taskRewardScheme, { exposeDynlog: true }))
   }
 }
 

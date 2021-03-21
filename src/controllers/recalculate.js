@@ -18,8 +18,11 @@ class RecalculateController {
   updateTaskValue (entry, next) {
     if (entry.taskValue && entry.taskRewardScheme) {
       let rewardScheme = 'fixed'
-      if (!_.isNull(entry.taskRewardScheme.minValue)) {
+      if (!_.isNull(entry.taskRewardScheme.minValue) && !_.isNull(entry.taskRewardScheme.subtractHitCount) && !_.isNull(entry.taskRewardScheme.subtractPoints)) {
         rewardScheme = 'variable'
+      }
+      if (!_.isNull(entry.taskRewardScheme.minValue) && !_.isNull(entry.taskRewardScheme.dynlogK) && !_.isNull(entry.taskRewardScheme.dynlogV)) {
+        rewardScheme = 'dynlog'
       }
 
       if (rewardScheme === 'fixed') {
@@ -49,6 +52,33 @@ class RecalculateController {
         if (newValue < entry.taskRewardScheme.minValue) {
           newValue = entry.taskRewardScheme.minValue
         }
+
+        if (newValue !== entry.taskValue.value) {
+          TaskValue
+          .query()
+          .patchAndFetchById(entry.taskValue.id, {
+            value: newValue,
+            updated: new Date()
+          })
+          .then(function (newTaskValue) {
+            next(null, {
+              task: entry.task,
+              taskValue: newTaskValue
+            })
+          })
+          .catch(function (err) {
+            next(err, null)
+          })
+        } else {
+          next(null, null)
+        }
+      } else if (rewardScheme === 'dynlog') {
+        const k = parseFloat(entry.taskRewardScheme.dynlogK)
+        const v = parseFloat(entry.taskRewardScheme.dynlogV)
+        const newValue = Math.max(
+          entry.taskRewardScheme.minValue,
+          Math.floor(entry.taskRewardScheme.maxValue - k * Math.log2((Math.max(1, entry.taskHits.length) + v) / (1 + v)))
+        )
 
         if (newValue !== entry.taskValue.value) {
           TaskValue

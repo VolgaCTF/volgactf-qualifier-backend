@@ -1,5 +1,12 @@
-module.exports = function (taskRewardScheme) {
-  return {
+const _ = require('underscore')
+
+module.exports = function (taskRewardScheme, options = {}) {
+  let defaultOptions = {
+    exposeDynlog: false
+  }
+  options = _.extend(defaultOptions, options)
+
+  const r = {
     id: taskRewardScheme.id,
     taskId: taskRewardScheme.taskId,
     maxValue: taskRewardScheme.maxValue,
@@ -9,4 +16,11 @@ module.exports = function (taskRewardScheme) {
     created: taskRewardScheme.created.getTime(),
     updated: taskRewardScheme.updated.getTime()
   }
+
+  if (options.exposeDynlog) {
+    r.dynlogK = taskRewardScheme.dynlogK
+    r.dynlogV = taskRewardScheme.dynlogV
+  }
+
+  return r
 }

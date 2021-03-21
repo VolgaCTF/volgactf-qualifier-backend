@@ -548,11 +548,15 @@ function sanitizeCreateTaskParams (params, callback) {
 
   const sanitizeMaxValue = function () {
     const deferred = when_.defer()
-    const value = parseInt(params.reward.maxValue, 10)
-    if (is_.number(value)) {
-      deferred.resolve(value)
+    if (params.rewardScheme === 'fixed' || params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.maxValue, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
     } else {
-      deferred.reject(new ValidationError())
+      deferred.resolve(null)
     }
 
     return deferred.promise
@@ -686,7 +690,6 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
         createConstraints['subtractPoints'] = constraints.taskSubtractPoints
         createConstraints['subtractHitCount'] = constraints.taskSubtractHitCount
       }
-
       const validationResult = validator.validate(taskParams, createConstraints)
       if (validationResult === true) {
         TaskController.create(taskParams, function (err, task) {
@@ -789,11 +792,15 @@ function sanitizeUpdateTaskParams (params, task, callback) {
 
   const sanitizeMaxValue = function () {
     const deferred = when_.defer()
-    const value = parseInt(params.reward.maxValue, 10)
-    if (is_.number(value)) {
-      deferred.resolve(value)
+    if (params.rewardScheme === 'fixed' || params.rewardScheme === 'variable') {
+      const value = parseInt(params.reward.maxValue, 10)
+      if (is_.number(value)) {
+        deferred.resolve(value)
+      } else {
+        deferred.reject(new ValidationError())
+      }
     } else {
-      deferred.reject(new ValidationError())
+      deferred.resolve(null)
     }
 
     return deferred.promise

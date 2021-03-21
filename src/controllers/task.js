@@ -49,6 +49,13 @@ function isTaskRemoteCheckerUniqueConstraintViolation (err) {
   return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_remote_checkers_ndx_remote_checker_unique')
 }
 
+const scoringDynlog = {
+  min: parseInt(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_MIN, 10),
+  max: parseInt(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_MAX, 10),
+  k: parseFloat(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_K).toFixed(4),
+  v: parseFloat(process.env.VOLGACTF_QUALIFIER_SCORING_DYNLOG_V).toFixed(4)
+}
+
 class TaskController {
   static isTaskTitleUniqueConstraintViolation (err) {
     return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'tasks_ndx_title_unique')
@@ -61,6 +68,8 @@ class TaskController {
     let taskRewardScheme = null
     let taskCategories = null
     let taskRemoteChecker = null
+
+    const isScoringDynlog = options.maxValue === null && options.minValue === null && options.subtractPoints === null && options.subtractHitCount === null
 
     transaction(Task, TaskValue, TaskRewardScheme, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker, function (Task, TaskValue, TaskRewardScheme, TaskCategory, TaskAnswer, TaskHint, TaskRemoteChecker) {
       return Task
@@ -79,10 +88,12 @@ class TaskController {
         .query()
         .insert({
           taskId: task.id,
-          maxValue: options.maxValue,
-          minValue: options.minValue,
+          maxValue: isScoringDynlog ? scoringDynlog.max : options.maxValue,
+          minValue: isScoringDynlog ? scoringDynlog.min : options.minValue,
           subtractPoints: options.subtractPoints,
           subtractHitCount: options.subtractHitCount,
+          dynlogK: isScoringDynlog ? scoringDynlog.k : null,
+          dynlogV: isScoringDynlog ? scoringDynlog.v : null,
           created: now,
           updated: now
         })
@@ -92,7 +103,7 @@ class TaskController {
           .query()
           .insert({
             taskId: task.id,
-            value: options.maxValue,
+            value: isScoringDynlog ? scoringDynlog.max : options.maxValue,
             created: now,
             updated: now
           })
@@ -207,23 +218,27 @@ class TaskController {
         } else {
           updatedTask = task
         }
-
+        const isScoringDynlog = options.maxValue === null && options.minValue === null && options.subtractPoints === null && options.subtractHitCount === null
         return TaskRewardScheme
         .query()
         .update({
-          maxValue: options.maxValue,
-          minValue: options.minValue,
+          maxValue: isScoringDynlog ? scoringDynlog.max : options.maxValue,
+          minValue: isScoringDynlog ? scoringDynlog.min : options.minValue,
           subtractPoints: options.subtractPoints,
           subtractHitCount: options.subtractHitCount,
+          dynlogK: isScoringDynlog ? scoringDynlog.k : null,
+          dynlogV: isScoringDynlog ? scoringDynlog.v : null,
           updated: now
         })
         .where('taskId', updatedTask.id)
         .andWhere(function () {
           this
-          .where('maxValue', '!=', options.maxValue)
-          .orWhereRaw('"minValue" IS DISTINCT FROM ?', [options.minValue])
+          .where('maxValue', '!=', isScoringDynlog ? scoringDynlog.max : options.maxValue)
+          .orWhereRaw('"minValue" IS DISTINCT FROM ?', [isScoringDynlog ? scoringDynlog.min : options.minValue])
           .orWhereRaw('"subtractPoints" IS DISTINCT FROM ?', [options.subtractPoints])
           .orWhereRaw('"subtractHitCount" IS DISTINCT FROM ?', [options.subtractHitCount])
+          .orWhereRaw('"dynlogK" IS DISTINCT FROM ?', [isScoringDynlog ? scoringDynlog.k : null])
+          .orWhereRaw('"dynlogV" IS DISTINCT FROM ?', [isScoringDynlog ? scoringDynlog.v : null])
         })
         .returning('*')
         .then(function (updatedTaskRewardSchemes) {
