@@ -29,7 +29,7 @@ class EmailAddressValidator {
           sender: email,
           validateRegex: false,
           validateMx: true,
-          validateTypo: true,
+          validateTypo: false,
           validateDisposable: true,
           validateSMTP: false
         })
