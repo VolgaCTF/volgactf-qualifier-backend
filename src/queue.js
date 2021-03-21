@@ -12,7 +12,6 @@ const SMTPController = require('./controllers/mail/smtp')
 
 const TeamController = require('./controllers/team')
 const TaskController = require('./controllers/task')
-const TaskValueController = require('./controllers/task-value')
 const PostController = require('./controllers/post')
 const TwitterController = require('./controllers/twitter')
 const telegramController = require('./controllers/telegram')
@@ -363,17 +362,15 @@ queue('notifyFinishCompetition').process(function (job, done) {
 queue('notifyOpenTask').process(function (job, done) {
   Promise
   .all([
-    TaskController.fetchOne(job.data.taskId),
-    TaskValueController.getByTaskId(job.data.taskId)
+    TaskController.fetchOne(job.data.taskId)
   ])
   .then(function (values) {
     const task = values[0]
-    const taskValue = values[1]
 
     if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_NEWS === 'yes') {
       PostController.create(
         `New task — ${task.title}`,
-        `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`,
+        `:triangular_flag_on_post: Check out a new task — [${task.title}](${TaskController.getTaskLink(task.id)})!`,
         function (err, post) {
           if (err) {
             logger.error(err)
@@ -384,7 +381,7 @@ queue('notifyOpenTask').process(function (job, done) {
 
     if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TWITTER === 'yes') {
       TwitterController.post(
-        `🚩 New task — ${task.title} — worth ${taskValue.value} pts! ${TaskController.getTaskLink(task.id)}`,
+        `🚩 New task — ${task.title}! ${TaskController.getTaskLink(task.id)}`,
         function (err) {
           if (err) {
             logger.error(err)
@@ -395,7 +392,7 @@ queue('notifyOpenTask').process(function (job, done) {
 
     if (process.env.VOLGACTF_QUALIFIER_NOTIFICATION_POST_TELEGRAM === 'yes') {
       telegramController
-      .post(`🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)}), which is worth ${taskValue.value} points!`)
+      .post(`🚩 Check out a new task - [${task.title}](${TaskController.getTaskLink(task.id)})!`)
       .then(function () {
       })
       .catch(function (err) {
