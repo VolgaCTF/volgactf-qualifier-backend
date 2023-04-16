@@ -463,7 +463,15 @@ class StatController {
             averageRating: averageRating,
             hitAttemptDistribution: _.sortBy(taskHitAttemptDistributionList, 'timestamp'),
             hitDistribution: _.sortBy(taskHitDistributionList, 'timestamp'),
-            reviewDistribution: _.sortBy(taskReviewDistributionList, 'timestamp')
+            reviewDistribution: _.sortBy(taskReviewDistributionList, 'timestamp'),
+            reviewsDetailed: _.map(_.sortBy(taskReviews, 'createdAt'), function (taskReview) {
+              return {
+                team: _.findWhere(data.teams, { id: taskReview.teamId }).name,
+                rating: taskReview.rating,
+                comment: taskReview.comment,
+                timestamp: taskReview.createdAt
+              }
+            })
           })
         }
 

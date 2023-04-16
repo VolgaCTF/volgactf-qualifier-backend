@@ -4,7 +4,7 @@ const prompt = require('prompt')
 const SupervisorController = require('./controllers/supervisor')
 const TeamController = require('./controllers/team')
 const StatController = require('./controllers/stat')
-const Table = require('cli-table')
+const Table = require('cli-table3')
 const _ = require('underscore')
 const numeral = require('numeral')
 const moment = require('moment')
@@ -383,6 +383,28 @@ parser
             ]
           }))
           console.log(`Task "${task.title}" reviews distribution\n${table33.toString()}\n\n`)
+
+          const table34 = new Table({
+            head: [
+              'Timestamp',
+              'Team',
+              'Rating',
+              'Comment'
+            ],
+            colWidths: [17, 20, 8, 60],
+            wordWrap: true,
+            wrapOnWordBoundary: false,
+          })
+
+          table34.push.apply(table34, _.map(task.reviewsDetailed, function (entry) {
+            return [
+              moment(entry.timestamp).utc().format('MM/DD HH:mm [UTC]'),
+              entry.team,
+              entry.rating,
+              entry.comment
+            ]
+          }))
+          console.log(`Task "${task.title}" reviews\n${table34.toString()}\n\n`)
         }
         process.exit(0)
       }
