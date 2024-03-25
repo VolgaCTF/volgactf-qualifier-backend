@@ -6,16 +6,16 @@ class TaskHintController {
   static fetchByTask (taskId) {
     return new Promise(function (resolve, reject) {
       TaskHint
-      .query()
-      .where('taskId', taskId)
-      .orderBy('id')
-      .then(function (taskHints) {
-        resolve(taskHints)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('taskId', taskId)
+        .orderBy('id')
+        .then(function (taskHints) {
+          resolve(taskHints)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 

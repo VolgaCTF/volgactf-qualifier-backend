@@ -27,53 +27,53 @@ class SupervisorController {
     return new Promise(function (resolve, reject) {
       let newSupervisor = null
       supervisorInvitationController
-      .find(code)
-      .then(function (supervisorInvitation) {
-        getPasswordHash(password, function (err, hash) {
-          if (err) {
-            logger.error(err)
-            reject(new InternalError())
-          } else {
-            transaction(Supervisor, SupervisorInvitation, function (Supervisor, SupervisorInvitation) {
-              return Supervisor
-              .query()
-              .insert({
-                username: username,
-                passwordHash: hash,
-                rights: supervisorInvitation.rights,
-                email: supervisorInvitation.email
+        .find(code)
+        .then(function (supervisorInvitation) {
+          getPasswordHash(password, function (err, hash) {
+            if (err) {
+              logger.error(err)
+              reject(new InternalError())
+            } else {
+              transaction(Supervisor, SupervisorInvitation, function (Supervisor, SupervisorInvitation) {
+                return Supervisor
+                  .query()
+                  .insert({
+                    username,
+                    passwordHash: hash,
+                    rights: supervisorInvitation.rights,
+                    email: supervisorInvitation.email
+                  })
+                  .then(function (supervisor) {
+                    newSupervisor = supervisor
+                    return SupervisorInvitation
+                      .query()
+                      .patchAndFetchById(supervisorInvitation.id, {
+                        used: true
+                      })
+                  })
               })
-              .then(function (supervisor) {
-                newSupervisor = supervisor
-                return SupervisorInvitation
-                .query()
-                .patchAndFetchById(supervisorInvitation.id, {
-                  used: true
+                .then(function () {
+                  if (newSupervisor) {
+                    EventController.push(new CreateSupervisorEvent(newSupervisor))
+                  }
+                  resolve(newSupervisor)
                 })
-              })
-            })
-            .then(function () {
-              if (newSupervisor) {
-                EventController.push(new CreateSupervisorEvent(newSupervisor))
-              }
-              resolve(newSupervisor)
-            })
-            .catch(function (err) {
-              if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
-                reject(new SupervisorUsernameTakenError())
-              } else if (SupervisorController.isSupervisorEmailUniqueConstraintViolation(err)) {
-                reject(new SupervisorEmailTakenError())
-              } else {
-                logger.error(err)
-                reject(new InternalError())
-              }
-            })
-          }
+                .catch(function (err) {
+                  if (SupervisorController.isSupervisorUsernameUniqueConstraintViolation(err)) {
+                    reject(new SupervisorUsernameTakenError())
+                  } else if (SupervisorController.isSupervisorEmailUniqueConstraintViolation(err)) {
+                    reject(new SupervisorEmailTakenError())
+                  } else {
+                    logger.error(err)
+                    reject(new InternalError())
+                  }
+                })
+            }
+          })
         })
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
@@ -167,14 +167,14 @@ class SupervisorController {
                 .where('id', supervisor.id)
             })
         })
-        .then(function () {
-          EventController.push(new DeleteSupervisorEvent(supervisor), function () {
-            callback(null)
+          .then(function () {
+            EventController.push(new DeleteSupervisorEvent(supervisor), function () {
+              callback(null)
+            })
           })
-        })
-        .catch(function (err) {
-          callback(err)
-        })
+          .catch(function (err) {
+            callback(err)
+          })
       }
     })
   }
@@ -182,30 +182,30 @@ class SupervisorController {
   static login (opts) {
     return new Promise(function (resolve, reject) {
       Supervisor
-      .query()
-      .where('username', opts.username)
-      .first()
-      .then(function (supervisor) {
-        if (supervisor) {
-          checkPassword(opts.password, supervisor.passwordHash, function (err, res) {
-            if (err) {
-              reject(err)
-            } else {
-              if (res) {
-                EventController.push(new LoginSupervisorEvent(supervisor, opts.countryName, opts.cityName))
-                resolve(supervisor)
+        .query()
+        .where('username', opts.username)
+        .first()
+        .then(function (supervisor) {
+          if (supervisor) {
+            checkPassword(opts.password, supervisor.passwordHash, function (err, res) {
+              if (err) {
+                reject(err)
               } else {
-                reject(new InvalidSupervisorCredentialsError())
+                if (res) {
+                  EventController.push(new LoginSupervisorEvent(supervisor, opts.countryName, opts.cityName))
+                  resolve(supervisor)
+                } else {
+                  reject(new InvalidSupervisorCredentialsError())
+                }
               }
-            }
-          })
-        } else {
-          reject(new InvalidSupervisorCredentialsError())
-        }
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+            })
+          } else {
+            reject(new InvalidSupervisorCredentialsError())
+          }
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
@@ -223,14 +223,14 @@ class SupervisorController {
   static fetchByIdList (idList) {
     return new Promise(function (resolve, reject) {
       Supervisor
-      .query()
-      .whereIn('id', idList)
-      .then(function (supervisors) {
-        resolve(supervisors)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .query()
+        .whereIn('id', idList)
+        .then(function (supervisors) {
+          resolve(supervisors)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 

@@ -28,20 +28,20 @@ class RecalculateController {
       if (rewardScheme === 'fixed') {
         if (entry.taskRewardScheme.maxValue !== entry.taskValue.value) {
           TaskValue
-          .query()
-          .patchAndFetchById(entry.taskValue.id, {
-            value: entry.taskRewardScheme.maxValue,
-            updated: new Date()
-          })
-          .then(function (newTaskValue) {
-            next(null, {
-              task: entry.task,
-              taskValue: newTaskValue
+            .query()
+            .patchAndFetchById(entry.taskValue.id, {
+              value: entry.taskRewardScheme.maxValue,
+              updated: new Date()
             })
-          })
-          .catch(function (err) {
-            next(err, null)
-          })
+            .then(function (newTaskValue) {
+              next(null, {
+                task: entry.task,
+                taskValue: newTaskValue
+              })
+            })
+            .catch(function (err) {
+              next(err, null)
+            })
         } else {
           next(null, null)
         }
@@ -55,20 +55,20 @@ class RecalculateController {
 
         if (newValue !== entry.taskValue.value) {
           TaskValue
-          .query()
-          .patchAndFetchById(entry.taskValue.id, {
-            value: newValue,
-            updated: new Date()
-          })
-          .then(function (newTaskValue) {
-            next(null, {
-              task: entry.task,
-              taskValue: newTaskValue
+            .query()
+            .patchAndFetchById(entry.taskValue.id, {
+              value: newValue,
+              updated: new Date()
             })
-          })
-          .catch(function (err) {
-            next(err, null)
-          })
+            .then(function (newTaskValue) {
+              next(null, {
+                task: entry.task,
+                taskValue: newTaskValue
+              })
+            })
+            .catch(function (err) {
+              next(err, null)
+            })
         } else {
           next(null, null)
         }
@@ -82,20 +82,20 @@ class RecalculateController {
 
         if (newValue !== entry.taskValue.value) {
           TaskValue
-          .query()
-          .patchAndFetchById(entry.taskValue.id, {
-            value: newValue,
-            updated: new Date()
-          })
-          .then(function (newTaskValue) {
-            next(null, {
-              task: entry.task,
-              taskValue: newTaskValue
+            .query()
+            .patchAndFetchById(entry.taskValue.id, {
+              value: newValue,
+              updated: new Date()
             })
-          })
-          .catch(function (err) {
-            next(err, null)
-          })
+            .then(function (newTaskValue) {
+              next(null, {
+                task: entry.task,
+                taskValue: newTaskValue
+              })
+            })
+            .catch(function (err) {
+              next(err, null)
+            })
         } else {
           next(null, null)
         }
@@ -116,54 +116,54 @@ class RecalculateController {
 
     return new Promise((resolve, reject) => {
       Task
-      .query()
-      .then((resTasks) => {
-        tasks = resTasks
-        taskIds = _.map(tasks, function (task) {
-          return task.id
+        .query()
+        .then((resTasks) => {
+          tasks = resTasks
+          taskIds = _.map(tasks, function (task) {
+            return task.id
+          })
+          return TaskValue
+            .query()
+            .whereIn('taskId', taskIds)
         })
-        return TaskValue
-        .query()
-        .whereIn('taskId', taskIds)
-      })
-      .then((resTaskValues) => {
-        taskValues = resTaskValues
-        return TaskRewardScheme
-        .query()
-        .whereIn('taskId', taskIds)
-      })
-      .then((resTaskRewardSchemes) => {
-        taskRewardSchemes = resTaskRewardSchemes
-        return TeamTaskHit
-        .query()
-        .whereIn('taskId', taskIds)
-      })
-      .then((resTeamTaskHits) => {
-        teamTaskHits = resTeamTaskHits
-      })
-      .then(() => {
-        const entries = _.map(tasks, (task) => {
-          return {
-            task: task,
-            taskRewardScheme: _.findWhere(taskRewardSchemes, { taskId: task.id }),
-            taskValue: _.findWhere(taskValues, { taskId: task.id }),
-            taskHits: _.where(teamTaskHits, { taskId: task.id })
-          }
+        .then((resTaskValues) => {
+          taskValues = resTaskValues
+          return TaskRewardScheme
+            .query()
+            .whereIn('taskId', taskIds)
         })
+        .then((resTaskRewardSchemes) => {
+          taskRewardSchemes = resTaskRewardSchemes
+          return TeamTaskHit
+            .query()
+            .whereIn('taskId', taskIds)
+        })
+        .then((resTeamTaskHits) => {
+          teamTaskHits = resTeamTaskHits
+        })
+        .then(() => {
+          const entries = _.map(tasks, (task) => {
+            return {
+              task,
+              taskRewardScheme: _.findWhere(taskRewardSchemes, { taskId: task.id }),
+              taskValue: _.findWhere(taskValues, { taskId: task.id }),
+              taskHits: _.where(teamTaskHits, { taskId: task.id })
+            }
+          })
 
-        async.mapLimit(entries, 5, this.updateTaskValue, (err2, results) => {
-          if (err2) {
-            reject(err2)
-          } else {
-            resolve(_.filter(results, function (item) {
-              return !_.isNull(item)
-            }))
-          }
+          async.mapLimit(entries, 5, this.updateTaskValue, (err2, results) => {
+            if (err2) {
+              reject(err2)
+            } else {
+              resolve(_.filter(results, function (item) {
+                return !_.isNull(item)
+              }))
+            }
+          })
         })
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
@@ -174,21 +174,21 @@ class RecalculateController {
         5,
         (entry, next) => {
           TeamRanking
-          .raw(
-            `INSERT INTO team_rankings AS t ("teamId", "position", "score", "lastUpdated")
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT ("teamId") DO
-            UPDATE SET "position" = EXCLUDED."position", "score" = EXCLUDED."score", "lastUpdated" = EXCLUDED."lastUpdated"
-            WHERE t."position" != EXCLUDED."position" OR t."score" != EXCLUDED."score"
-            RETURNING *`,
-            [entry.teamId, entry.position, entry.score, entry.lastUpdated]
-          )
-          .then(function (response) {
-            next(null, response)
-          })
-          .catch(function (err) {
-            next(err, null)
-          })
+            .raw(
+              `INSERT INTO team_rankings AS t ("teamId", "position", "score", "lastUpdated")
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT ("teamId") DO
+              UPDATE SET "position" = EXCLUDED."position", "score" = EXCLUDED."score", "lastUpdated" = EXCLUDED."lastUpdated"
+              WHERE t."position" != EXCLUDED."position" OR t."score" != EXCLUDED."score"
+              RETURNING *`,
+              [entry.teamId, entry.position, entry.score, entry.lastUpdated]
+            )
+            .then(function (response) {
+              next(null, response)
+            })
+            .catch(function (err) {
+              next(err, null)
+            })
         },
         (err, results) => {
           if (err) {
@@ -272,8 +272,8 @@ class RecalculateController {
     return {
       team: entry.team,
       teamCreated: entry.team.createdAt.getTime(),
-      score: score,
-      lastUpdated: lastUpdated
+      score,
+      lastUpdated
     }
   }
 
@@ -292,71 +292,72 @@ class RecalculateController {
 
     return new Promise((resolve, reject) => {
       Team
-      .query()
-      .where('emailConfirmed', true)
-      .andWhere('disqualified', false)
-      .then((resTeams) => {
-        teams = resTeams
-        return TaskValue.query()
-      })
-      .then((resTaskValues) => {
-        taskValues = resTaskValues
-        return TeamTaskHit.query()
-      })
-      .then((resTeamTaskHits) => {
-        teamTaskHits = resTeamTaskHits
-        const entries = _.map(teams, function (team) {
-          const teamHits = _.where(teamTaskHits, { teamId: team.id })
-          const taskIds = _.uniq(_.map(teamHits, function (teamHit) {
-            return teamHit.taskId
-          }))
-          return {
-            team: team,
-            teamHits: teamHits,
-            taskValues: _.filter(taskValues, function (taskValue) {
-              return _.contains(taskIds, taskValue.taskId)
-            })
-          }
+        .query()
+        .where('emailConfirmed', true)
+        .andWhere('disqualified', false)
+        .then((resTeams) => {
+          teams = resTeams
+          return TaskValue.query()
         })
-        return this.calculateTeamScores(entries)
-      })
-      .then((entries) => {
-        return this.sortTeamScores(entries)
-      })
-      .then((entries) => {
-        return transaction(TeamRanking, (TeamRanking) => {
-          return this.saveTeamRankings(entries, TeamRanking)
+        .then((resTaskValues) => {
+          taskValues = resTaskValues
+          return TeamTaskHit.query()
         })
-      })
-      .then((entries) => {
-        resolve(entries)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .then((resTeamTaskHits) => {
+          teamTaskHits = resTeamTaskHits
+          const entries = _.map(teams, function (team) {
+            const teamHits = _.where(teamTaskHits, { teamId: team.id })
+            const taskIds = _.uniq(_.map(teamHits, function (teamHit) {
+              return teamHit.taskId
+            }))
+            return {
+              team,
+              teamHits,
+              taskValues: _.filter(taskValues, function (taskValue) {
+                return _.contains(taskIds, taskValue.taskId)
+              })
+            }
+          })
+          return this.calculateTeamScores(entries)
+        })
+        .then((entries) => {
+          return this.sortTeamScores(entries)
+        })
+        .then((entries) => {
+          return transaction(TeamRanking, (TeamRanking) => {
+            return this.saveTeamRankings(entries, TeamRanking)
+          })
+        })
+        .then((entries) => {
+          resolve(entries)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
   recalculate () {
     return new Promise((resolve, reject) => {
-      this.updateTaskValues()
-      .then((taskValueEntries) => {
-        _.each(taskValueEntries, function (entry) {
-          EventController.push(new UpdateTaskValueEvent(entry.task, entry.taskValue))
-        })
+      this
+        .updateTaskValues()
+        .then((taskValueEntries) => {
+          _.each(taskValueEntries, function (entry) {
+            EventController.push(new UpdateTaskValueEvent(entry.task, entry.taskValue))
+          })
 
-        return this.updateTeamRankings()
-      })
-      .then((entries) => {
-        return TeamRanking.query()
-      })
-      .then((teamRankings) => {
-        EventController.push(new UpdateTeamRankingsEvent(teamRankings))
-        resolve()
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+          return this.updateTeamRankings()
+        })
+        .then((entries) => {
+          return TeamRanking.query()
+        })
+        .then((teamRankings) => {
+          EventController.push(new UpdateTeamRankingsEvent(teamRankings))
+          resolve()
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 }

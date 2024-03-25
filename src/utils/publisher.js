@@ -7,7 +7,7 @@ class EventPublisher {
   }
 
   push (event) {
-    let data = {
+    const data = {
       id: event.id,
       type: event.type,
       data: event.data,

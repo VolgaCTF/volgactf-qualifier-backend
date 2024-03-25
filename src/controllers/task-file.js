@@ -19,36 +19,36 @@ class TaskFileController {
   fetchById (id) {
     return new Promise(function (resolve, reject) {
       TaskFile
-      .query()
-      .where('id', id)
-      .first()
-      .then(function (taskFile) {
-        if (taskFile) {
-          resolve(taskFile)
-        } else {
-          reject(new TaskFileNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('id', id)
+        .first()
+        .then(function (taskFile) {
+          if (taskFile) {
+            resolve(taskFile)
+          } else {
+            reject(new TaskFileNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
   fetchByTask (taskId) {
     return new Promise(function (resolve, reject) {
       TaskFile
-      .query()
-      .where('taskId', taskId)
-      .orderBy('id')
-      .then(function (taskFiles) {
-        resolve(taskFiles)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('taskId', taskId)
+        .orderBy('id')
+        .then(function (taskFiles) {
+          resolve(taskFiles)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -67,24 +67,24 @@ class TaskFileController {
   createTaskFile (taskId, filename) {
     return new Promise((resolve, reject) => {
       TaskFile
-      .query()
-      .insert({
-        taskId: taskId,
-        prefix: crypto.randomBytes(16).toString('hex'),
-        filename: filename,
-        createdAt: new Date()
-      })
-      .then((taskFile) => {
-        resolve(taskFile)
-      })
-      .catch((err) => {
-        if (this.isTaskFilenameUniqueConstraintViolation(err)) {
-          reject(new DuplicateTaskFilenameError())
-        } else {
-          logger.error(err)
-          reject(new InternalError())
-        }
-      })
+        .query()
+        .insert({
+          taskId,
+          prefix: crypto.randomBytes(16).toString('hex'),
+          filename,
+          createdAt: new Date()
+        })
+        .then((taskFile) => {
+          resolve(taskFile)
+        })
+        .catch((err) => {
+          if (this.isTaskFilenameUniqueConstraintViolation(err)) {
+            reject(new DuplicateTaskFilenameError())
+          } else {
+            logger.error(err)
+            reject(new InternalError())
+          }
+        })
     })
   }
 
@@ -117,42 +117,43 @@ class TaskFileController {
   create (taskId, tempPath, newFilename) {
     return new Promise((resolve, reject) => {
       let taskFile = null
-      this.createTaskFile(taskId, newFilename)
-      .then((newTaskFile) => {
-        taskFile = newTaskFile
-        return this.makeTaskFileDir(this.getTaskFileDir(taskFile))
-      })
-      .then(() => {
-        return this.moveTaskFile(tempPath, this.getTaskFilePath(taskFile))
-      })
-      .then(() => {
-        EventController.push(new CreateTaskFileEvent(taskFile))
-        resolve(taskFile)
-      })
-      .catch((err) => {
-        reject(err)
-      })
+      this
+        .createTaskFile(taskId, newFilename)
+        .then((newTaskFile) => {
+          taskFile = newTaskFile
+          return this.makeTaskFileDir(this.getTaskFileDir(taskFile))
+        })
+        .then(() => {
+          return this.moveTaskFile(tempPath, this.getTaskFilePath(taskFile))
+        })
+        .then(() => {
+          EventController.push(new CreateTaskFileEvent(taskFile))
+          resolve(taskFile)
+        })
+        .catch((err) => {
+          reject(err)
+        })
     })
   }
 
   deleteTaskFile (id, callback) {
     return new Promise((resolve, reject) => {
       TaskFile
-      .query()
-      .delete()
-      .where('id', id)
-      .returning('*')
-      .then(function (taskFiles) {
-        if (taskFiles.length === 1) {
-          resolve(taskFiles[0])
-        } else {
-          reject(new TaskFileNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .delete()
+        .where('id', id)
+        .returning('*')
+        .then(function (taskFiles) {
+          if (taskFiles.length === 1) {
+            resolve(taskFiles[0])
+          } else {
+            reject(new TaskFileNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -185,21 +186,22 @@ class TaskFileController {
   delete (taskFile) {
     return new Promise((resolve, reject) => {
       let deletedTaskFile = null
-      this.deleteTaskFile(taskFile.id)
-      .then((taskFile) => {
-        deletedTaskFile = taskFile
-        return this.unlinkTaskFile(this.getTaskFilePath(deletedTaskFile))
-      })
-      .then(() => {
-        return this.removeTaskFileDir(this.getTaskFileDir(deletedTaskFile))
-      })
-      .then(() => {
-        EventController.push(new DeleteTaskFileEvent(deletedTaskFile))
-        resolve(deletedTaskFile)
-      })
-      .catch((err) => {
-        reject(err)
-      })
+      this
+        .deleteTaskFile(taskFile.id)
+        .then((taskFile) => {
+          deletedTaskFile = taskFile
+          return this.unlinkTaskFile(this.getTaskFilePath(deletedTaskFile))
+        })
+        .then(() => {
+          return this.removeTaskFileDir(this.getTaskFileDir(deletedTaskFile))
+        })
+        .then(() => {
+          EventController.push(new DeleteTaskFileEvent(deletedTaskFile))
+          resolve(deletedTaskFile)
+        })
+        .catch((err) => {
+          reject(err)
+        })
     })
   }
 }

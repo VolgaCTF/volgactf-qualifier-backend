@@ -32,22 +32,22 @@ class CountryController {
   static findByCodeOrDefault (code) {
     return new Promise(function (resolve, reject) {
       Country
-      .query()
-      .where('code', code)
-      .orWhere('code', '')
-      .orderBy('id', 'desc')
-      .first()
-      .then(function (country) {
-        if (country) {
-          resolve(country)
-        } else {
+        .query()
+        .where('code', code)
+        .orWhere('code', '')
+        .orderBy('id', 'desc')
+        .first()
+        .then(function (country) {
+          if (country) {
+            resolve(country)
+          } else {
+            reject(new InternalError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
           reject(new InternalError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        })
     })
   }
 }

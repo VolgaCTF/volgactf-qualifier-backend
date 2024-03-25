@@ -31,31 +31,31 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
   }
 
   RemoteCheckerController
-  .create(
-    request.body.name,
-    request.body.url,
-    request.body.authUsername,
-    request.body.authPassword
-  )
-  .then(function (remoteChecker) {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .create(
+      request.body.name,
+      request.body.url,
+      request.body.authUsername,
+      request.body.authPassword
+    )
+    .then(function (remoteChecker) {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.param('remoteCheckerId', remoteCheckerParam.id)
 
 router.post('/:remoteCheckerId/delete', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, function (request, response, next) {
   RemoteCheckerController
-  .delete(request.remoteCheckerId)
-  .then(function () {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .delete(request.remoteCheckerId)
+    .then(function () {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/:remoteCheckerId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
@@ -72,19 +72,19 @@ router.post('/:remoteCheckerId/update', contestNotFinished, checkToken, needsToB
   }
 
   RemoteCheckerController
-  .update(
-    request.remoteCheckerId,
-    request.body.name,
-    request.body.url,
-    request.body.authUsername,
-    request.body.authPassword
-  )
-  .then(function (remoteChecker) {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .update(
+      request.remoteCheckerId,
+      request.body.name,
+      request.body.url,
+      request.body.authUsername,
+      request.body.authPassword
+    )
+    .then(function (remoteChecker) {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 module.exports = router

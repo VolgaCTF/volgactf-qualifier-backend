@@ -6,7 +6,6 @@ const constraints = require('../utils/constraints')
 const tmp = require('tmp')
 const fs = require('fs')
 const gm = require('gm')
-const path = require('path')
 
 const TeamController = require('../controllers/team')
 const Validator = require('validator.js')
@@ -17,7 +16,7 @@ const _ = require('underscore')
 const is_ = require('is_js')
 
 const { detectScope, needsToBeUnauthorized, needsToBeAuthorizedTeam } = require('../middleware/session')
-const { checkToken, issueToken } = require('../middleware/security')
+const { checkToken } = require('../middleware/security')
 const { contestNotFinished } = require('../middleware/contest')
 
 const teamSerializer = require('../serializers/team')
@@ -55,14 +54,14 @@ router.get('/index', detectScope, function (request, response, next) {
 
 router.get('/ranking/index', detectScope, function (request, response, next) {
   teamRankingController
-  .fetch()
-  .then(function (teamRankings) {
-    response.json(teamRankings.map(teamRankingSerializer))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(new InternalError())
-  })
+    .fetch()
+    .then(function (teamRankings) {
+      response.json(teamRankings.map(teamRankingSerializer))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(new InternalError())
+    })
 })
 
 router.param('teamId', teamParam.id)
@@ -118,7 +117,7 @@ router.get('/:teamId/review/statistics', function (request, response, next) {
 
       response.json({
         count: teamTaskReviews.length,
-        averageRating: averageRating
+        averageRating
       })
     }
   })
@@ -247,16 +246,16 @@ router.post('/update-email', checkToken, needsToBeAuthorizedTeam, contestNotFini
   }
 
   emailAddressValidator
-  .validate(request.body.email, request.ip)
-  .then(function () {
-    return TeamController.updateEmail2(request.session.identityID, request.body.email)
-  })
-  .then(function () {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .validate(request.body.email, request.ip)
+    .then(function () {
+      return TeamController.updateEmail2(request.session.identityID, request.body.email)
+    })
+    .then(function () {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/restore', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
@@ -290,21 +289,21 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, getG
   }
 
   TeamController
-  .signin({
-    name: request.body.team,
-    password: request.body.password,
-    countryName: request.geoIPData.countryName,
-    cityName: request.geoIPData.cityName
-  })
-  .then(function (team) {
-    request.session.authenticated = true
-    request.session.identityID = team.id
-    request.session.scopeID = SCOPE_TEAM
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .signin({
+      name: request.body.team,
+      password: request.body.password,
+      countryName: request.geoIPData.countryName,
+      cityName: request.geoIPData.cityName
+    })
+    .then(function (team) {
+      request.session.authenticated = true
+      request.session.identityID = team.id
+      request.session.scopeID = SCOPE_TEAM
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/signout', needsToBeAuthorizedTeam, getTeam, function (request, response, next) {
@@ -380,7 +379,7 @@ router.post('/signup', checkToken, needsToBeUnauthorized, contestNotFinished, mu
     file.on('data', function (data) {
       if (fieldName === 'logo') {
         fs.appendFileSync(teamLogo.name, data)
-        teamInfo['logoFilename'] = teamLogo.name
+        teamInfo.logoFilename = teamLogo.name
       }
     })
   })

@@ -43,11 +43,11 @@ class ContestController {
       return true
     }
 
-    let initialToStarted = curState === CONTEST_INITIAL && newState === CONTEST_STARTED
-    let startedToPaused = curState === CONTEST_STARTED && newState === CONTEST_PAUSED
-    let pausedToStarted = curState === CONTEST_PAUSED && newState === CONTEST_STARTED
-    let startedToFinished = curState === CONTEST_STARTED && newState === CONTEST_FINISHED
-    let pausedToFinished = curState === CONTEST_FINISHED && newState === CONTEST_FINISHED
+    const initialToStarted = curState === CONTEST_INITIAL && newState === CONTEST_STARTED
+    const startedToPaused = curState === CONTEST_STARTED && newState === CONTEST_PAUSED
+    const pausedToStarted = curState === CONTEST_PAUSED && newState === CONTEST_STARTED
+    const startedToFinished = curState === CONTEST_STARTED && newState === CONTEST_FINISHED
+    const pausedToFinished = curState === CONTEST_FINISHED && newState === CONTEST_FINISHED
 
     return initialToStarted || startedToPaused || pausedToStarted || startedToFinished || pausedToFinished
   }
@@ -95,8 +95,8 @@ class ContestController {
               .query()
               .patchAndFetchById(contest.id, {
                 state: newState,
-                startsAt: startsAt,
-                finishesAt: finishesAt
+                startsAt,
+                finishesAt
               })
               .then(function (updatedContest) {
                 EventController.push(new UpdateContestEvent(updatedContest))
@@ -116,8 +116,8 @@ class ContestController {
               .query()
               .insert({
                 state: newState,
-                startsAt: startsAt,
-                finishesAt: finishesAt
+                startsAt,
+                finishesAt
               })
               .then(function (contest) {
                 EventController.push(new UpdateContestEvent(contest))

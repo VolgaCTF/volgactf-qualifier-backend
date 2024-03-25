@@ -13,7 +13,7 @@ class SupervisorTaskSubscriptionController {
       SupervisorTaskSubscription
         .query()
         .insert({
-          supervisorId: supervisorId,
+          supervisorId,
           taskId: task.id,
           createdAt: new Date()
         })
@@ -65,7 +65,7 @@ class SupervisorTaskSubscriptionController {
         .query()
         .delete()
         .where({
-          supervisorId: supervisorId,
+          supervisorId,
           taskId: task.id
         })
         .then(function (numDeleted) {

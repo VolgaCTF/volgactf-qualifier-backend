@@ -9,9 +9,9 @@ class TeamTaskHitAttemptController {
     TeamTaskHitAttempt
       .query()
       .insert({
-        teamId: teamId,
-        taskId: taskId,
-        wrongAnswer: wrongAnswer,
+        teamId,
+        taskId,
+        wrongAnswer,
         createdAt: new Date()
       })
       .then(function (teamTaskHitAttempt) {

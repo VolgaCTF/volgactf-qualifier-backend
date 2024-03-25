@@ -2,7 +2,7 @@ const { InvalidCSRFTokenError } = require('../utils/errors')
 const tokenUtil = require('../utils/token')
 const moment = require('moment')
 
-let tokenExpirationDate = 1000 * 60 * 60  // 1 hour
+let tokenExpirationDate = 1000 * 60 * 60 // 1 hour
 if (process.env.VOLGACTF_QUALIFIER_TOKEN_EXPIRATION_DATE) {
   tokenExpirationDate = parseInt(process.env.VOLGACTF_QUALIFIER_TOKEN_EXPIRATION_DATE, 10)
 }
@@ -28,7 +28,7 @@ function issueToken (request, response, next) {
   let reissueToken = null
 
   if (request.session.token && request.session.tokenExpires) {
-    let diff = moment().diff(request.session.tokenExpires)
+    const diff = moment().diff(request.session.tokenExpires)
     reissueToken = diff > 0
   } else {
     reissueToken = true

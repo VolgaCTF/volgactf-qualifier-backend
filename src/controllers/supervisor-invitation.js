@@ -20,39 +20,39 @@ class SupervisorInvitationController {
     const that = this
     return new Promise(function (resolve, reject) {
       SupervisorInvitation
-      .query()
-      .where('email', email.toLowerCase())
-      .andWhere('used', false)
-      .andWhere('expires', '>', new Date())
-      .then(function (activeSupervisorInvitations) {
-        if (activeSupervisorInvitations.length >= 2) {
-          reject(new SupervisorInvitationLimitError())
-        } else {
-          return SupervisorInvitation
-          .query()
-          .insert({
-            email: email.toLowerCase(),
-            rights: rights,
-            token: token.generate(),
-            used: false,
-            created: new Date(),
-            expires: moment().add(4, 'h').toDate()
-          })
-        }
-      })
-      .then(function (supervisorInvitation) {
-        queue('sendEmailQueue').add({
-          message: 'invite_supervisor',
-          create_account_link: that.getCreateAccountLink(supervisorInvitation.token),
-          email: supervisorInvitation.email,
-          rights: supervisorInvitation.rights
+        .query()
+        .where('email', email.toLowerCase())
+        .andWhere('used', false)
+        .andWhere('expires', '>', new Date())
+        .then(function (activeSupervisorInvitations) {
+          if (activeSupervisorInvitations.length >= 2) {
+            reject(new SupervisorInvitationLimitError())
+          } else {
+            return SupervisorInvitation
+              .query()
+              .insert({
+                email: email.toLowerCase(),
+                rights,
+                token: token.generate(),
+                used: false,
+                created: new Date(),
+                expires: moment().add(4, 'h').toDate()
+              })
+          }
         })
-        resolve(supervisorInvitation)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .then(function (supervisorInvitation) {
+          queue('sendEmailQueue').add({
+            message: 'invite_supervisor',
+            create_account_link: that.getCreateAccountLink(supervisorInvitation.token),
+            email: supervisorInvitation.email,
+            rights: supervisorInvitation.rights
+          })
+          resolve(supervisorInvitation)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -72,22 +72,22 @@ class SupervisorInvitationController {
       }
 
       SupervisorInvitation
-      .query()
-      .where('token', decodedToken)
-      .andWhere('used', false)
-      .andWhere('expires', '>', new Date())
-      .first()
-      .then(function (supervisorInvitation) {
-        if (supervisorInvitation) {
-          resolve(supervisorInvitation)
-        } else {
-          reject(new InvalidCreateSupervisorURLError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('token', decodedToken)
+        .andWhere('used', false)
+        .andWhere('expires', '>', new Date())
+        .first()
+        .then(function (supervisorInvitation) {
+          if (supervisorInvitation) {
+            resolve(supervisorInvitation)
+          } else {
+            reject(new InvalidCreateSupervisorURLError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 }

@@ -25,7 +25,7 @@ class EmailAddressValidator {
       const emailValidator = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR
       if (emailValidator === 'default') {
         deepEmailValidate({
-          email: email,
+          email,
           sender: email,
           validateRegex: false,
           validateMx: true,
@@ -33,26 +33,26 @@ class EmailAddressValidator {
           validateDisposable: true,
           validateSMTP: false
         })
-        .then(function (res) {
-          if (res.valid) {
-            resolve(email)
-          } else {
-            if (!res.validators.typo.valid) {
-              const suggested = res.validators.typo.reason.substring('Likely typo, suggested email: '.length)
-              reject(new EmailAddressValidationError(`This email address seems to be invalid. Did you mean ${suggested}?`))
-            } else if (!res.validators.disposable.valid) {
-              reject(new EmailAddressValidationError('The use of a disposable email address is not allowed'))
-            } else if (!res.validators.mx.valid) {
-              reject(new EmailAddressValidationError('This email address seems to be undeliverable. Please check the spelling'))
+          .then(function (res) {
+            if (res.valid) {
+              resolve(email)
             } else {
-              reject(new InternalError())
+              if (!res.validators.typo.valid) {
+                const suggested = res.validators.typo.reason.substring('Likely typo, suggested email: '.length)
+                reject(new EmailAddressValidationError(`This email address seems to be invalid. Did you mean ${suggested}?`))
+              } else if (!res.validators.disposable.valid) {
+                reject(new EmailAddressValidationError('The use of a disposable email address is not allowed'))
+              } else if (!res.validators.mx.valid) {
+                reject(new EmailAddressValidationError('This email address seems to be undeliverable. Please check the spelling'))
+              } else {
+                reject(new InternalError())
+              }
             }
-          }
-        })
-        .catch(function (err) {
-          logger.error(err)
-          reject(new InternalError())
-        })
+          })
+          .catch(function (err) {
+            logger.error(err)
+            reject(new InternalError())
+          })
       } else {
         resolve(email)
       }

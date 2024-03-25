@@ -18,8 +18,10 @@ const urlencodedExtendedParser = bodyParser.urlencoded({ extended: true })
 
 const router = express.Router()
 
-const { InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError, WrongTaskAnswerError,
-  ValidationError, TaskNotAvailableError } = require('../utils/errors')
+const {
+  InternalError, NotAuthenticatedError, TeamNotQualifiedError, TaskSubmitAttemptsLimitError,
+  WrongTaskAnswerError, ValidationError, TaskNotAvailableError
+} = require('../utils/errors')
 const is_ = require('is_js')
 const _ = require('underscore')
 
@@ -51,6 +53,8 @@ const taskFileSerializer = require('../serializers/task-file')
 const taskFileParam = require('../params/task-file')
 
 const supervisorTaskSubscriptionController = require('../controllers/supervisor-task-subscription')
+const githubController = require('../controllers/github')
+const CategoryController = require('../controllers/category')
 
 router.param('taskId', taskParam.id)
 router.param('taskFileId', taskFileParam.id)
@@ -86,6 +90,17 @@ router.get('/category/index', detectScope, function (request, response, next) {
       })
     }
   }, !request.scope.isSupervisor())
+})
+
+router.get('/github_repository/index', needsToBeAuthorizedAdmin, function (request, response, next) {
+  githubController
+    .listRepositories()
+    .then(function (repositories) {
+      response.json(repositories)
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.get('/:taskId/category', detectScope, getTask, function (request, response, next) {
@@ -219,7 +234,7 @@ router.get('/:taskId/review/statistics', detectScope, function (request, respons
 
       response.json({
         count: teamTaskReviews.length,
-        averageRating: averageRating
+        averageRating
       })
     }
   })
@@ -370,24 +385,24 @@ router.post('/:taskId/revise', checkToken, needsToBeAuthorizedSupervisor, getTas
 
 router.post('/:taskId/subscribe', checkToken, needsToBeAuthorizedSupervisor, getTask, function (request, response, next) {
   supervisorTaskSubscriptionController
-  .create(request.session.identityID, request.task)
-  .then(function (supervisorTaskSubscription) {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .create(request.session.identityID, request.task)
+    .then(function (supervisorTaskSubscription) {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/:taskId/unsubscribe', checkToken, needsToBeAuthorizedSupervisor, getTask, function (request, response, next) {
   supervisorTaskSubscriptionController
-  .delete(request.session.identityID, request.task)
-  .then(function () {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .delete(request.session.identityID, request.task)
+    .then(function () {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/:taskId/check', detectScope, checkToken, contestIsFinished, getTask, urlencodedParser, function (request, response, next) {
@@ -623,42 +638,42 @@ function sanitizeCreateTaskParams (params, callback) {
   }
 
   when_
-  .all([
-    sanitizeTitle(),
-    sanitizeDescription(),
-    sanitizeHints(),
-    sanitizeCategories(),
-    sanitizeCheckMethod(),
-    sanitizeAnswers(),
-    sanitizeRemoteChecker(),
-    sanitizeRewardScheme(),
-    sanitizeMaxValue(),
-    sanitizeMinValue(),
-    sanitizeSubtractPoints(),
-    sanitizeSubtractHitCount(),
-    sanitizeOpenAt()
-  ])
-  .then(function (res) {
-    callback(null, {
-      title: res[0],
-      description: res[1],
-      hints: res[2],
-      categories: res[3],
-      checkMethod: res[4],
-      answers: res[5],
-      remoteChecker: res[6],
-      rewardScheme: res[7],
-      maxValue: res[8],
-      minValue: res[9],
-      subtractPoints: res[10],
-      subtractHitCount: res[11],
-      openAt: res[12]
+    .all([
+      sanitizeTitle(),
+      sanitizeDescription(),
+      sanitizeHints(),
+      sanitizeCategories(),
+      sanitizeCheckMethod(),
+      sanitizeAnswers(),
+      sanitizeRemoteChecker(),
+      sanitizeRewardScheme(),
+      sanitizeMaxValue(),
+      sanitizeMinValue(),
+      sanitizeSubtractPoints(),
+      sanitizeSubtractHitCount(),
+      sanitizeOpenAt()
+    ])
+    .then(function (res) {
+      callback(null, {
+        title: res[0],
+        description: res[1],
+        hints: res[2],
+        categories: res[3],
+        checkMethod: res[4],
+        answers: res[5],
+        remoteChecker: res[6],
+        rewardScheme: res[7],
+        maxValue: res[8],
+        minValue: res[9],
+        subtractPoints: res[10],
+        subtractHitCount: res[11],
+        openAt: res[12]
+      })
     })
-  })
-  .catch(function (err) {
-    logger.error(err)
-    callback(err, null)
-  })
+    .catch(function (err) {
+      logger.error(err)
+      callback(err, null)
+    })
 }
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
@@ -677,18 +692,18 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
       }
 
       if (taskParams.checkMethod === 'list') {
-        createConstraints['answers'] = constraints.taskAnswers
+        createConstraints.answers = constraints.taskAnswers
       } else if (taskParams.checkMethod === 'remote') {
-        createConstraints['remoteChecker'] = constraints.remoteCheckerId
+        createConstraints.remoteChecker = constraints.remoteCheckerId
       }
 
       if (taskParams.rewardScheme === 'fixed') {
-        createConstraints['maxValue'] = constraints.taskValue
+        createConstraints.maxValue = constraints.taskValue
       } else if (taskParams.rewardScheme === 'variable') {
-        createConstraints['maxValue'] = constraints.taskValue
-        createConstraints['minValue'] = constraints.taskValue
-        createConstraints['subtractPoints'] = constraints.taskSubtractPoints
-        createConstraints['subtractHitCount'] = constraints.taskSubtractHitCount
+        createConstraints.maxValue = constraints.taskValue
+        createConstraints.minValue = constraints.taskValue
+        createConstraints.subtractPoints = constraints.taskSubtractPoints
+        createConstraints.subtractHitCount = constraints.taskSubtractHitCount
       }
       const validationResult = validator.validate(taskParams, createConstraints)
       if (validationResult === true) {
@@ -704,6 +719,115 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
       }
     }
   })
+})
+
+function preprocessTaskConfigFromGitHub (taskConfig) {
+  const resolveCategory = function (categoryTitle) {
+    const deferred = when_.defer()
+
+    CategoryController
+      .getByTitle(categoryTitle)
+      .then(function (category) {
+        if (category === null) {
+          CategoryController
+            .create(categoryTitle, '', function (err, newCategory) {
+              if (err) {
+                logger.error(err)
+                deferred.resolve(null)
+              } else {
+                deferred.resolve({ type: 'category', id: newCategory.id })
+              }
+            })
+        } else {
+          deferred.resolve({ type: 'category', id: category.id })
+        }
+      })
+      .catch(function (err) {
+        logger.error(err)
+        deferred.resolve(null)
+      })
+
+    return deferred.promise
+  }
+
+  return new Promise(function (resolve, reject) {
+    const propResolvers = []
+
+    if (Object.hasOwn(taskConfig, 'categories')) {
+      const categoryResolvers = _.map(taskConfig.categories, function (categoryTitle) {
+        return resolveCategory(categoryTitle)
+      })
+      propResolvers.push(...categoryResolvers)
+    }
+
+    when_
+      .all(propResolvers)
+      .then(function (propResolved) {
+        const params = {
+          title: taskConfig.title,
+          description: taskConfig.description,
+          hints: [],
+          categories: _.map(
+            _.filter(propResolved, function (propResolvedItem) {
+              return propResolvedItem && propResolvedItem.type === 'category'
+            }),
+            function (categoryResolvedItem) {
+              return categoryResolvedItem.id
+            }
+          ),
+          checkMethod: 'list',
+          anwers: _.map(taskConfig.answers, function (answer) {
+            if (is_.string(answer)) {
+              return { answer, caseSensitive: true }
+            } else if (Object.hasOwn(answer, 'answer') && Object.hasOwn(answer, 'case_sensitive')) {
+              return { answer: answer.answer, caseSensitive: answer.case_ensitive }
+            }
+          }),
+          remoteChecker: -1,
+          openAt: null
+        }
+
+        if (Object.hasOwn(taskConfig, 'scoring') && Object.hasOwn(taskConfig.scoring, 'type')) {
+          if (taskConfig.scoring.type === 'static' && Object.hasOwn(taskConfig.scoring, 'value')) {
+            params.rewardScheme = 'fixed'
+            params.maxValue = taskConfig.scoring.value
+          } else if (taskConfig.scoring.type === 'dyn_log') {
+            params.rewardScheme = 'dynlog'
+          } else if (taskConfig.scoring.type === 'dyn_lin' && Object.hasOwn(taskConfig.scoring, 'max_value') && Object.hasOwn(taskConfig.scoring, 'min_value') && Object.hasOwn(taskConfig.scoring, 'subtract_points') && Object.hasOwn(taskConfig.scoring, 'subtract_hit_count')) {
+            params.rewardScheme = 'variable'
+            params.maxValue = taskConfig.scoring.max_value
+            params.minValue = taskConfig.scoring.min_value
+            params.subtractPoints = taskConfig.scoring.subtract_points
+            params.subtractHitCount = taskConfig.scoring.subtract_hit_count
+          }
+        }
+
+        resolve(taskConfig)
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+  })
+}
+
+router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  TaskController
+    .loadFromGitHub(request.body.repository)
+    .then(function (taskConfig) {
+      logger.info(JSON.stringify(taskConfig))
+
+      preprocessTaskConfigFromGitHub(taskConfig)
+        .then(function (taskParams) {
+          logger.info(JSON.stringify(taskParams))
+          response.json({ success: true })
+        })
+        .catch(function (err) {
+          next(err)
+        })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 function sanitizeUpdateTaskParams (params, task, callback) {
@@ -867,37 +991,37 @@ function sanitizeUpdateTaskParams (params, task, callback) {
   }
 
   when_
-  .all([
-    sanitizeDescription(),
-    sanitizeHints(),
-    sanitizeCategories(),
-    sanitizeCheckMethod(),
-    sanitizeAnswers(),
-    sanitizeRewardScheme(),
-    sanitizeMaxValue(),
-    sanitizeMinValue(),
-    sanitizeSubtractPoints(),
-    sanitizeSubtractHitCount(),
-    sanitizeOpenAt()
-  ])
-  .then(function (res) {
-    callback(null, {
-      description: res[0],
-      hints: res[1],
-      categories: res[2],
-      checkMethod: res[3],
-      answers: res[4],
-      rewardScheme: res[5],
-      maxValue: res[6],
-      minValue: res[7],
-      subtractPoints: res[8],
-      subtractHitCount: res[9],
-      openAt: res[10]
+    .all([
+      sanitizeDescription(),
+      sanitizeHints(),
+      sanitizeCategories(),
+      sanitizeCheckMethod(),
+      sanitizeAnswers(),
+      sanitizeRewardScheme(),
+      sanitizeMaxValue(),
+      sanitizeMinValue(),
+      sanitizeSubtractPoints(),
+      sanitizeSubtractHitCount(),
+      sanitizeOpenAt()
+    ])
+    .then(function (res) {
+      callback(null, {
+        description: res[0],
+        hints: res[1],
+        categories: res[2],
+        checkMethod: res[3],
+        answers: res[4],
+        rewardScheme: res[5],
+        maxValue: res[6],
+        minValue: res[7],
+        subtractPoints: res[8],
+        subtractHitCount: res[9],
+        openAt: res[10]
+      })
     })
-  })
-  .catch(function (err) {
-    callback(err, null)
-  })
+    .catch(function (err) {
+      callback(err, null)
+    })
 }
 
 router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, urlencodedExtendedParser, function (request, response, next) {
@@ -915,16 +1039,16 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
       }
 
       if (taskParams.checkMethod === 'list') {
-        updateConstraints['answers'] = constraints.taskExtraAnswers
+        updateConstraints.answers = constraints.taskExtraAnswers
       }
 
       if (taskParams.rewardScheme === 'fixed') {
-        updateConstraints['maxValue'] = constraints.taskValue
+        updateConstraints.maxValue = constraints.taskValue
       } else if (taskParams.rewardScheme === 'variable') {
-        updateConstraints['maxValue'] = constraints.taskValue
-        updateConstraints['minValue'] = constraints.taskValue
-        updateConstraints['subtractPoints'] = constraints.taskSubtractPoints
-        updateConstraints['subtractHitCount'] = constraints.taskSubtractHitCount
+        updateConstraints.maxValue = constraints.taskValue
+        updateConstraints.minValue = constraints.taskValue
+        updateConstraints.subtractPoints = constraints.taskSubtractPoints
+        updateConstraints.subtractHitCount = constraints.taskSubtractHitCount
       }
 
       const validationResult = validator.validate(taskParams, updateConstraints)
@@ -956,13 +1080,13 @@ const multidataParser = busboy({
 
 router.get('/:taskId/file/index', needsToBeAuthorizedAdmin, getTask, function (request, response, next) {
   taskFileController
-  .fetchByTask(request.task.id)
-  .then(function (taskFiles) {
-    response.json(taskFiles.map(taskFileSerializer))
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .fetchByTask(request.task.id)
+    .then(function (taskFiles) {
+      response.json(taskFiles.map(taskFileSerializer))
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, multidataParser, function (request, response, next) {
@@ -995,13 +1119,13 @@ router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAut
     const validationResult = validator.validate(taskFileMetadata, uploadConstraints)
     if (validationResult === true) {
       taskFileController
-      .create(request.task.id, taskFile.name, taskFileMetadata.uploadName)
-      .then(function (taskFile) {
-        response.json({ success: true })
-      })
-      .catch(function (err) {
-        next(err)
-      })
+        .create(request.task.id, taskFile.name, taskFileMetadata.uploadName)
+        .then(function (taskFile) {
+          response.json({ success: true })
+        })
+        .catch(function (err) {
+          next(err)
+        })
     } else {
       next(new ValidationError())
     }
@@ -1013,13 +1137,13 @@ router.post('/:taskId/file/:taskFileId/delete', needsToBeAuthorizedAdmin, getTas
     next(new ValidationError())
   } else {
     taskFileController
-    .delete(request.taskFile)
-    .then(function () {
-      response.json({ success: true })
-    })
-    .catch(function (err) {
-      next(err)
-    })
+      .delete(request.taskFile)
+      .then(function () {
+        response.json({ success: true })
+      })
+      .catch(function (err) {
+        next(err)
+      })
   }
 })
 

@@ -15,7 +15,7 @@ function fieldsForSignature (type) {
   }
 }
 
-const CERT_CACHE = new LRU({max: 1000, maxAge: 1000 * 60 * 5})
+const CERT_CACHE = new LRU({ max: 1000, maxAge: 1000 * 60 * 5 })
 
 function fetchCert (certUrl, cb) {
   const cachedCertificate = CERT_CACHE.get(certUrl)
@@ -97,6 +97,6 @@ function overrideContentType (request, response, next) {
 }
 
 module.exports = {
-  verifyAwsSignature: verifyAwsSignature,
-  overrideContentType: overrideContentType
+  verifyAwsSignature,
+  overrideContentType
 }

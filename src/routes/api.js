@@ -57,7 +57,7 @@ router.get('/identity', detectScope, issueToken, function (request, response, ne
           id: request.session.identityID,
           role: supervisor.rights,
           name: supervisor.username,
-          token: token
+          token
         })
       }
     })
@@ -71,14 +71,14 @@ router.get('/identity', detectScope, issueToken, function (request, response, ne
           role: 'team',
           name: team.name,
           emailConfirmed: team.emailConfirmed,
-          token: token
+          token
         })
       }
     })
   } else if (request.scope.isGuest()) {
     response.json({
       role: 'guest',
-      token: token
+      token
     })
   } else {
     next(new UnknownIdentityError())
@@ -104,9 +104,9 @@ router.get('/stream', detectScope, getLastEventId, function (request, response, 
   request.socket.setTimeout(0)
 
   response.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
+    'content-type': 'text/event-stream',
+    'cache-control': 'no-cache',
+    connection: 'keep-alive'
   })
   response.write('\n')
 
@@ -135,7 +135,7 @@ router.get('/stream', detectScope, getLastEventId, function (request, response, 
               5000,
               _.extend(event.data.teams, { __metadataCreatedAt: event.createdAt.getTime() })
             ))
-          } else if (event.data.team && event.data.team.hasOwnProperty(request.session.identityID)) {
+          } else if (event.data.team && Object.hasOwn(event.data.team, request.session.identityID)) {
             writeFunc(eventStream.format(
               event.id,
               eventNameList.getName(event.type),

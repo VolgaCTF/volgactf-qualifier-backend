@@ -11,7 +11,7 @@ const supervisorEventSerializer = require('../serializers/supervisor-event')
 
 router.get('/index', needsToBeAuthorizedSupervisor, getSupervisor, function (request, response, next) {
   let fetchThreshold = new Date()
-  if (request.query.hasOwnProperty('fetch_threshold')) {
+  if (Object.hasOwn(request.query, 'fetch_threshold')) {
     const val = parseInt(request.query.fetch_threshold, 10)
     if (!isNaN(val)) {
       fetchThreshold = new Date(val)
@@ -19,7 +19,7 @@ router.get('/index', needsToBeAuthorizedSupervisor, getSupervisor, function (req
   }
 
   let page = 1
-  if (request.query.hasOwnProperty('page')) {
+  if (Object.hasOwn(request.query, 'page')) {
     const val = parseInt(request.query.page, 10)
     if (!isNaN(val)) {
       page = val
@@ -29,22 +29,22 @@ router.get('/index', needsToBeAuthorizedSupervisor, getSupervisor, function (req
   const pageSize = request.supervisor.eventHistoryPageSize || 250
 
   Promise
-  .all([
-    EventController.countHistoryEntries(fetchThreshold),
-    EventController.indexHistoryEntries(fetchThreshold, page, pageSize)
-  ])
-  .then(function (values) {
-    response.json({
-      page: page,
-      pageSize: pageSize,
-      numEntries: values[0],
-      entries: _.map(values[1], supervisorEventSerializer)
+    .all([
+      EventController.countHistoryEntries(fetchThreshold),
+      EventController.indexHistoryEntries(fetchThreshold, page, pageSize)
+    ])
+    .then(function (values) {
+      response.json({
+        page,
+        pageSize,
+        numEntries: values[0],
+        entries: _.map(values[1], supervisorEventSerializer)
+      })
     })
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 module.exports = router

@@ -14,7 +14,7 @@ class TeamTaskHitController {
     TeamTaskHit
       .query()
       .insert({
-        teamId: teamId,
+        teamId,
         taskId: task.id,
         createdAt: new Date()
       })

@@ -6,7 +6,7 @@ class LinkTeamCTFtimeEvent extends SupervisorEvent {
   constructor (team, ctftime) {
     super(EVENT_LINK_TEAM_CTFTIME, {
       team: teamSerializer(team, { exposeEmail: true }),
-      ctftime: ctftime
+      ctftime
     })
   }
 }

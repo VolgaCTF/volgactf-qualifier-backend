@@ -34,8 +34,8 @@ class TemplateStore {
 
   resolveOne (templateId) {
     return new Promise((resolve, reject) => {
-      if (!this.cache.hasOwnProperty(templateId)) {
-        if (!this.metadata.hasOwnProperty(templateId)) {
+      if (!Object.hasOwn(this.cache, templateId)) {
+        if (!Object.hasOwn(this.metadata, templateId)) {
           reject(new TemplateNotRegisteredError(`Template "${templateId}" is not available!`))
         } else {
           this.updateTemplate(templateId, resolve, reject)
@@ -68,17 +68,17 @@ class TemplateStore {
       })
 
       Promise
-      .all(promises)
-      .then(function (values) {
-        const result = {}
-        _.each(templateIdList, function (templateId, ndx) {
-          result[templateId] = values[ndx]
+        .all(promises)
+        .then(function (values) {
+          const result = {}
+          _.each(templateIdList, function (templateId, ndx) {
+            result[templateId] = values[ndx]
+          })
+          resolve(result)
         })
-        resolve(result)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 }

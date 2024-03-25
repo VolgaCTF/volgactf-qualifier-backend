@@ -1,13 +1,13 @@
 const _ = require('underscore')
 
 module.exports = function (team, options = {}) {
-  let defaultOptions = {
+  const defaultOptions = {
     exposeEmail: false,
     exposePasswordAvailability: false
   }
   options = _.extend(defaultOptions, options)
 
-  let obj = {
+  const obj = {
     id: team.id,
     name: team.name,
     countryId: team.countryId,

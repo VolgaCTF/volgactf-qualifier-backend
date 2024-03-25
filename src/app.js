@@ -1,6 +1,5 @@
 const express = require('express')
 const logger = require('./utils/logger')
-const token =  require('./utils/token')
 
 const apiRouter = require('./routes/api')
 
@@ -71,7 +70,7 @@ const supervisorTaskSubscriptionSerializer = require('./serializers/supervisor-t
 
 const taskParam = require('./params/task')
 
-const ctftimeOAuthController =  require('./controllers/ctftime-oauth')
+const ctftimeOAuthController = require('./controllers/ctftime-oauth')
 const emailAddressValidator = require('./controllers/email-address-validator')
 const { SCOPE_TEAM } = require('./utils/constants')
 const EventController = require('./controllers/event')
@@ -81,7 +80,8 @@ const LinkTeamCTFtimeEvent = require('./events/link-team-ctftime')
 const jsesc = require('jsesc')
 
 const templateStore = require('./utils/template-store')
-const { TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_CATEGORIES_PAGE, TEMPLATE_TEAM_PROFILE_PAGE,
+const {
+  TEMPLATE_INDEX_PAGE, TEMPLATE_NEWS_PAGE, TEMPLATE_TEAMS_PAGE, TEMPLATE_CATEGORIES_PAGE, TEMPLATE_TEAM_PROFILE_PAGE,
   TEMPLATE_SCOREBOARD_PAGE, TEMPLATE_TASKS_PAGE, TEMPLATE_TASK_STATISTICS_PAGE, TEMPLATE_ABOUT_PAGE, TEMPLATE_CONTEST_PAGE,
   TEMPLATE_REMOTE_CHECKERS_PAGE, TEMPLATE_SUPERVISOR_SIGNIN_PAGE, TEMPLATE_TEAM_SIGNIN_PAGE, TEMPLATE_TEAM_RESTORE_PAGE,
   TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE,
@@ -282,28 +282,28 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_INDEX_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_INDEX_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_INDEX_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_INDEX_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/teams', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -324,32 +324,32 @@ app.get('/teams', detectScope, issueToken, getContestTitle, function (request, r
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const countries = _.map(values[3], countrySerializer)
-    const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
-    const pageTemplate = templates[TEMPLATE_TEAMS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      countries: countries,
-      teams: teams,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAMS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const countries = _.map(values[3], countrySerializer)
+      const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
+      const pageTemplate = templates[TEMPLATE_TEAMS_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        countries,
+        teams,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAMS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/news', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -370,31 +370,31 @@ app.get('/news', detectScope, issueToken, getContestTitle, function (request, re
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const posts = _.map(values[3], postSerializer)
-    const pageTemplate = templates[TEMPLATE_NEWS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      md: new MarkdownRenderer(),
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      posts: posts,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_NEWS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const posts = _.map(values[3], postSerializer)
+      const pageTemplate = templates[TEMPLATE_NEWS_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        md: new MarkdownRenderer(),
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        posts,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_NEWS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/categories', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -419,30 +419,30 @@ app.get('/categories', detectScope, issueToken, getContestTitle, function (reque
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const categories = _.map(values[3], categorySerializer)
-    const pageTemplate = templates[TEMPLATE_CATEGORIES_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      categories: categories,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const categories = _.map(values[3], categorySerializer)
+      const pageTemplate = templates[TEMPLATE_CATEGORIES_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        categories,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_CATEGORIES_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.param('teamId', teamParam.id)
@@ -476,63 +476,63 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
   }
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const exposeSensitiveData = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[3].id)
-    const team = teamSerializer(values[3], { exposeEmail: exposeSensitiveData, exposePasswordAvailability: exposeSensitiveData })
-    const countries = _.map(values[4], countrySerializer)
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const exposeSensitiveData = request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === values[3].id)
+      const team = teamSerializer(values[3], { exposeEmail: exposeSensitiveData, exposePasswordAvailability: exposeSensitiveData })
+      const countries = _.map(values[4], countrySerializer)
 
-    let tasks = []
-    let taskValues = []
-    let teamTaskHits = []
-    let teamTaskHitStatistics = null
-    let teamTaskReviews = []
-    let teamTaskReviewStatistics = null
-    if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
-      tasks = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
-      taskValues = _.map(values[6], taskValueSerializer)
-      teamTaskHits = _.map(values[7], teamTaskHitSerializer)
-      teamTaskReviews = _.map(values[8], teamTaskReviewSerializer)
-    } else {
-      teamTaskHitStatistics = {
-        count: values[7].length
+      let tasks = []
+      let taskValues = []
+      let teamTaskHits = []
+      let teamTaskHitStatistics = null
+      let teamTaskReviews = []
+      let teamTaskReviewStatistics = null
+      if (request.scope.isSupervisor() || (request.scope.isTeam() && request.session.identityID === request.teamId)) {
+        tasks = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+        taskValues = _.map(values[6], taskValueSerializer)
+        teamTaskHits = _.map(values[7], teamTaskHitSerializer)
+        teamTaskReviews = _.map(values[8], teamTaskReviewSerializer)
+      } else {
+        teamTaskHitStatistics = {
+          count: values[7].length
+        }
+        teamTaskReviewStatistics = {
+          count: values[8].length,
+          averageRating: _.reduce(values[8], function (sum, review) {
+            return sum + review.rating
+          }, 0) / (values[8].length === 0 ? 1 : values[8].length)
+        }
       }
-      teamTaskReviewStatistics = {
-        count: values[8].length,
-        averageRating: _.reduce(values[8], function (sum, review) {
-          return sum + review.rating
-        }, 0) / (values[8].length === 0 ? 1 : values[8].length)
-      }
-    }
 
-    const pageTemplate = templates[TEMPLATE_TEAM_PROFILE_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      team: team,
-      countries: countries,
-      tasks: tasks,
-      taskValues: taskValues,
-      teamTaskHits: teamTaskHits,
-      teamTaskHitStatistics: teamTaskHitStatistics,
-      teamTaskReviews: teamTaskReviews,
-      teamTaskReviewStatistics: teamTaskReviewStatistics,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+      const pageTemplate = templates[TEMPLATE_TEAM_PROFILE_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        team,
+        countries,
+        tasks,
+        taskValues,
+        teamTaskHits,
+        teamTaskHitStatistics,
+        teamTaskReviews,
+        teamTaskReviewStatistics,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -554,36 +554,36 @@ app.get('/scoreboard', detectScope, issueToken, getContestTitle, function (reque
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const countries = _.map(values[3], countrySerializer)
-    const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
-    const teamRankings = _.map(values[5], teamRankingSerializer)
-    const pageTemplate = templates[TEMPLATE_SCOREBOARD_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      countries: countries,
-      teams: teams,
-      teamRankings: teamRankings,
-      detailed: request.query.hasOwnProperty('detailed'),
-      printLayout: request.query.hasOwnProperty('printLayout'),
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const countries = _.map(values[3], countrySerializer)
+      const teams = _.map(values[4], _.partial(teamSerializer, _, { exposeEmail: request.scope.isSupervisor() }))
+      const teamRankings = _.map(values[5], teamRankingSerializer)
+      const pageTemplate = templates[TEMPLATE_SCOREBOARD_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        countries,
+        teams,
+        teamRankings,
+        detailed: Object.hasOwn(request.query, 'detailed'),
+        printLayout: Object.hasOwn(request.query, 'printLayout'),
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_SCOREBOARD_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 const scoringDynlog = {
@@ -642,62 +642,62 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
   }
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const categories = _.map(values[3], categorySerializer)
-    const taskPreviews = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
-    const taskCategories = _.map(values[5], taskCategorySerializer)
-    const taskValues = _.map(values[6], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[7], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: request.scope.isSupervisor() }))
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const categories = _.map(values[3], categorySerializer)
+      const taskPreviews = _.map(values[4], _.partial(taskSerializer, _, { preview: true }))
+      const taskCategories = _.map(values[5], taskCategorySerializer)
+      const taskValues = _.map(values[6], taskValueSerializer)
+      const taskRewardSchemes = _.map(values[7], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: request.scope.isSupervisor() }))
 
-    let teamTaskHits = []
-    if (request.scope.isTeam()) {
-      teamTaskHits = _.map(values[8], teamTaskHitSerializer)
-    }
+      let teamTaskHits = []
+      if (request.scope.isTeam()) {
+        teamTaskHits = _.map(values[8], teamTaskHitSerializer)
+      }
 
-    let supervisorTaskSubscriptions = []
-    if (request.scope.isSupervisor()) {
-      supervisorTaskSubscriptions = _.map(values[8], supervisorTaskSubscriptionSerializer)
-    }
+      let supervisorTaskSubscriptions = []
+      if (request.scope.isSupervisor()) {
+        supervisorTaskSubscriptions = _.map(values[8], supervisorTaskSubscriptionSerializer)
+      }
 
-    let remoteCheckers = []
-    let taskRemoteCheckers = []
-    if (request.scope.isAdmin()) {
-      remoteCheckers = _.map(values[9], remoteCheckerSerializer)
-      taskRemoteCheckers = _.map(values[10], taskRemoteCheckerSerializer)
-    }
-    const pageTemplate = templates[TEMPLATE_TASKS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      categories: categories,
-      taskPreviews: taskPreviews,
-      taskCategories: taskCategories,
-      taskValues: taskValues,
-      taskRewardSchemes: taskRewardSchemes,
-      teamTaskHits: teamTaskHits,
-      supervisorTaskSubscriptions: supervisorTaskSubscriptions,
-      remoteCheckers: remoteCheckers,
-      taskRemoteCheckers: taskRemoteCheckers,
-      google_tag_id: googleTagId,
-      taskMinValue: TASK_MIN_VALUE,
-      taskMaxValue: TASK_MAX_VALUE,
-      scoringDynlog: scoringDynlog,
-      templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+      let remoteCheckers = []
+      let taskRemoteCheckers = []
+      if (request.scope.isAdmin()) {
+        remoteCheckers = _.map(values[9], remoteCheckerSerializer)
+        taskRemoteCheckers = _.map(values[10], taskRemoteCheckerSerializer)
+      }
+      const pageTemplate = templates[TEMPLATE_TASKS_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        categories,
+        taskPreviews,
+        taskCategories,
+        taskValues,
+        taskRewardSchemes,
+        teamTaskHits,
+        supervisorTaskSubscriptions,
+        remoteCheckers,
+        taskRemoteCheckers,
+        google_tag_id: googleTagId,
+        taskMinValue: TASK_MIN_VALUE,
+        taskMaxValue: TASK_MAX_VALUE,
+        scoringDynlog,
+        templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.param('taskId', taskParam.id)
@@ -726,39 +726,39 @@ app.get('/task/:taskId/statistics', detectScope, issueToken, getContestTitle, fu
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: true }))
-    const task = taskSerializer(values[4])
-    const taskHints = _.map(values[5], taskHintSerializer)
-    const teamTaskHits = _.map(values[6], teamTaskHitSerializer)
-    const teamTaskReviews = _.map(values[7], teamTaskReviewSerializer)
-    const pageTemplate = templates[TEMPLATE_TASK_STATISTICS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      md: new MarkdownRenderer(),
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      teams: teams,
-      task: task,
-      taskHints: taskHints,
-      teamTaskHits: teamTaskHits,
-      teamTaskReviews: teamTaskReviews,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const teams = _.map(values[3], _.partial(teamSerializer, _, { exposeEmail: true }))
+      const task = taskSerializer(values[4])
+      const taskHints = _.map(values[5], taskHintSerializer)
+      const teamTaskHits = _.map(values[6], teamTaskHitSerializer)
+      const teamTaskReviews = _.map(values[7], teamTaskReviewSerializer)
+      const pageTemplate = templates[TEMPLATE_TASK_STATISTICS_PAGE]
+      response.send(pageTemplate({
+        _,
+        md: new MarkdownRenderer(),
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        teams,
+        task,
+        taskHints,
+        teamTaskHits,
+        teamTaskReviews,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TASK_STATISTICS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/about', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -775,28 +775,28 @@ app.get('/about', detectScope, issueToken, getContestTitle, function (request, r
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_ABOUT_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_ABOUT_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_ABOUT_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_ABOUT_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/contest', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -817,28 +817,29 @@ app.get('/contest', detectScope, issueToken, getContestTitle, function (request,
     contestController.fetch()
   ]
 
-  Promise.all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_CONTEST_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_CONTEST_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+  Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_CONTEST_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_CONTEST_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/supervisors', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -859,28 +860,29 @@ app.get('/supervisors', detectScope, issueToken, getContestTitle, function (requ
     contestController.fetch()
   ]
 
-  Promise.all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_SUPERVISORS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISORS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+  Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_SUPERVISORS_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_SUPERVISORS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -904,30 +906,31 @@ app.get('/remote_checkers', detectScope, issueToken, getContestTitle, function (
     remoteCheckerController.fetch()
   ]
 
-  Promise.all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const remoteCheckers = _.map(values[3], remoteCheckerSerializer)
-    const pageTemplate = templates[TEMPLATE_REMOTE_CHECKERS_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      remoteCheckers: remoteCheckers,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+  Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const remoteCheckers = _.map(values[3], remoteCheckerSerializer)
+      const pageTemplate = templates[TEMPLATE_REMOTE_CHECKERS_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        remoteCheckers,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_REMOTE_CHECKERS_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/event/live', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -997,45 +1000,46 @@ app.get('/event/live', detectScope, issueToken, getContestTitle, function (reque
     remoteCheckerController.fetch()
   ]
 
-  Promise.all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const categories = _.map(values[3], categorySerializer)
-    const posts = _.map(values[4], postSerializer)
-    const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
-    const taskCategories = _.map(values[6], taskCategorySerializer)
-    const taskValues = _.map(values[7], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
-    const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
-    const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
+  Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const categories = _.map(values[3], categorySerializer)
+      const posts = _.map(values[4], postSerializer)
+      const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+      const taskCategories = _.map(values[6], taskCategorySerializer)
+      const taskValues = _.map(values[7], taskValueSerializer)
+      const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
+      const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
+      const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
 
-    const pageTemplate = templates[TEMPLATE_EVENT_LIVE_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      categories: categories,
-      posts: posts,
-      taskPreviews: taskPreviews,
-      taskCategories: taskCategories,
-      taskValues: taskValues,
-      taskRewardSchemes: taskRewardSchemes,
-      teams: teams,
-      remoteCheckers: remoteCheckers,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_EVENT_LIVE_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+      const pageTemplate = templates[TEMPLATE_EVENT_LIVE_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        categories,
+        posts,
+        taskPreviews,
+        taskCategories,
+        taskValues,
+        taskRewardSchemes,
+        teams,
+        remoteCheckers,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_EVENT_LIVE_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/event/history', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1106,46 +1110,47 @@ app.get('/event/history', detectScope, issueToken, getContestTitle, function (re
     remoteCheckerController.fetch()
   ]
 
-  Promise.all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const categories = _.map(values[3], categorySerializer)
-    const posts = _.map(values[4], postSerializer)
-    const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
-    const taskCategories = _.map(values[6], taskCategorySerializer)
-    const taskValues = _.map(values[7], taskValueSerializer)
-    const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
-    const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
-    const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
+  Promise
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const categories = _.map(values[3], categorySerializer)
+      const posts = _.map(values[4], postSerializer)
+      const taskPreviews = _.map(values[5], _.partial(taskSerializer, _, { preview: true }))
+      const taskCategories = _.map(values[6], taskCategorySerializer)
+      const taskValues = _.map(values[7], taskValueSerializer)
+      const taskRewardSchemes = _.map(values[8], _.partial(taskRewardSchemeSerializer, _, { exposeDynlog: true }))
+      const teams = _.map(values[9], _.partial(teamSerializer, _, { exposeEmail: true }))
+      const remoteCheckers = _.map(values[10], remoteCheckerSerializer)
 
-    const pageTemplate = templates[TEMPLATE_EVENT_HISTORY_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      jsesc: jsesc,
-      moment: moment,
-      identity: identity,
-      contest: contest,
-      categories: categories,
-      posts: posts,
-      taskPreviews: taskPreviews,
-      taskCategories: taskCategories,
-      taskValues: taskValues,
-      taskRewardSchemes: taskRewardSchemes,
-      teams: teams,
-      remoteCheckers: remoteCheckers,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_EVENT_HISTORY_PAGE),
-      runtimeStorage: {},
-      fetchThreshold: (new Date()).getTime()
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+      const pageTemplate = templates[TEMPLATE_EVENT_HISTORY_PAGE]
+      response.send(pageTemplate({
+        _,
+        jsesc,
+        moment,
+        identity,
+        contest,
+        categories,
+        posts,
+        taskPreviews,
+        taskCategories,
+        taskValues,
+        taskRewardSchemes,
+        teams,
+        remoteCheckers,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_EVENT_HISTORY_PAGE),
+        runtimeStorage: {},
+        fetchThreshold: (new Date()).getTime()
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1162,28 +1167,28 @@ app.get('/supervisor/signin', detectScope, issueToken, getContestTitle, function
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_SUPERVISOR_SIGNIN_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_SUPERVISOR_SIGNIN_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_SUPERVISOR_SIGNIN_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/supervisor/create', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1200,28 +1205,28 @@ app.get('/supervisor/create', detectScope, issueToken, getContestTitle, function
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_SUPERVISOR_CREATE_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_SUPERVISOR_CREATE_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_SUPERVISOR_CREATE_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_SUPERVISOR_CREATE_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/team/signin', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1238,28 +1243,28 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_TEAM_SIGNIN_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_TEAM_SIGNIN_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 if (ctftimeOAuthController.isEnabled()) {
@@ -1282,30 +1287,30 @@ if (ctftimeOAuthController.isEnabled()) {
       ]
 
       Promise
-      .all(promises)
-      .then(function (values) {
-        const templates = values[0]
-        const identity = values[1]
-        const contest = contestSerializer(values[2])
-        const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE]
+        .all(promises)
+        .then(function (values) {
+          const templates = values[0]
+          const identity = values[1]
+          const contest = contestSerializer(values[2])
+          const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE]
 
-        response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
-        response.send(pageTemplate({
-          _: _,
-          moment: moment,
-          jsesc: jsesc,
-          identity: identity,
-          contest: contest,
-          contestTitle: request.contestTitle,
-          google_tag_id: googleTagId,
-          templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE),
-          runtimeStorage: {}
-        }))
-      })
-      .catch(function (err) {
-        logger.error(err)
-        next(err)
-      })
+          response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+          response.send(pageTemplate({
+            _,
+            moment,
+            jsesc,
+            identity,
+            contest,
+            contestTitle: request.contestTitle,
+            google_tag_id: googleTagId,
+            templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE),
+            runtimeStorage: {}
+          }))
+        })
+        .catch(function (err) {
+          logger.error(err)
+          next(err)
+        })
     }
   })
 
@@ -1314,96 +1319,96 @@ if (ctftimeOAuthController.isEnabled()) {
       let ctftimeData = null
 
       ctftimeOAuthController
-      .processCallback(request)
-      .then(function (data) {
-        ctftimeData = data
-        return teamController.fetchByCTFtimeTeamId((data.team || { id: -1})['id'])
-      })
-      .then(function (existingTeam) {
-        if (existingTeam) {
-          if (!request.team || (request.team && request.team.id === existingTeam.id)) {
-            resolve({
-              action: 'signin',
-              team: existingTeam,
-              ctftimeData: ctftimeData
-            })
-          } else {
-            reject(new CTFtimeProfileAlreadyLinkedError())
-          }
-        } else {
-          if (request.team && !request.team.ctftimeTeamId) {
-            const claimEmail = ctftimeData.email || ''
-            const claimTeamName = (ctftimeData.team || { name: ''})['name']
-            const claimCtftimeTeamId = (ctftimeData.team || { id: -1})['id']
-
-            if (claimEmail.toLowerCase() !== request.team.email.toLowerCase()) {
-              reject(new CTFtimeProfileEmailMismatchError())
-            } else if (claimTeamName !== request.team.name) {
-              reject(new CTFtimeProfileTeamMismatchError())
-            } else {
-              teamController
-              .updateFromCTFtime(request.team.id, claimCtftimeTeamId)
-              .then(function (existingTeam) {
-                resolve({
-                  action: 'nothing',
-                  team: existingTeam,
-                  ctftimeData: ctftimeData
-                })
-              })
-              .catch(function (err3) {
-                reject(err3)
-              })
-            }
-          } else {
-            if (request.contest && request.contest.isFinished()) {
-              reject(new ContestFinishedError())
-            }
-
-            let teamInfo = null
-            countryController
-            .findByCodeOrDefault((ctftimeData.team || { country: ''})['country'])
-            .then(function (country) {
-              const signupConstraints = {
-                team: constraints.team,
-                email: constraints.email,
-                countryId: constraints.countryId,
-                locality: constraints.locality
-              }
-
-              teamInfo = {
-                team: (ctftimeData.team || { name: ''})['name'],
-                email: ctftimeData.email || '',
-                countryId: country.id,
-                locality: '',
-                ctftimeTeamId: (ctftimeData.team || { id: -1})['id']
-              }
-
-              const validationResult = validator.validate(teamInfo, signupConstraints)
-              if (validationResult === true) {
-                return emailAddressValidator.validate(teamInfo.email, request.ip)
-              } else {
-                throw new ValidationError()
-              }
-            })
-            .then(function () {
-              return teamController.createFromCTFtime(teamInfo, ctftimeData)
-            })
-            .then(function (newTeam) {
+        .processCallback(request)
+        .then(function (data) {
+          ctftimeData = data
+          return teamController.fetchByCTFtimeTeamId((data.team || { id: -1 }).id)
+        })
+        .then(function (existingTeam) {
+          if (existingTeam) {
+            if (!request.team || (request.team && request.team.id === existingTeam.id)) {
               resolve({
-                action: 'signup',
-                team: newTeam,
-                ctftimeData: ctftimeData
+                action: 'signin',
+                team: existingTeam,
+                ctftimeData
               })
-            })
-            .catch(function (err2) {
-              reject(err2)
-            })
+            } else {
+              reject(new CTFtimeProfileAlreadyLinkedError())
+            }
+          } else {
+            if (request.team && !request.team.ctftimeTeamId) {
+              const claimEmail = ctftimeData.email || ''
+              const claimTeamName = (ctftimeData.team || { name: '' }).name
+              const claimCtftimeTeamId = (ctftimeData.team || { id: -1 }).id
+
+              if (claimEmail.toLowerCase() !== request.team.email.toLowerCase()) {
+                reject(new CTFtimeProfileEmailMismatchError())
+              } else if (claimTeamName !== request.team.name) {
+                reject(new CTFtimeProfileTeamMismatchError())
+              } else {
+                teamController
+                  .updateFromCTFtime(request.team.id, claimCtftimeTeamId)
+                  .then(function (existingTeam) {
+                    resolve({
+                      action: 'nothing',
+                      team: existingTeam,
+                      ctftimeData
+                    })
+                  })
+                  .catch(function (err3) {
+                    reject(err3)
+                  })
+              }
+            } else {
+              if (request.contest && request.contest.isFinished()) {
+                reject(new ContestFinishedError())
+              }
+
+              let teamInfo = null
+              countryController
+                .findByCodeOrDefault((ctftimeData.team || { country: '' }).country)
+                .then(function (country) {
+                  const signupConstraints = {
+                    team: constraints.team,
+                    email: constraints.email,
+                    countryId: constraints.countryId,
+                    locality: constraints.locality
+                  }
+
+                  teamInfo = {
+                    team: (ctftimeData.team || { name: '' }).name,
+                    email: ctftimeData.email || '',
+                    countryId: country.id,
+                    locality: '',
+                    ctftimeTeamId: (ctftimeData.team || { id: -1 }).id
+                  }
+
+                  const validationResult = validator.validate(teamInfo, signupConstraints)
+                  if (validationResult === true) {
+                    return emailAddressValidator.validate(teamInfo.email, request.ip)
+                  } else {
+                    throw new ValidationError()
+                  }
+                })
+                .then(function () {
+                  return teamController.createFromCTFtime(teamInfo, ctftimeData)
+                })
+                .then(function (newTeam) {
+                  resolve({
+                    action: 'signup',
+                    team: newTeam,
+                    ctftimeData
+                  })
+                })
+                .catch(function (err2) {
+                  reject(err2)
+                })
+            }
           }
-        }
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
@@ -1421,74 +1426,74 @@ if (ctftimeOAuthController.isEnabled()) {
     ]
 
     Promise
-    .all(promises)
-    .then(function (values) {
-      const templates = values[0]
-      const identity = values[1]
-      const contest = contestSerializer(values[2])
-      const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE]
+      .all(promises)
+      .then(function (values) {
+        const templates = values[0]
+        const identity = values[1]
+        const contest = contestSerializer(values[2])
+        const pageTemplate = templates[TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE]
 
-      if (request.scope.isGuest() || (request.team && !request.team.ctftimeTeamId)) {
-        loginWithCTFtime(request)
-        .then(function (result) {
-          ctftimeOAuthController.clearState(request)
-          response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
-          if (!request.team) {
-            EventController.push(new LoginTeamEvent(
-              result.team,
-              request.geoIPData.countryName,
-              request.geoIPData.cityName,
-              result.ctftimeData
-            ))
-            request.session.authenticated = true
-            request.session.identityID = result.team.id
-            request.session.scopeID = SCOPE_TEAM
-            response.redirect('/')
-          } else {
-            EventController.push(new LinkTeamCTFtimeEvent(
-              result.team,
-              result.ctftimeData
-            ))
-            response.redirect(`/team/${result.team.id}/profile`)
-          }
-        })
-        .catch(function (err) {
-          logger.error(err)
-          ctftimeOAuthController.clearState(request)
+        if (request.scope.isGuest() || (request.team && !request.team.ctftimeTeamId)) {
+          loginWithCTFtime(request)
+            .then(function (result) {
+              ctftimeOAuthController.clearState(request)
+              response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+              if (!request.team) {
+                EventController.push(new LoginTeamEvent(
+                  result.team,
+                  request.geoIPData.countryName,
+                  request.geoIPData.cityName,
+                  result.ctftimeData
+                ))
+                request.session.authenticated = true
+                request.session.identityID = result.team.id
+                request.session.scopeID = SCOPE_TEAM
+                response.redirect('/')
+              } else {
+                EventController.push(new LinkTeamCTFtimeEvent(
+                  result.team,
+                  result.ctftimeData
+                ))
+                response.redirect(`/team/${result.team.id}/profile`)
+              }
+            })
+            .catch(function (err) {
+              logger.error(err)
+              ctftimeOAuthController.clearState(request)
+              response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
+              response.send(pageTemplate({
+                _,
+                moment,
+                jsesc,
+                identity,
+                contest,
+                contestTitle: request.contestTitle,
+                google_tag_id: googleTagId,
+                templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
+                runtimeStorage: {},
+                errorMsg: err instanceof BaseError ? err.message : 'Internal Server Error'
+              }))
+            })
+        } else {
           response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
           response.send(pageTemplate({
-            _: _,
-            moment: moment,
-            jsesc: jsesc,
-            identity: identity,
-            contest: contest,
+            _,
+            moment,
+            jsesc,
+            identity,
+            contest,
             contestTitle: request.contestTitle,
             google_tag_id: googleTagId,
             templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
             runtimeStorage: {},
-            errorMsg: err instanceof BaseError ? err.message : 'Internal Server Error'
+            errorMsg: null
           }))
-        })
-      } else {
-        response.header('Cache-Control', 'no-cache, must-revalidate, max-age=0')
-        response.send(pageTemplate({
-          _: _,
-          moment: moment,
-          jsesc: jsesc,
-          identity: identity,
-          contest: contest,
-          contestTitle: request.contestTitle,
-          google_tag_id: googleTagId,
-          templates: _.omit(templates, TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE),
-          runtimeStorage: {},
-          errorMsg: null
-        }))
-      }
-    })
-    .catch(function (err) {
-      logger.error(err)
-      next(err)
-    })
+        }
+      })
+      .catch(function (err) {
+        logger.error(err)
+        next(err)
+      })
   })
 }
 
@@ -1506,28 +1511,28 @@ app.get('/team/restore', detectScope, issueToken, getContestTitle, function (req
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_TEAM_RESTORE_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_TEAM_RESTORE_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_RESTORE_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, function (request, response, next) {
@@ -1545,31 +1550,31 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const countries = _.map(values[3], countrySerializer)
-    const pageTemplate = templates[TEMPLATE_TEAM_SIGNUP_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      countries: countries,
-      geoIPData: request.geoIPData,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const countries = _.map(values[3], countrySerializer)
+      const pageTemplate = templates[TEMPLATE_TEAM_SIGNUP_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        countries,
+        geoIPData: request.geoIPData,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 function verifyPromise (request) {
@@ -1611,48 +1616,48 @@ app.get('/team/verify-email', detectScope, issueToken, contestNotFinished, getCo
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_TEAM_VERIFY_EMAIL_PAGE]
-    verifyPromise(request)
-    .then(function () {
-      response.send(pageTemplate({
-        _: _,
-        moment: moment,
-        jsesc: jsesc,
-        identity: identity,
-        contest: contest,
-        contestTitle: request.contestTitle,
-        success: true,
-        text: 'Email verified. Thank you!',
-        google_tag_id: googleTagId,
-        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
-        runtimeStorage: {}
-      }))
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_TEAM_VERIFY_EMAIL_PAGE]
+      verifyPromise(request)
+        .then(function () {
+          response.send(pageTemplate({
+            _,
+            moment,
+            jsesc,
+            identity,
+            contest,
+            contestTitle: request.contestTitle,
+            success: true,
+            text: 'Email verified. Thank you!',
+            google_tag_id: googleTagId,
+            templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
+            runtimeStorage: {}
+          }))
+        })
+        .catch(function (err2) {
+          response.send(pageTemplate({
+            _,
+            moment,
+            jsesc,
+            identity,
+            contest,
+            contestTitle: request.contestTitle,
+            success: false,
+            text: err2.message,
+            google_tag_id: googleTagId,
+            templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
+            runtimeStorage: {}
+          }))
+        })
     })
-    .catch(function (err2) {
-      response.send(pageTemplate({
-        _: _,
-        moment: moment,
-        jsesc: jsesc,
-        identity: identity,
-        contest: contest,
-        contestTitle: request.contestTitle,
-        success: false,
-        text: err2.message,
-        google_tag_id: googleTagId,
-        templates: _.omit(templates, TEMPLATE_TEAM_VERIFY_EMAIL_PAGE),
-        runtimeStorage: {}
-      }))
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
     })
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
 })
 
 app.get('/team/reset-password', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1669,28 +1674,28 @@ app.get('/team/reset-password', detectScope, issueToken, getContestTitle, functi
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_TEAM_RESET_PASSWORD_PAGE]
-    response.send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_TEAM_RESET_PASSWORD_PAGE]
+      response.send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_TEAM_RESET_PASSWORD_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('/robots.txt', function (request, response, next) {
@@ -1701,21 +1706,21 @@ app.get('/robots.txt', function (request, response, next) {
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const pageTemplate = templates[TEMPLATE_ROBOTS_PAGE]
-    response
-    .set('content-type', 'text/plain')
-    .send(pageTemplate({
-      fqdn: process.env.VOLGACTF_QUALIFIER_FQDN,
-      secure: (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes')
-    }))
-  })
-  .catch(function (err) {
-    logger.error(err)
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const pageTemplate = templates[TEMPLATE_ROBOTS_PAGE]
+      response
+        .set('content-type', 'text/plain')
+        .send(pageTemplate({
+          fqdn: process.env.VOLGACTF_QUALIFIER_FQDN,
+          secure: (process.env.VOLGACTF_QUALIFIER_SECURE === 'yes')
+        }))
+    })
+    .catch(function (err) {
+      logger.error(err)
+      next(err)
+    })
 })
 
 app.get('*', detectScope, issueToken, getContestTitle, function (request, response, next) {
@@ -1732,28 +1737,28 @@ app.get('*', detectScope, issueToken, getContestTitle, function (request, respon
   ]
 
   Promise
-  .all(promises)
-  .then(function (values) {
-    const templates = values[0]
-    const identity = values[1]
-    const contest = contestSerializer(values[2])
-    const pageTemplate = templates[TEMPLATE_404_PAGE]
-    response.status(404).send(pageTemplate({
-      _: _,
-      moment: moment,
-      jsesc: jsesc,
-      identity: identity,
-      contest: contest,
-      contestTitle: request.contestTitle,
-      urlPath: request.path,
-      google_tag_id: googleTagId,
-      templates: _.omit(templates, TEMPLATE_404_PAGE),
-      runtimeStorage: {}
-    }))
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .all(promises)
+    .then(function (values) {
+      const templates = values[0]
+      const identity = values[1]
+      const contest = contestSerializer(values[2])
+      const pageTemplate = templates[TEMPLATE_404_PAGE]
+      response.status(404).send(pageTemplate({
+        _,
+        moment,
+        jsesc,
+        identity,
+        contest,
+        contestTitle: request.contestTitle,
+        urlPath: request.path,
+        google_tag_id: googleTagId,
+        templates: _.omit(templates, TEMPLATE_404_PAGE),
+        runtimeStorage: {}
+      }))
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 app.use(function (err, request, response, next) {
@@ -1774,30 +1779,30 @@ app.use(function (err, request, response, next) {
       ]
 
       Promise
-      .all(promises)
-      .then(function (values) {
-        const templates = values[0]
-        const identity = values[1]
-        const contest = contestSerializer(values[2])
-        const pageTemplate = templates[TEMPLATE_500_PAGE]
-        response.status(500).send(pageTemplate({
-          _: _,
-          moment: moment,
-          jsesc: jsesc,
-          identity: identity,
-          contest: contest,
-          contestTitle: request.contestTitle,
-          google_tag_id: googleTagId,
-          templates: _.omit(templates, TEMPLATE_500_PAGE),
-          runtimeStorage: {}
-        }))
-      })
-      .catch(function (err2) {
-        logger.error(err2)
-        response
-          .status(500)
-          .json('Internal Server Error')
-      })
+        .all(promises)
+        .then(function (values) {
+          const templates = values[0]
+          const identity = values[1]
+          const contest = contestSerializer(values[2])
+          const pageTemplate = templates[TEMPLATE_500_PAGE]
+          response.status(500).send(pageTemplate({
+            _,
+            moment,
+            jsesc,
+            identity,
+            contest,
+            contestTitle: request.contestTitle,
+            google_tag_id: googleTagId,
+            templates: _.omit(templates, TEMPLATE_500_PAGE),
+            runtimeStorage: {}
+          }))
+        })
+        .catch(function (err2) {
+          logger.error(err2)
+          response
+            .status(500)
+            .json('Internal Server Error')
+        })
     })
   })
 })
