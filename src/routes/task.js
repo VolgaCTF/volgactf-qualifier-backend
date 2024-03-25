@@ -676,49 +676,62 @@ function sanitizeCreateTaskParams (params, callback) {
     })
 }
 
-router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
-  sanitizeCreateTaskParams(request.body, function (err, taskParams) {
-    if (err) {
-      next(err)
-    } else {
-      const createConstraints = {
-        title: constraints.taskTitle,
-        description: constraints.taskDescription,
-        hints: constraints.taskHints,
-        categories: constraints.taskCategories,
-        rewardScheme: constraints.taskRewardScheme,
-        checkMethod: constraints.taskCheckMethod,
-        openAt: constraints.taskOpenAt
-      }
-
-      if (taskParams.checkMethod === 'list') {
-        createConstraints.answers = constraints.taskAnswers
-      } else if (taskParams.checkMethod === 'remote') {
-        createConstraints.remoteChecker = constraints.remoteCheckerId
-      }
-
-      if (taskParams.rewardScheme === 'fixed') {
-        createConstraints.maxValue = constraints.taskValue
-      } else if (taskParams.rewardScheme === 'variable') {
-        createConstraints.maxValue = constraints.taskValue
-        createConstraints.minValue = constraints.taskValue
-        createConstraints.subtractPoints = constraints.taskSubtractPoints
-        createConstraints.subtractHitCount = constraints.taskSubtractHitCount
-      }
-      const validationResult = validator.validate(taskParams, createConstraints)
-      if (validationResult === true) {
-        TaskController.create(taskParams, function (err, task) {
-          if (err) {
-            next(err)
-          } else {
-            response.json({ success: true })
-          }
-        })
+function createTaskFromPayload(payload) {
+  return new Promise(function (resolve, reject) {
+    sanitizeCreateTaskParams(payload, function (err, taskParams) {
+      if (err) {
+        reject(err)
       } else {
-        next(new ValidationError())
+        const createConstraints = {
+          title: constraints.taskTitle,
+          description: constraints.taskDescription,
+          hints: constraints.taskHints,
+          categories: constraints.taskCategories,
+          rewardScheme: constraints.taskRewardScheme,
+          checkMethod: constraints.taskCheckMethod,
+          openAt: constraints.taskOpenAt
+        }
+
+        if (taskParams.checkMethod === 'list') {
+          createConstraints.answers = constraints.taskAnswers
+        } else if (taskParams.checkMethod === 'remote') {
+          createConstraints.remoteChecker = constraints.remoteCheckerId
+        }
+
+        if (taskParams.rewardScheme === 'fixed') {
+          createConstraints.maxValue = constraints.taskValue
+        } else if (taskParams.rewardScheme === 'variable') {
+          createConstraints.maxValue = constraints.taskValue
+          createConstraints.minValue = constraints.taskValue
+          createConstraints.subtractPoints = constraints.taskSubtractPoints
+          createConstraints.subtractHitCount = constraints.taskSubtractHitCount
+        }
+        const validationResult = validator.validate(taskParams, createConstraints)
+        if (validationResult === true) {
+          TaskController.create(taskParams, function (err, task) {
+            if (err) {
+              reject(err)
+            } else {
+              resolve({ success: true })
+            }
+          })
+        } else {
+          logger.error(JSON.stringify(validationResult))
+          reject(new ValidationError())
+        }
       }
-    }
+    })
   })
+}
+
+router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
+  createTaskFromPayload(request.body)
+    .then(function (res) {
+      response.json(res)
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 function preprocessTaskConfigFromGitHub (taskConfig) {
@@ -776,7 +789,7 @@ function preprocessTaskConfigFromGitHub (taskConfig) {
             }
           ),
           checkMethod: 'list',
-          anwers: _.map(taskConfig.answers, function (answer) {
+          answers: _.map(taskConfig.answers, function (answer) {
             if (is_.string(answer)) {
               return { answer, caseSensitive: true }
             } else if (Object.hasOwn(answer, 'answer') && Object.hasOwn(answer, 'case_sensitive')) {
@@ -790,19 +803,23 @@ function preprocessTaskConfigFromGitHub (taskConfig) {
         if (Object.hasOwn(taskConfig, 'scoring') && Object.hasOwn(taskConfig.scoring, 'type')) {
           if (taskConfig.scoring.type === 'static' && Object.hasOwn(taskConfig.scoring, 'value')) {
             params.rewardScheme = 'fixed'
-            params.maxValue = taskConfig.scoring.value
+            params.reward = {
+              maxValue: taskConfig.scoring.value
+            }
           } else if (taskConfig.scoring.type === 'dyn_log') {
             params.rewardScheme = 'dynlog'
           } else if (taskConfig.scoring.type === 'dyn_lin' && Object.hasOwn(taskConfig.scoring, 'max_value') && Object.hasOwn(taskConfig.scoring, 'min_value') && Object.hasOwn(taskConfig.scoring, 'subtract_points') && Object.hasOwn(taskConfig.scoring, 'subtract_hit_count')) {
             params.rewardScheme = 'variable'
-            params.maxValue = taskConfig.scoring.max_value
-            params.minValue = taskConfig.scoring.min_value
-            params.subtractPoints = taskConfig.scoring.subtract_points
-            params.subtractHitCount = taskConfig.scoring.subtract_hit_count
+            params.reward = {
+              maxValue: taskConfig.scoring.max_value,
+              minValue: taskConfig.scoring.min_value,
+              subtractPoints: taskConfig.scoring.subtract_points,
+              subtractHitCount: taskConfig.scoring.subtract_hit_count
+            }
           }
         }
 
-        resolve(taskConfig)
+        resolve(params)
       })
       .catch(function (err) {
         reject(err)
@@ -815,15 +832,14 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
     .loadFromGitHub(request.body.repository)
     .then(function (taskConfig) {
       logger.info(JSON.stringify(taskConfig))
-
-      preprocessTaskConfigFromGitHub(taskConfig)
-        .then(function (taskParams) {
-          logger.info(JSON.stringify(taskParams))
-          response.json({ success: true })
-        })
-        .catch(function (err) {
-          next(err)
-        })
+      return preprocessTaskConfigFromGitHub(taskConfig)
+    })
+    .then(function (taskParams) {
+      logger.info(JSON.stringify(taskParams))
+      return createTaskFromPayload(taskParams)
+    })
+    .then(function (res) {
+      response.json(res)
     })
     .catch(function (err) {
       next(err)
