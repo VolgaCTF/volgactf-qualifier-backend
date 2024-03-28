@@ -676,7 +676,7 @@ function sanitizeCreateTaskParams (params, callback) {
     })
 }
 
-function createTaskFromPayload(payload) {
+function createTaskFromPayload (payload) {
   return new Promise(function (resolve, reject) {
     sanitizeCreateTaskParams(payload, function (err, taskParams) {
       if (err) {
@@ -712,11 +712,10 @@ function createTaskFromPayload(payload) {
             if (err) {
               reject(err)
             } else {
-              resolve({ success: true })
+              resolve(task)
             }
           })
         } else {
-          logger.error(JSON.stringify(validationResult))
           reject(new ValidationError())
         }
       }
@@ -726,8 +725,8 @@ function createTaskFromPayload(payload) {
 
 router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedExtendedParser, function (request, response, next) {
   createTaskFromPayload(request.body)
-    .then(function (res) {
-      response.json(res)
+    .then(function (task) {
+      response.json({ success: true })
     })
     .catch(function (err) {
       next(err)
@@ -791,9 +790,9 @@ function preprocessTaskConfigFromGitHub (taskConfig) {
           checkMethod: 'list',
           answers: _.map(taskConfig.answers, function (answer) {
             if (is_.string(answer)) {
-              return { answer, caseSensitive: true }
+              return { answer, caseSensitive: 'true' }
             } else if (Object.hasOwn(answer, 'answer') && Object.hasOwn(answer, 'case_sensitive')) {
-              return { answer: answer.answer, caseSensitive: answer.case_ensitive }
+              return { answer: answer.answer, caseSensitive: answer.case_sensitive.toString() }
             }
           }),
           remoteChecker: -1,
@@ -831,15 +830,17 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
   TaskController
     .loadFromGitHub(request.body.repository)
     .then(function (taskConfig) {
-      logger.info(JSON.stringify(taskConfig))
       return preprocessTaskConfigFromGitHub(taskConfig)
     })
     .then(function (taskParams) {
-      logger.info(JSON.stringify(taskParams))
       return createTaskFromPayload(taskParams)
     })
-    .then(function (res) {
-      response.json(res)
+    .then(function (task) {
+      return TaskController
+        .loadFilesFromGitHubAndUpdateDescription(task, request.body.repository)
+    })
+    .then(function (updatedTask) {
+      response.json({ success: true })
     })
     .catch(function (err) {
       next(err)

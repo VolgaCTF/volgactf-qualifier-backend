@@ -50,6 +50,8 @@ const tmp = require('tmp')
 const fs = require('fs')
 const githubController = require('./github')
 const YAML = require('yaml')
+const when_ = require('when')
+const taskFileController = require('./task-file')
 
 function isTaskRemoteCheckerUniqueConstraintViolation (err) {
   return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'task_remote_checkers_ndx_remote_checker_unique')
@@ -97,6 +99,98 @@ class TaskController {
             cleanupCallback()
           })
       })
+    })
+  }
+
+  static loadFilesFromGitHubAndUpdateDescription (task, repository) {
+    return new Promise(function (resolve, reject) {
+      const fileRefRegexp = /\[([\w\d \.\-_]+)\]\(([\w\d \.\-_/]+)\)/gm
+
+      if (task.description.match(fileRefRegexp).length === 0) {
+        resolve(task)
+      } else {
+        tmp.dir(function (err, path, cleanupCallback) {
+          if (err) {
+            logger.error('Failed to create temporary directory')
+            reject(new InternalError())
+          }
+          const clonePath = `${path}/repo`
+
+          githubController
+            .cloneRepository(repository, clonePath)
+            .then(function () {
+              const resolveFile = function (name, url) {
+                return new Promise(function (_resolve, _reject) {
+                  taskFileController
+                    .create(task.id, `${clonePath}/${url}`, name)
+                    .then(function (taskFile) {
+                      _resolve({
+                        name,
+                        url,
+                        updatedUrl: `${(process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'}://${process.env.VOLGACTF_QUALIFIER_FQDN}/files/${taskFile.prefix}/${taskFile.filename}`
+                      })
+                    })
+                    .catch(function (err) {
+                      logger.error(err)
+                      _resolve(null)
+                    })
+                })
+              }
+
+              const fileResolvers = []
+              for (const match of task.description.matchAll(fileRefRegexp)) {
+                if (!match[2].startsWith('http') && fs.existsSync(`${clonePath}/${match[2]}`)) {
+                  fileResolvers.push(resolveFile(match[1], match[2]))
+                }
+              }
+
+              return when_.all(fileResolvers)
+            })
+            .then(function (fileResolved) {
+              const fileResolvedNonNull = _.filter(fileResolved, function (item) {
+                return item !== null
+              })
+
+              const updatedDescription = task.description.replace(fileRefRegexp, function (match, name, url) {
+                const updatedItem = _.find(fileResolvedNonNull, function (item) {
+                  return item.name === name && item.url === url
+                })
+
+                if (updatedItem) {
+                  return `[${updatedItem.name}](${updatedItem.updatedUrl})`
+                } else {
+                  return match
+                }
+              })
+
+              return Task
+                .query()
+                .update({
+                  description: updatedDescription,
+                  updatedAt: new Date()
+                })
+                .where('id', task.id)
+                .andWhere('description', '!=', updatedDescription)
+                .returning('*')
+            })
+            .then(function (updatedTasks) {
+              if (updatedTasks.length === 1) {
+                EventController.push(new UpdateTaskEvent(updatedTasks[0]))
+                resolve(updatedTasks[0])
+              } else {
+                resolve(task)
+              }
+            })
+            .catch(function (err) {
+              logger.error(err)
+              reject(err)
+            })
+            .finally(function () {
+              fs.rmSync(clonePath, { recursive: true, force: true })
+              cleanupCallback()
+            })
+        })
+      }
     })
   }
 
