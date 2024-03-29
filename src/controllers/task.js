@@ -105,8 +105,9 @@ class TaskController {
   static loadFilesFromGitHubAndUpdateDescription (task, repository) {
     return new Promise(function (resolve, reject) {
       const fileRefRegexp = /\[([\w\d \.\-_]+)\]\(([\w\d \.\-_/]+)\)/gm
+      const matches = task.description.match(fileRefRegexp) || []
 
-      if (task.description.match(fileRefRegexp).length === 0) {
+      if (matches.length === 0) {
         resolve(task)
       } else {
         tmp.dir(function (err, path, cleanupCallback) {
@@ -147,7 +148,7 @@ class TaskController {
               return when_.all(fileResolvers)
             })
             .then(function (fileResolved) {
-              const fileResolvedNonNull = _.filter(fileResolved, function (item) {
+              const fileResolvedNonNull = _.filter(fileResolved || [], function (item) {
                 return item !== null
               })
 

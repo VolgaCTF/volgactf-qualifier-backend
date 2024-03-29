@@ -716,6 +716,7 @@ function createTaskFromPayload (payload) {
             }
           })
         } else {
+          logger.error(JSON.stringify(validationResult))
           reject(new ValidationError())
         }
       }
