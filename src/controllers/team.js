@@ -6,9 +6,11 @@ const { getPasswordHash, checkPassword } = require('../utils/security')
 const queue = require('../utils/queue')
 const token = require('../utils/token')
 const logger = require('../utils/logger')
-const { InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError,
+const {
+  InternalError, TeamNotFoundError, TeamCredentialsTakenError, InvalidTeamCredentialsError, EmailConfirmedError,
   EmailTakenError, InvalidTeamPasswordError, InvalidResetPasswordURLError, InvalidVerificationURLError,
-  ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError, CTFtimeProfileAlreadyLinkedError } = require('../utils/errors')
+  ResetPasswordAttemptsLimitError, EmailVerificationAttemptsLimitError, TeamNotQualifiedError, CTFtimeProfileAlreadyLinkedError
+} = require('../utils/errors')
 const { POSTGRES_UNIQUE_CONSTRAINT_VIOLATION } = require('../utils/constants')
 const moment = require('moment')
 const { transaction } = require('objection')
@@ -151,35 +153,35 @@ class TeamController {
                 })
             })
         })
-        .then(function () {
-          if (options.logoFilename) {
-            queue('createLogoQueue').add({
-              id: team.id,
-              filename: options.logoFilename
+          .then(function () {
+            if (options.logoFilename) {
+              queue('createLogoQueue').add({
+                id: team.id,
+                filename: options.logoFilename
+              })
+            }
+
+            queue('sendEmailQueue').add({
+              message: 'welcome',
+              name: team.name,
+              email: team.email,
+              email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
+              teamId: team.id
             })
-          }
 
-          queue('sendEmailQueue').add({
-            message: 'welcome',
-            name: team.name,
-            email: team.email,
-            email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
-            teamId: team.id
+            callback(null)
+            EventController.push(new CreateTeamEvent(team))
           })
-
-          callback(null)
-          EventController.push(new CreateTeamEvent(team))
-        })
-        .catch(function (err) {
-          if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
-            callback(new TeamCredentialsTakenError())
-          } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
-            callback(new TeamCredentialsTakenError())
-          } else {
-            logger.error(err)
-            callback(new InternalError())
-          }
-        })
+          .catch(function (err) {
+            if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
+              callback(new TeamCredentialsTakenError())
+            } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
+              callback(new TeamCredentialsTakenError())
+            } else {
+              logger.error(err)
+              callback(new InternalError())
+            }
+          })
       }
     })
   }
@@ -221,35 +223,35 @@ class TeamController {
               })
           })
       })
-      .then(function () {
-        queue('sendEmailQueue').add({
-          message: 'welcome',
-          name: team.name,
-          email: team.email,
-          email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
-          teamId: team.id
-        })
+        .then(function () {
+          queue('sendEmailQueue').add({
+            message: 'welcome',
+            name: team.name,
+            email: team.email,
+            email_confirm_link: TeamController.getEmailConfirmLink(team.email, teamEmailVerificationToken.token),
+            teamId: team.id
+          })
 
-        resolve(team)
-        EventController.push(new CreateTeamEvent(team, ctftime))
-      })
-      .catch(function (err) {
-        if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
-          reject(new TeamCredentialsTakenError())
-        } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
-          reject(new TeamCredentialsTakenError())
-        } else if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
-          reject(new CTFtimeProfileAlreadyLinkedError())
-        } else {
-          logger.error(err)
-          reject(new InternalError())
-        }
-      })
+          resolve(team)
+          EventController.push(new CreateTeamEvent(team, ctftime))
+        })
+        .catch(function (err) {
+          if (TeamController.isTeamNameUniqueConstraintViolation(err)) {
+            reject(new TeamCredentialsTakenError())
+          } else if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
+            reject(new TeamCredentialsTakenError())
+          } else if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
+            reject(new CTFtimeProfileAlreadyLinkedError())
+          } else {
+            logger.error(err)
+            reject(new InternalError())
+          }
+        })
     })
   }
 
   static updateFromCTFtime (id, ctftimeTeamId) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       TeamController.get(id, function (err, team) {
         if (err) {
           reject(err)
@@ -258,21 +260,21 @@ class TeamController {
             reject(new InternalError())
           } else {
             Team
-            .query()
-            .patchAndFetchById(team.id, {
-              ctftimeTeamId: ctftimeTeamId
-            })
-            .then(function (updatedTeam) {
-              resolve(updatedTeam)
-            })
-            .catch(function (err) {
-              if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
-                reject(new CTFtimeProfileAlreadyLinkedError())
-              } else {
-                logger.error(err)
-                reject(new InternalError())
-              }
-            })
+              .query()
+              .patchAndFetchById(team.id, {
+                ctftimeTeamId
+              })
+              .then(function (updatedTeam) {
+                resolve(updatedTeam)
+              })
+              .catch(function (err) {
+                if (TeamController.isTeamCtftimeTeamIdUniqueConstraintViolation(err)) {
+                  reject(new CTFtimeProfileAlreadyLinkedError())
+                } else {
+                  logger.error(err)
+                  reject(new InternalError())
+                }
+              })
           }
         }
       })
@@ -282,32 +284,32 @@ class TeamController {
   static signin (opts) {
     return new Promise(function (resolve, reject) {
       Team
-      .query()
-      .where('name', opts.name)
-      .first()
-      .then(function (team) {
-        if (team) {
-          checkPassword(opts.password, team.passwordHash, function (err, res) {
-            if (err) {
-              logger.error(err)
-              reject(new InvalidTeamCredentialsError())
-            } else {
-              if (res) {
-                EventController.push(new LoginTeamEvent(team, opts.countryName, opts.cityName, null))
-                resolve(team)
-              } else {
+        .query()
+        .where('name', opts.name)
+        .first()
+        .then(function (team) {
+          if (team) {
+            checkPassword(opts.password, team.passwordHash, function (err, res) {
+              if (err) {
+                logger.error(err)
                 reject(new InvalidTeamCredentialsError())
+              } else {
+                if (res) {
+                  EventController.push(new LoginTeamEvent(team, opts.countryName, opts.cityName, null))
+                  resolve(team)
+                } else {
+                  reject(new InvalidTeamCredentialsError())
+                }
               }
-            }
-          })
-        } else {
-          reject(new InvalidTeamCredentialsError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+            })
+          } else {
+            reject(new InvalidTeamCredentialsError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -389,19 +391,19 @@ class TeamController {
                   })
               })
           })
-          .then(function () {
-            EventController.push(new DisqualifyTeamEvent(updatedTeam), function (err, event) {
-              if (err) {
-                callback(err)
-              } else {
-                callback(null)
-              }
+            .then(function () {
+              EventController.push(new DisqualifyTeamEvent(updatedTeam), function (err, event) {
+                if (err) {
+                  callback(err)
+                } else {
+                  callback(null)
+                }
+              })
             })
-          })
-          .catch(function (err) {
-            logger.error(err)
-            callback(err)
-          })
+            .catch(function (err) {
+              logger.error(err)
+              callback(err)
+            })
         }
       }
     })
@@ -443,7 +445,7 @@ class TeamController {
                   return Team
                     .query()
                     .patchAndFetchById(id, {
-                      email: email
+                      email
                     })
                     .then(function (updatedTeamObject) {
                       updatedTeam = updatedTeamObject
@@ -469,26 +471,26 @@ class TeamController {
                         })
                     })
                 })
-                .then(function () {
-                  queue('sendEmailQueue').add({
-                    message: 'welcome',
-                    name: updatedTeam.name,
-                    email: updatedTeam.email,
-                    email_confirm_link: TeamController.getEmailConfirmLink(updatedTeam.email, updatedTeamEmailVerificationToken.token),
-                    teamId: updatedTeam.id
-                  })
+                  .then(function () {
+                    queue('sendEmailQueue').add({
+                      message: 'welcome',
+                      name: updatedTeam.name,
+                      email: updatedTeam.email,
+                      email_confirm_link: TeamController.getEmailConfirmLink(updatedTeam.email, updatedTeamEmailVerificationToken.token),
+                      teamId: updatedTeam.id
+                    })
 
-                  callback(null)
-                  EventController.push(new UpdateTeamEmailEvent(updatedTeam))
-                })
-                .catch(function (err) {
-                  if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
-                    callback(new EmailTakenError())
-                  } else {
-                    logger.error(err)
-                    callback(new InternalError())
-                  }
-                })
+                    callback(null)
+                    EventController.push(new UpdateTeamEmailEvent(updatedTeam))
+                  })
+                  .catch(function (err) {
+                    if (TeamController.isTeamEmailUniqueConstraintViolation(err)) {
+                      callback(new EmailTakenError())
+                    } else {
+                      logger.error(err)
+                      callback(new InternalError())
+                    }
+                  })
               }
             })
             .catch(function (err) {
@@ -508,9 +510,9 @@ class TeamController {
         Team
           .query()
           .patchAndFetchById(team.id, {
-            countryId: countryId,
-            locality: locality,
-            institution: institution
+            countryId,
+            locality,
+            institution
           })
           .then(function (updatedTeam) {
             callback(null)
@@ -541,21 +543,21 @@ class TeamController {
   static updateLogoChecksum (id, checksum) {
     return new Promise(function (resolve, reject) {
       TeamController
-      .fetchOne(id)
-      .then(function (team) {
-        return Team
-          .query()
-          .patchAndFetchById(team.id, {
-            logoChecksum: checksum
-          })
-      })
-      .then(function (updatedTeam) {
-        EventController.push(new UpdateTeamLogoEvent(updatedTeam))
-        resolve(updatedTeam)
-      })
-      .catch(function (err2) {
-        reject(err2)
-      })
+        .fetchOne(id)
+        .then(function (team) {
+          return Team
+            .query()
+            .patchAndFetchById(team.id, {
+              logoChecksum: checksum
+            })
+        })
+        .then(function (updatedTeam) {
+          EventController.push(new UpdateTeamLogoEvent(updatedTeam))
+          resolve(updatedTeam)
+        })
+        .catch(function (err2) {
+          reject(err2)
+        })
     })
   }
 
@@ -719,13 +721,13 @@ class TeamController {
                             })
                         })
                     })
-                    .then(function () {
-                      callback(null)
-                    })
-                    .catch(function (err) {
-                      logger.error(err)
-                      callback(new InternalError())
-                    })
+                      .then(function () {
+                        callback(null)
+                      })
+                      .catch(function (err) {
+                        logger.error(err)
+                        callback(new InternalError())
+                      })
                   }
                 })
               } else {
@@ -789,14 +791,14 @@ class TeamController {
                           })
                       })
                   })
-                  .then(function () {
-                    callback(null)
-                    EventController.push(new QualifyTeamEvent(updatedTeam))
-                  })
-                  .catch(function (err) {
-                    logger.error(err)
-                    callback(new InternalError())
-                  })
+                    .then(function () {
+                      callback(null)
+                      EventController.push(new QualifyTeamEvent(updatedTeam))
+                    })
+                    .catch(function (err) {
+                      logger.error(err)
+                      callback(new InternalError())
+                    })
                 } else {
                   callback(new InvalidVerificationURLError())
                 }

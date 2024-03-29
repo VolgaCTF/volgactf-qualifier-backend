@@ -31,7 +31,7 @@ if (cluster.isMaster) {
     cluster.fork()
   })
 } else {
-  let server = app.listen(getServerPort(), getServerHost(), function () {
+  const server = app.listen(getServerPort(), getServerHost(), function () {
     logger.info(`Worker ${process.pid}, server listening on ${server.address().address}:${server.address().port}`)
     eventStream.run()
   })

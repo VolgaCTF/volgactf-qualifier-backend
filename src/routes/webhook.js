@@ -15,17 +15,18 @@ const emailWebhook = process.env.VOLGACTF_QUALIFIER_EMAIL_WEBHOOK
 if (emailWebhook === 'aws') {
   router.post('/aws', overrideContentType, jsonParser, verifyAwsSignature, function (request, response, next) {
     if (request.body.Type === 'Notification') {
-      webhookResponseController.create({
-        data: request.body
-      })
-      .then(function () {
-        response.status(200).send('ok')
-      })
-      .catch(function (err) {
-        logger.error(err)
-        response.status(500).send('Internal Server Error')
-      })
-    } else if (request.body.Type === 'SubscriptionConfirmation' && request.body.hasOwnProperty('SubscribeURL')) {
+      webhookResponseController
+        .create({
+          data: request.body
+        })
+        .then(function () {
+          response.status(200).send('ok')
+        })
+        .catch(function (err) {
+          logger.error(err)
+          response.status(500).send('Internal Server Error')
+        })
+    } else if (request.body.Type === 'SubscriptionConfirmation' && Object.hasOwn(request.body, 'SubscribeURL')) {
       queue('subscribeAwsSns').add({
         url: request.body.SubscribeURL
       })

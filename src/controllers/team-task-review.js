@@ -27,15 +27,15 @@ class TeamTaskReviewController {
   static fetchByTask (taskId) {
     return new Promise(function (resolve, reject) {
       TeamTaskReview
-      .query()
-      .where('taskId', taskId)
-      .then(function (teamTaskReviews) {
-        resolve(teamTaskReviews)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('taskId', taskId)
+        .then(function (teamTaskReviews) {
+          resolve(teamTaskReviews)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -55,15 +55,15 @@ class TeamTaskReviewController {
   static fetchByTeam (teamId) {
     return new Promise(function (resolve, reject) {
       TeamTaskReview
-      .query()
-      .where('teamId', teamId)
-      .then(function (teamTaskReviews) {
-        resolve(teamTaskReviews)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('teamId', teamId)
+        .then(function (teamTaskReviews) {
+          resolve(teamTaskReviews)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -104,10 +104,10 @@ class TeamTaskReviewController {
           TeamTaskReview
             .query()
             .insert({
-              teamId: teamId,
-              taskId: taskId,
-              rating: rating,
-              comment: comment,
+              teamId,
+              taskId,
+              rating,
+              comment,
               createdAt: new Date()
             })
             .then(function (teamTaskReview) {
@@ -138,19 +138,19 @@ class TeamTaskReviewController {
   static get (id) {
     return new Promise(function (resolve, reject) {
       TeamTaskReview
-      .query()
-      .where('id', id)
-      .first()
-      .then(function (teamTaskReview) {
-        if (teamTaskReview) {
-          resolve(teamTaskReview)
-        } else {
-          reject(new TaskReviewNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .query()
+        .where('id', id)
+        .first()
+        .then(function (teamTaskReview) {
+          if (teamTaskReview) {
+            resolve(teamTaskReview)
+          } else {
+            reject(new TaskReviewNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 }

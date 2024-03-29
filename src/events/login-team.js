@@ -7,10 +7,10 @@ class LoginTeamEvent extends SupervisorEvent {
     super(EVENT_LOGIN_TEAM, {
       team: teamSerializer(team, { exposeEmail: true }),
       geoIP: {
-        countryName: countryName,
-        cityName: cityName
+        countryName,
+        cityName
       },
-      ctftime: ctftime
+      ctftime
     })
   }
 }

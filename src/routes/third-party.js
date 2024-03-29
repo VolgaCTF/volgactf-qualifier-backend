@@ -80,7 +80,7 @@ router.get('/teams.csv', needsToBeAuthorizedSupervisor, function (request, respo
               const entries = _.map(teamRankings, function (teamRanking) {
                 const team = _.findWhere(teams, { id: teamRanking.teamId })
                 return {
-                  team: team,
+                  team,
                   position: teamRanking.position,
                   score: teamRanking.score
                 }

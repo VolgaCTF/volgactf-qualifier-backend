@@ -7,8 +7,8 @@ class LoginSupervisorEvent extends SupervisorEvent {
     super(EVENT_LOGIN_SUPERVISOR, {
       supervisor: supervisorSerializer(supervisor),
       geoIP: {
-        countryName: countryName,
-        cityName: cityName
+        countryName,
+        cityName
       }
     })
   }

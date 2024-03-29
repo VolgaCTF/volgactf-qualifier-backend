@@ -1,13 +1,13 @@
-const token =  require('../utils/token')
+const token = require('../utils/token')
 const { InvalidCTFtimeOAuthStateError, InternalError } = require('../utils/errors')
 const requestlib = require('request')
 const logger = require('../utils/logger')
 
 class CTFtimeOAuthController {
   isEnabled () {
-    return process.env.hasOwnProperty('CTFTIME_OAUTH_CLIENT_ID') &&
+    return Object.hasOwn(process.env, 'CTFTIME_OAUTH_CLIENT_ID') &&
       process.env.CTFTIME_OAUTH_CLIENT_ID !== '' &&
-      process.env.hasOwnProperty('CTFTIME_OAUTH_CLIENT_SECRET') &&
+      Object.hasOwn(process.env, 'CTFTIME_OAUTH_CLIENT_SECRET') &&
       process.env.CTFTIME_OAUTH_CLIENT_SECRET !== ''
   }
 
@@ -64,7 +64,7 @@ class CTFtimeOAuthController {
         } else {
           const accessToken = body.access_token
 
-          var params2 = {
+          const params2 = {
             method: 'GET',
             url: process.env.CTFTIME_OAUTH_API_ENDPOINT,
             json: true,
@@ -78,7 +78,7 @@ class CTFtimeOAuthController {
               logger.error(err2)
               reject(new InternalError())
             } else {
-              if (body2.hasOwnProperty('error')) {
+              if (Object.hasOwn(body2, 'error')) {
                 reject(new InternalError())
               } else {
                 resolve(body2)

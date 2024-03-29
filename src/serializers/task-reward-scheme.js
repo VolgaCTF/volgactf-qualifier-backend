@@ -1,7 +1,7 @@
 const _ = require('underscore')
 
 module.exports = function (taskRewardScheme, options = {}) {
-  let defaultOptions = {
+  const defaultOptions = {
     exposeDynlog: false
   }
   options = _.extend(defaultOptions, options)

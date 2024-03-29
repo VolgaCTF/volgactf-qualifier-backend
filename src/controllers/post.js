@@ -18,8 +18,8 @@ class PostController {
     Post
       .query()
       .insert({
-        title: title,
-        description: description,
+        title,
+        description,
         createdAt: now,
         updatedAt: now
       })
@@ -41,8 +41,8 @@ class PostController {
     Post
       .query()
       .patchAndFetchById(id, {
-        title: title,
-        description: description,
+        title,
+        description,
         updatedAt: new Date()
       })
       .then(function (post) {

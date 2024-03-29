@@ -6,7 +6,7 @@ class CreateTeamEvent extends SupervisorEvent {
   constructor (team, ctftime) {
     super(EVENT_CREATE_TEAM, {
       team: teamSerializer(team, { exposeEmail: true }),
-      ctftime: ctftime
+      ctftime
     })
   }
 }

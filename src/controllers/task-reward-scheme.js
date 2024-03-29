@@ -11,45 +11,45 @@ class TaskRewardSchemeController {
       let taskPromise = Task.query()
       if (!privateData) {
         taskPromise = taskPromise
-        .where('state', TASK_OPENED)
-        .orWhere('state', TASK_CLOSED)
+          .where('state', TASK_OPENED)
+          .orWhere('state', TASK_CLOSED)
       }
 
       taskPromise
-      .then(function (tasks) {
-        const taskIdList = _.map(tasks, function (task) {
-          return task.id
+        .then(function (tasks) {
+          const taskIdList = _.map(tasks, function (task) {
+            return task.id
+          })
+          return TaskRewardScheme
+            .query()
+            .whereIn('taskId', taskIdList)
         })
-        return TaskRewardScheme
-        .query()
-        .whereIn('taskId', taskIdList)
-      })
-      .then(function (taskRewardSchemes) {
-        resolve(taskRewardSchemes)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .then(function (taskRewardSchemes) {
+          resolve(taskRewardSchemes)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
   getByTaskId (taskId) {
     return new Promise(function (resolve, reject) {
       TaskRewardScheme
-      .query()
-      .where('taskId', taskId)
-      .first()
-      .then(function (taskRewardScheme) {
-        if (taskRewardScheme) {
-          resolve(taskRewardScheme)
-        } else {
-          reject(new TaskRewardSchemeNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('taskId', taskId)
+        .first()
+        .then(function (taskRewardScheme) {
+          if (taskRewardScheme) {
+            resolve(taskRewardScheme)
+          } else {
+            reject(new TaskRewardSchemeNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 }

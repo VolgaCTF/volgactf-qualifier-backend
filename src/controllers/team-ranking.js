@@ -4,13 +4,13 @@ class TeamRankingController {
   fetch () {
     return new Promise(function (resolve, reject) {
       TeamRanking
-      .query()
-      .then(function (teamRankings) {
-        resolve(teamRankings)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .query()
+        .then(function (teamRankings) {
+          resolve(teamRankings)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 }

@@ -64,25 +64,25 @@ class StatController {
                                               callback(err10, null)
                                             } else {
                                               taskValueController
-                                              .getByTasks(taskIds)
-                                              .then(function (taskValues) {
-                                                callback(null, {
-                                                  teams: teams,
-                                                  countries: countries,
-                                                  contest: contest,
-                                                  events: events_,
-                                                  categories: categories,
-                                                  tasks: tasks,
-                                                  taskValues: taskValues,
-                                                  taskCategories: taskCategories,
-                                                  teamTaskHitAttempts: teamTaskHitAttempts,
-                                                  teamTaskHits: teamTaskHits,
-                                                  teamTaskReviews: teamTaskReviews
+                                                .getByTasks(taskIds)
+                                                .then(function (taskValues) {
+                                                  callback(null, {
+                                                    teams,
+                                                    countries,
+                                                    contest,
+                                                    events: events_,
+                                                    categories,
+                                                    tasks,
+                                                    taskValues,
+                                                    taskCategories,
+                                                    teamTaskHitAttempts,
+                                                    teamTaskHits,
+                                                    teamTaskReviews
+                                                  })
                                                 })
-                                              })
-                                              .catch(function (err11) {
-                                                callback(err11, null)
-                                              })
+                                                .catch(function (err11) {
+                                                  callback(err11, null)
+                                                })
                                             }
                                           })
                                         }
@@ -173,9 +173,9 @@ class StatController {
           }
 
           let teamId = null
-          if (signInEvent.data.supervisors.hasOwnProperty('id')) {
+          if (Object.hasOwn(signInEvent.data.supervisors, 'id')) {
             teamId = signInEvent.data.supervisors.id
-          } else if (signInEvent.data.supervisors.hasOwnProperty('team') && signInEvent.data.supervisors.team.hasOwnProperty('id')) {
+          } else if (Object.hasOwn(signInEvent.data.supervisors, 'team') && Object.hasOwn(signInEvent.data.supervisors.team, 'id')) {
             teamId = signInEvent.data.supervisors.team.id
           }
 
@@ -241,7 +241,7 @@ class StatController {
         countryMap.forEach(function (value, key, map) {
           const countryId = parseInt(key, 10)
           countryDistribution.push({
-            countryId: countryId,
+            countryId,
             countryName: _.findWhere(data.countries, { id: countryId }).name,
             numTeams: value
           })
@@ -262,7 +262,7 @@ class StatController {
           const countryId = parseInt(key, 10)
           if (topCountries.indexOf(countryId) !== -1) {
             countryDistributionPopular.push({
-              countryId: countryId,
+              countryId,
               countryName: _.findWhere(data.countries, { id: countryId }).name,
               numTeams: value
             })
@@ -450,17 +450,17 @@ class StatController {
           tasks.push({
             title: task.title,
             value: _.findWhere(data.taskValues, { taskId: task.id }).value,
-            categories: categories,
-            opened: opened,
-            firstSubmit: firstSubmit,
-            lastSubmit: lastSubmit,
-            flagsSubmitted: flagsSubmitted,
-            teamsSolved: teamsSolved,
-            firstSolved: firstSolved,
-            firstSolvedTeam: firstSolvedTeam,
-            lastSolved: lastSolved,
+            categories,
+            opened,
+            firstSubmit,
+            lastSubmit,
+            flagsSubmitted,
+            teamsSolved,
+            firstSolved,
+            firstSolvedTeam,
+            lastSolved,
             reviews: taskReviews.length,
-            averageRating: averageRating,
+            averageRating,
             hitAttemptDistribution: _.sortBy(taskHitAttemptDistributionList, 'timestamp'),
             hitDistribution: _.sortBy(taskHitDistributionList, 'timestamp'),
             reviewDistribution: _.sortBy(taskReviewDistributionList, 'timestamp'),

@@ -23,7 +23,7 @@ class SMTPController {
         subject: message.subject,
         text: message.plain,
         html: message.html,
-        headers: headers
+        headers
       }
 
       transporter.sendMail(data, function (err, info) {

@@ -35,20 +35,20 @@ class RemoteCheckerController {
   get (id) {
     return new Promise(function (resolve, reject) {
       RemoteChecker
-      .query()
-      .where('id', id)
-      .first()
-      .then(function (remoteChecker) {
-        if (remoteChecker) {
-          resolve(remoteChecker)
-        } else {
-          reject(new RemoteCheckerNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('id', id)
+        .first()
+        .then(function (remoteChecker) {
+          if (remoteChecker) {
+            resolve(remoteChecker)
+          } else {
+            reject(new RemoteCheckerNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 
@@ -56,79 +56,79 @@ class RemoteCheckerController {
     return new Promise(function (resolve, reject) {
       const now = new Date()
       RemoteChecker
-      .query()
-      .insert({
-        name: name,
-        url: url,
-        authUsername: authUsername,
-        authPassword: authPassword,
-        createdAt: now,
-        updatedAt: now
-      })
-      .then(function (remoteChecker) {
-        EventController.push(new CreateRemoteCheckerEvent(remoteChecker))
-        resolve(remoteChecker)
-      })
-      .catch(function (err) {
-        if (isRemoteCheckerNameUniqueConstraintViolation(err)) {
-          reject(new DuplicateRemoteCheckerNameError())
-        } else {
-          logger.error(err)
-          reject(new InternalError())
-        }
-      })
+        .query()
+        .insert({
+          name,
+          url,
+          authUsername,
+          authPassword,
+          createdAt: now,
+          updatedAt: now
+        })
+        .then(function (remoteChecker) {
+          EventController.push(new CreateRemoteCheckerEvent(remoteChecker))
+          resolve(remoteChecker)
+        })
+        .catch(function (err) {
+          if (isRemoteCheckerNameUniqueConstraintViolation(err)) {
+            reject(new DuplicateRemoteCheckerNameError())
+          } else {
+            logger.error(err)
+            reject(new InternalError())
+          }
+        })
     })
   }
 
   update (id, name, url, authUsername, authPassword) {
     return new Promise(function (resolve, reject) {
       RemoteChecker
-      .query()
-      .patchAndFetchById(id, {
-        name: name,
-        url: url,
-        authUsername: authUsername,
-        authPassword: authPassword,
-        updatedAt: new Date()
-      })
-      .then(function (remoteChecker) {
-        EventController.push(new UpdateRemoteCheckerEvent(remoteChecker))
-        resolve(remoteChecker)
-      })
-      .catch(function (err) {
-        if (isRemoteCheckerNameUniqueConstraintViolation(err)) {
-          reject(new DuplicateRemoteCheckerNameError())
-        } else {
-          logger.error(err)
-          reject(new InternalError())
-        }
-      })
+        .query()
+        .patchAndFetchById(id, {
+          name,
+          url,
+          authUsername,
+          authPassword,
+          updatedAt: new Date()
+        })
+        .then(function (remoteChecker) {
+          EventController.push(new UpdateRemoteCheckerEvent(remoteChecker))
+          resolve(remoteChecker)
+        })
+        .catch(function (err) {
+          if (isRemoteCheckerNameUniqueConstraintViolation(err)) {
+            reject(new DuplicateRemoteCheckerNameError())
+          } else {
+            logger.error(err)
+            reject(new InternalError())
+          }
+        })
     })
   }
 
   delete (id) {
     return new Promise(function (resolve, reject) {
       RemoteChecker
-      .query()
-      .delete()
-      .where('id', id)
-      .returning('*')
-      .then(function (remoteCheckers) {
-        if (remoteCheckers.length === 1) {
-          EventController.push(new DeleteRemoteCheckerEvent(remoteCheckers[0]))
-          resolve()
-        } else {
-          reject(new RemoteCheckerNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        if (isTaskRemoteCheckerForeignKeyConstraintViolation(err)) {
-          reject(new RemoteCheckerAttachedError())
-        } else {
-          logger.error(err)
-          reject(new InternalError())
-        }
-      })
+        .query()
+        .delete()
+        .where('id', id)
+        .returning('*')
+        .then(function (remoteCheckers) {
+          if (remoteCheckers.length === 1) {
+            EventController.push(new DeleteRemoteCheckerEvent(remoteCheckers[0]))
+            resolve()
+          } else {
+            reject(new RemoteCheckerNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          if (isTaskRemoteCheckerForeignKeyConstraintViolation(err)) {
+            reject(new RemoteCheckerAttachedError())
+          } else {
+            logger.error(err)
+            reject(new InternalError())
+          }
+        })
     })
   }
 }

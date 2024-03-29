@@ -32,13 +32,13 @@ router.post('/invite', checkToken, needsToBeAuthorizedAdmin, urlencodedParser, f
   }
 
   supervisorInvitationController
-  .create(request.body.email, request.body.rights)
-  .then(function (supervisorInvitation) {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .create(request.body.email, request.body.rights)
+    .then(function (supervisorInvitation) {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/create', checkToken, needsToBeUnauthorized, urlencodedParser, function (request, response, next) {
@@ -54,13 +54,13 @@ router.post('/create', checkToken, needsToBeUnauthorized, urlencodedParser, func
   }
 
   SupervisorController
-  .createFromInvitation(request.body.code, request.body.username, request.body.password)
-  .then(function () {
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .createFromInvitation(request.body.code, request.body.username, request.body.password)
+    .then(function () {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, getGeoIPData, function (request, response, next) {
@@ -75,25 +75,25 @@ router.post('/signin', checkToken, needsToBeUnauthorized, urlencodedParser, getG
   }
 
   SupervisorController
-  .login({
-    username: request.body.username,
-    password: request.body.password,
-    countryName: request.geoIPData.countryName,
-    cityName: request.geoIPData.cityName
-  })
-  .then(function (supervisor) {
-    request.session.authenticated = true
-    request.session.identityID = supervisor.id
-    if (supervisor.rights === 'admin') {
-      request.session.scopeID = SCOPE_ADMIN
-    } else if (supervisor.rights === 'manager') {
-      request.session.scopeID = SCOPE_MANAGER
-    }
-    response.json({ success: true })
-  })
-  .catch(function (err) {
-    next(err)
-  })
+    .login({
+      username: request.body.username,
+      password: request.body.password,
+      countryName: request.geoIPData.countryName,
+      cityName: request.geoIPData.cityName
+    })
+    .then(function (supervisor) {
+      request.session.authenticated = true
+      request.session.identityID = supervisor.id
+      if (supervisor.rights === 'admin') {
+        request.session.scopeID = SCOPE_ADMIN
+      } else if (supervisor.rights === 'manager') {
+        request.session.scopeID = SCOPE_MANAGER
+      }
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
 })
 
 router.post('/signout', needsToBeAuthorizedSupervisor, getSupervisor, function (request, response, next) {

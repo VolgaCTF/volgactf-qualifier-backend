@@ -6,34 +6,34 @@ class TaskRemoteCheckerController {
   fetch () {
     return new Promise(function (resolve, reject) {
       TaskRemoteChecker
-      .query()
-      .then(function (taskRemoteCheckers) {
-        resolve(taskRemoteCheckers)
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(err)
-      })
+        .query()
+        .then(function (taskRemoteCheckers) {
+          resolve(taskRemoteCheckers)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(err)
+        })
     })
   }
 
   getByTaskId (taskId) {
     return new Promise(function (resolve, reject) {
       TaskRemoteChecker
-      .query()
-      .where('taskId', taskId)
-      .first()
-      .then(function (taskRemoteChecker) {
-        if (taskRemoteChecker) {
-          resolve(taskRemoteChecker)
-        } else {
-          reject(new TaskRemoteCheckerNotFoundError())
-        }
-      })
-      .catch(function (err) {
-        logger.error(err)
-        reject(new InternalError())
-      })
+        .query()
+        .where('taskId', taskId)
+        .first()
+        .then(function (taskRemoteChecker) {
+          if (taskRemoteChecker) {
+            resolve(taskRemoteChecker)
+          } else {
+            reject(new TaskRemoteCheckerNotFoundError())
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
     })
   }
 }

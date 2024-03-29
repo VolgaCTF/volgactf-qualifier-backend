@@ -72,33 +72,33 @@ class EmailGenerator {
   }
 
   getWelcomeEmail (params) {
-    let plainMessage = mustache.render(this.templates['welcome']['plain'], params)
-    let htmlMessage = mustache.render(this.templates['welcome']['html'], params)
+    const plainMessage = mustache.render(this.templates.welcome.plain, params)
+    const htmlMessage = mustache.render(this.templates.welcome.html, params)
 
     return {
-      subject: this.templates['welcome']['subject'],
+      subject: this.templates.welcome.subject,
       plain: plainMessage,
       html: htmlMessage
     }
   }
 
   getRestoreEmail (params) {
-    let plainMessage = mustache.render(this.templates['restore']['plain'], params)
-    let htmlMessage = mustache.render(this.templates['restore']['html'], params)
+    const plainMessage = mustache.render(this.templates.restore.plain, params)
+    const htmlMessage = mustache.render(this.templates.restore.html, params)
 
     return {
-      subject: this.templates['restore']['subject'],
+      subject: this.templates.restore.subject,
       plain: plainMessage,
       html: htmlMessage
     }
   }
 
   getInviteSupervisorEmail (params) {
-    let plainMessage = mustache.render(this.templates['inviteSupervisor']['plain'], params)
-    let htmlMessage = mustache.render(this.templates['inviteSupervisor']['html'], params)
+    const plainMessage = mustache.render(this.templates.inviteSupervisor.plain, params)
+    const htmlMessage = mustache.render(this.templates.inviteSupervisor.html, params)
 
     return {
-      subject: this.templates['inviteSupervisor']['subject'],
+      subject: this.templates.inviteSupervisor.subject,
       plain: plainMessage,
       html: htmlMessage
     }

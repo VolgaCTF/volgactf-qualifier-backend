@@ -39,7 +39,7 @@ parser
         logger.error(err)
         process.exit(1)
       } else {
-        let supervisorOpts = {
+        const supervisorOpts = {
           username: options.username,
           password: result.password,
           rights: options.rights,
@@ -86,7 +86,7 @@ parser
         logger.error(err)
         process.exit(1)
       } else {
-        let supervisorOpts = {
+        const supervisorOpts = {
           username: options.username,
           password: result.new_password
         }
@@ -128,7 +128,7 @@ parser
         logger.error(err)
         process.exit(1)
       } else {
-        for (let supervisor of supervisors) {
+        for (const supervisor of supervisors) {
           logger.info(`Supervisor #${supervisor.id} ${supervisor.username} (${supervisor.rights})`)
         }
         process.exit(0)
@@ -160,7 +160,7 @@ parser
         logger.error(err)
         process.exit(1)
       } else {
-        let teamId = parseInt(options.teamId, 10)
+        const teamId = parseInt(options.teamId, 10)
         TeamController.disqualify(teamId, function (err) {
           if (err) {
             logger.error(err)
@@ -393,7 +393,7 @@ parser
             ],
             colWidths: [17, 20, 8, 60],
             wordWrap: true,
-            wrapOnWordBoundary: false,
+            wrapOnWordBoundary: false
           })
 
           table34.push.apply(table34, _.map(task.reviewsDetailed, function (entry) {

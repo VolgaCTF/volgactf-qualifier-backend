@@ -18,7 +18,7 @@ class QueueManager {
   }
 
   getQueue (name) {
-    if (!this.cache.hasOwnProperty(name)) {
+    if (!Object.hasOwn(this.cache, name)) {
       this.cache[name] = Queue(
         `${this.prefix}:${name}`,
         this.redisPort,

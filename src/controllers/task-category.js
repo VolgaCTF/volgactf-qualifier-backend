@@ -11,25 +11,25 @@ class TaskCategoryController {
       let taskPromise = Task.query()
       if (!privateData) {
         taskPromise = taskPromise
-        .where('state', TASK_OPENED)
-        .orWhere('state', TASK_CLOSED)
+          .where('state', TASK_OPENED)
+          .orWhere('state', TASK_CLOSED)
       }
 
       taskPromise
-      .then(function (tasks) {
-        const taskIdList = _.map(tasks, function (task) {
-          return task.id
+        .then(function (tasks) {
+          const taskIdList = _.map(tasks, function (task) {
+            return task.id
+          })
+          return TaskCategory
+            .query()
+            .whereIn('taskId', taskIdList)
         })
-        return TaskCategory
-        .query()
-        .whereIn('taskId', taskIdList)
-      })
-      .then(function (taskCategories) {
-        resolve(taskCategories)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .then(function (taskCategories) {
+          resolve(taskCategories)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 
@@ -49,14 +49,14 @@ class TaskCategoryController {
   static fetchByTask (taskId) {
     return new Promise(function (resolve, reject) {
       TaskCategory
-      .query()
-      .where('taskId', taskId)
-      .then(function (taskCategories) {
-        resolve(taskCategories)
-      })
-      .catch(function (err) {
-        reject(err)
-      })
+        .query()
+        .where('taskId', taskId)
+        .then(function (taskCategories) {
+          resolve(taskCategories)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
     })
   }
 

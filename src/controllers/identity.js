@@ -18,7 +18,7 @@ class IdentityController {
               role: supervisor.rights,
               name: supervisor.username,
               email: supervisor.email,
-              token: token
+              token
             })
           }
         })
@@ -33,14 +33,14 @@ class IdentityController {
               name: team.name,
               logoChecksum: team.logoChecksum || 'deadbeef',
               emailConfirmed: team.emailConfirmed,
-              token: token
+              token
             })
           }
         })
       } else if (request.scope.isGuest()) {
         resolve({
           role: 'guest',
-          token: token
+          token
         })
       } else {
         reject(new UnknownIdentityError())

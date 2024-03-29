@@ -54,6 +54,26 @@ class CategoryController {
       })
   }
 
+  static getByTitle (title) {
+    return new Promise(function (resolve, reject) {
+      Category
+        .query()
+        .where('title', title)
+        .first()
+        .then(function (category) {
+          if (category) {
+            resolve(category)
+          } else {
+            resolve(null)
+          }
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(err)
+        })
+    })
+  }
+
   static isCategoryTitleUniqueConstraintViolation (err) {
     return (err.code && err.code === POSTGRES_UNIQUE_CONSTRAINT_VIOLATION && err.constraint && err.constraint === 'categories_ndx_title_unique')
   }
@@ -67,8 +87,8 @@ class CategoryController {
     Category
       .query()
       .insert({
-        title: title,
-        description: description,
+        title,
+        description,
         createdAt: now,
         updatedAt: now
       })
@@ -90,8 +110,8 @@ class CategoryController {
     Category
       .query()
       .patchAndFetchById(id, {
-        title: title,
-        description: description,
+        title,
+        description,
         updatedAt: new Date()
       })
       .then(function (category) {
