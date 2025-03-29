@@ -24,7 +24,10 @@ class MarkdownRenderer {
       })
 
     this.md.renderer.rules.emoji = (token, idx) => {
-      return twemoji.parse(token[idx].content)
+      return twemoji.parse(
+        token[idx].content,
+        { base: 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/' }
+      )
     }
   }
 
