@@ -53,7 +53,8 @@ const taskFileSerializer = require('../serializers/task-file')
 const taskFileParam = require('../params/task-file')
 
 const supervisorTaskSubscriptionController = require('../controllers/supervisor-task-subscription')
-const githubController = require('../controllers/github')
+const gitHubController = require('../controllers/github')
+const gitFlicController = require('../controllers/gitflic')
 const CategoryController = require('../controllers/category')
 
 router.param('taskId', taskParam.id)
@@ -92,8 +93,19 @@ router.get('/category/index', detectScope, function (request, response, next) {
   }, !request.scope.isSupervisor())
 })
 
-router.get('/github_repository/index', needsToBeAuthorizedAdmin, function (request, response, next) {
-  githubController
+router.get('/github-repository/index', needsToBeAuthorizedAdmin, function (request, response, next) {
+  gitHubController
+    .listRepositories()
+    .then(function (repositories) {
+      response.json(repositories)
+    })
+    .catch(function (err) {
+      next(err)
+    })
+})
+
+router.get('/gitflic-repository/index', needsToBeAuthorizedAdmin, function (request, response, next) {
+  gitFlicController
     .listRepositories()
     .then(function (repositories) {
       response.json(repositories)
@@ -734,7 +746,7 @@ router.post('/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin,
     })
 })
 
-function preprocessTaskConfigFromGitHub (taskConfig) {
+function preprocessTaskConfigFromVcsRepository (taskConfig) {
   const resolveCategory = function (categoryTitle) {
     const deferred = when_.defer()
 
@@ -831,7 +843,7 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
   TaskController
     .loadFromGitHub(request.body.repository)
     .then(function (taskConfig) {
-      return preprocessTaskConfigFromGitHub(taskConfig)
+      return preprocessTaskConfigFromVcsRepository(taskConfig)
     })
     .then(function (taskParams) {
       return createTaskFromPayload(taskParams)
@@ -839,6 +851,27 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
     .then(function (task) {
       return TaskController
         .loadFilesFromGitHubAndUpdateDescription(task, request.body.repository)
+    })
+    .then(function (updatedTask) {
+      response.json({ success: true })
+    })
+    .catch(function (err) {
+      next(err)
+    })
+})
+
+router.post('/create-from-gitflic', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  TaskController
+    .loadFromGitFlic(request.body.repository)
+    .then(function (taskConfig) {
+      return preprocessTaskConfigFromVcsRepository(taskConfig)
+    })
+    .then(function (taskParams) {
+      return createTaskFromPayload(taskParams)
+    })
+    .then(function (task) {
+      return TaskController
+        .loadFilesFromGitFlicAndUpdateDescription(task, request.body.repository)
     })
     .then(function (updatedTask) {
       response.json({ success: true })

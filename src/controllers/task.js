@@ -48,7 +48,8 @@ const request = require('request')
 const async = require('async')
 const tmp = require('tmp')
 const fs = require('fs')
-const githubController = require('./github')
+const gitHubController = require('./github')
+const gitFlicController = require('./gitflic')
 const YAML = require('yaml')
 const when_ = require('when')
 const taskFileController = require('./task-file')
@@ -78,7 +79,40 @@ class TaskController {
         }
         const clonePath = `${path}/repo`
 
-        githubController
+        gitHubController
+          .cloneRepository(repository, clonePath)
+          .then(function () {
+            const taskConfigPath = `${clonePath}/task.yaml`
+
+            if (fs.existsSync(taskConfigPath)) {
+              const taskConfig = YAML.parse(fs.readFileSync(taskConfigPath, 'utf8'))
+              resolve(taskConfig)
+            } else {
+              reject(new Error(`Could not find task.yaml file inside ${repository}`))
+            }
+          })
+          .catch(function (err) {
+            logger.error(err)
+            reject(err)
+          })
+          .finally(function () {
+            fs.rmSync(clonePath, { recursive: true, force: true })
+            cleanupCallback()
+          })
+      })
+    })
+  }
+
+  static loadFromGitFlic (repository) {
+    return new Promise(function (resolve, reject) {
+      tmp.dir(function (err, path, cleanupCallback) {
+        if (err) {
+          logger.error('Failed to create temporary directory')
+          reject(new InternalError())
+        }
+        const clonePath = `${path}/repo`
+
+        gitFlicController
           .cloneRepository(repository, clonePath)
           .then(function () {
             const taskConfigPath = `${clonePath}/task.yaml`
@@ -104,7 +138,7 @@ class TaskController {
 
   static loadFilesFromGitHubAndUpdateDescription (task, repository) {
     return new Promise(function (resolve, reject) {
-      const fileRefRegexp = /\[([\w\d \.\-_]+)\]\(([\w\d \.\-_/]+)\)/gm
+      const fileRefRegexp = /\[([\w\d .\-_]+)\]\(([\w\d .\-_/]+)\)/gm
       const matches = task.description.match(fileRefRegexp) || []
 
       if (matches.length === 0) {
@@ -117,7 +151,100 @@ class TaskController {
           }
           const clonePath = `${path}/repo`
 
-          githubController
+          gitHubController
+            .cloneRepository(repository, clonePath)
+            .then(function () {
+              const resolveFile = function (name, url) {
+                return new Promise(function (_resolve, _reject) {
+                  taskFileController
+                    .create(task.id, `${clonePath}/${url}`, name)
+                    .then(function (taskFile) {
+                      _resolve({
+                        name,
+                        url,
+                        updatedUrl: `${(process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'}://${process.env.VOLGACTF_QUALIFIER_FQDN}/files/${taskFile.prefix}/${taskFile.filename}`
+                      })
+                    })
+                    .catch(function (err) {
+                      logger.error(err)
+                      _resolve(null)
+                    })
+                })
+              }
+
+              const fileResolvers = []
+              for (const match of task.description.matchAll(fileRefRegexp)) {
+                if (!match[2].startsWith('http') && fs.existsSync(`${clonePath}/${match[2]}`)) {
+                  fileResolvers.push(resolveFile(match[1], match[2]))
+                }
+              }
+
+              return when_.all(fileResolvers)
+            })
+            .then(function (fileResolved) {
+              const fileResolvedNonNull = _.filter(fileResolved || [], function (item) {
+                return item !== null
+              })
+
+              const updatedDescription = task.description.replace(fileRefRegexp, function (match, name, url) {
+                const updatedItem = _.find(fileResolvedNonNull, function (item) {
+                  return item.name === name && item.url === url
+                })
+
+                if (updatedItem) {
+                  return `[${updatedItem.name}](${updatedItem.updatedUrl})`
+                } else {
+                  return match
+                }
+              })
+
+              return Task
+                .query()
+                .update({
+                  description: updatedDescription,
+                  updatedAt: new Date()
+                })
+                .where('id', task.id)
+                .andWhere('description', '!=', updatedDescription)
+                .returning('*')
+            })
+            .then(function (updatedTasks) {
+              if (updatedTasks.length === 1) {
+                EventController.push(new UpdateTaskEvent(updatedTasks[0]))
+                resolve(updatedTasks[0])
+              } else {
+                resolve(task)
+              }
+            })
+            .catch(function (err) {
+              logger.error(err)
+              reject(err)
+            })
+            .finally(function () {
+              fs.rmSync(clonePath, { recursive: true, force: true })
+              cleanupCallback()
+            })
+        })
+      }
+    })
+  }
+
+  static loadFilesFromGitFlicAndUpdateDescription (task, repository) {
+    return new Promise(function (resolve, reject) {
+      const fileRefRegexp = /\[([\w\d .\-_]+)\]\(([\w\d .\-_/]+)\)/gm
+      const matches = task.description.match(fileRefRegexp) || []
+
+      if (matches.length === 0) {
+        resolve(task)
+      } else {
+        tmp.dir(function (err, path, cleanupCallback) {
+          if (err) {
+            logger.error('Failed to create temporary directory')
+            reject(new InternalError())
+          }
+          const clonePath = `${path}/repo`
+
+          gitFlicController
             .cloneRepository(repository, clonePath)
             .then(function () {
               const resolveFile = function (name, url) {

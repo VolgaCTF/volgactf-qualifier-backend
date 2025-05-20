@@ -2,9 +2,9 @@ const request = require('request')
 const _ = require('underscore')
 const gitPullOrClone = require('git-pull-or-clone')
 
-class GitHubController {
+class GitFlicController {
   constructor () {
-    this.githubOrg = process.env.GITHUB_ORG
+    this.gitFlicOwner = process.env.GITFLIC_ORG
   }
 
   listRepositoriesPage (pageNum) {
@@ -12,15 +12,14 @@ class GitHubController {
     return new Promise(function (resolve, reject) {
       const params = {
         method: 'GET',
-        url: `https://api.github.com/orgs/${that.githubOrg}/repos`,
+        url: 'https://api.gitflic.ru/project/shared',
         headers: {
-          accept: 'application/vnd.github+json',
-          authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          'User-Agent': 'VolgaCTF',
-          'X-GitHub-Api-Version': '2022-11-28'
+          accept: 'application/json',
+          authorization: `token ${process.env.GITFLIC_API_TOKEN}`,
+          'User-Agent': 'VolgaCTF'
         },
         qs: {
-          per_page: 100,
+          size: 100,
           page: pageNum
         }
       }
@@ -30,11 +29,17 @@ class GitHubController {
           reject(err)
         } else {
           if (response.statusCode === 200) {
-            const repositories = _.map(JSON.parse(body), function (item) {
-              return item.full_name
+            const parsedBody = JSON.parse(body)
+
+            const filteredData = _.filter(parsedBody._embedded.projectList, function (item) {
+              return item.owner && item.owner.alias && item.owner.alias === that.gitFlicOwner
             })
 
-            if (response.headers.link && response.headers.link.includes('; rel="next"')) {
+            const repositories = _.map(filteredData, function (item) {
+              return `${that.gitFlicOwner}/${item.alias}`
+            })
+
+            if (parsedBody.page && parsedBody.page.number && parsedBody.page.totalPages && (parsedBody.page.number + 1 < parsedBody.page.totalPages)) {
               that
                 .listRepositoriesPage(pageNum + 1)
                 .then(function (nextPageRepositories) {
@@ -47,7 +52,7 @@ class GitHubController {
               resolve(repositories)
             }
           } else {
-            reject(new Error(`Request to GitHub API failed with HTTP status code ${response.statusCode}`))
+            reject(new Error(`Request to GitFlic API failed with HTTP status code ${response.statusCode}`))
           }
         }
       })
@@ -55,11 +60,11 @@ class GitHubController {
   }
 
   listRepositories () {
-    return this.listRepositoriesPage(1)
+    return this.listRepositoriesPage(0)
   }
 
   cloneRepository (repository, path) {
-    const url = `https://oauth2:${process.env.GITHUB_TOKEN}@github.com/${repository}.git`
+    const url = `git@gitflic.ru:${repository}.git`
     return new Promise(function (resolve, reject) {
       gitPullOrClone(url, path, function (err) {
         if (err) {
@@ -72,4 +77,4 @@ class GitHubController {
   }
 }
 
-module.exports = new GitHubController()
+module.exports = new GitFlicController()
