@@ -967,7 +967,7 @@ function sanitizeUpdateTaskParams (params, task, callback) {
 
   const sanitizeMaxValue = function () {
     const deferred = when_.defer()
-    if (params.rewardScheme === 'fixed' || params.rewardScheme === 'variable') {
+    if (params.rewardScheme === 'fixed' || params.rewardScheme === 'variable' || params.rewardScheme === 'dynlog') {
       const value = parseInt(params.reward.maxValue, 10)
       if (is_.number(value)) {
         deferred.resolve(value)
@@ -983,7 +983,7 @@ function sanitizeUpdateTaskParams (params, task, callback) {
 
   const sanitizeMinValue = function () {
     const deferred = when_.defer()
-    if (params.rewardScheme === 'variable') {
+    if (params.rewardScheme === 'variable' || params.rewardScheme === 'dynlog') {
       const value = parseInt(params.reward.minValue, 10)
       if (is_.number(value)) {
         deferred.resolve(value)
@@ -1100,6 +1100,9 @@ router.post('/:taskId/update', contestNotFinished, checkToken, needsToBeAuthoriz
         updateConstraints.minValue = constraints.taskValue
         updateConstraints.subtractPoints = constraints.taskSubtractPoints
         updateConstraints.subtractHitCount = constraints.taskSubtractHitCount
+      } else if (taskParams.rewardScheme === 'dynlog') {
+        updateConstraints.maxValue = constraints.taskValue
+        updateConstraints.minValue = constraints.taskValue
       }
 
       const validationResult = validator.validate(taskParams, updateConstraints)

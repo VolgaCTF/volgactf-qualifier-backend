@@ -479,12 +479,12 @@ class TaskController {
           } else {
             updatedTask = task
           }
-          const isScoringDynlog = options.maxValue === null && options.minValue === null && options.subtractPoints === null && options.subtractHitCount === null
+          const isScoringDynlog = options.rewardScheme === 'dynlog'
           return TaskRewardScheme
             .query()
             .update({
-              maxValue: isScoringDynlog ? scoringDynlog.max : options.maxValue,
-              minValue: isScoringDynlog ? scoringDynlog.min : options.minValue,
+              maxValue: options.maxValue,
+              minValue: options.minValue,
               subtractPoints: options.subtractPoints,
               subtractHitCount: options.subtractHitCount,
               dynlogK: isScoringDynlog ? scoringDynlog.k : null,
@@ -494,8 +494,8 @@ class TaskController {
             .where('taskId', updatedTask.id)
             .andWhere(function () {
               this
-                .where('maxValue', '!=', isScoringDynlog ? scoringDynlog.max : options.maxValue)
-                .orWhereRaw('"minValue" IS DISTINCT FROM ?', [isScoringDynlog ? scoringDynlog.min : options.minValue])
+                .where('maxValue', '!=', options.maxValue)
+                .orWhereRaw('"minValue" IS DISTINCT FROM ?', [options.minValue])
                 .orWhereRaw('"subtractPoints" IS DISTINCT FROM ?', [options.subtractPoints])
                 .orWhereRaw('"subtractHitCount" IS DISTINCT FROM ?', [options.subtractHitCount])
                 .orWhereRaw('"dynlogK" IS DISTINCT FROM ?', [isScoringDynlog ? scoringDynlog.k : null])
@@ -597,6 +597,7 @@ class TaskController {
       })
       .catch(function (err) {
         logger.error(err)
+        logger.error(err.stack)
         callback(new InternalError(), null)
       })
   }
