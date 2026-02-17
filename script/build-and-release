@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+USERNAME=volgactf
+IMAGE=volgactf-qualifier-backend
+VERSION=`cat VERSION`
+docker buildx build --platform linux/amd64,linux/arm64 --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg BUILD_VERSION=$VERSION --build-arg VCS_REF=$(git rev-parse --short HEAD) -t $USERNAME/$IMAGE:$VERSION -t $USERNAME/$IMAGE:latest --push .
