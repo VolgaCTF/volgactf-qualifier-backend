@@ -3,7 +3,7 @@ const Agent = require('socks5-https-client/lib/Agent')
 
 class TelegramController {
   constructor () {
-    this.botAccessToken = process.env.TELEGRAM_BOT_ACCESS_TOKEN
+    this.botToken = process.env.TELEGRAM_BOT_TOKEN
     this.chatId = process.env.TELEGRAM_CHAT_ID
     this.socks5 = Object.hasOwn(process.env, 'TELEGRAM_SOCKS5_HOST') && process.env.TELEGRAM_SOCKS5_HOST !== '' && Object.hasOwn(process.env, 'TELEGRAM_SOCKS5_PORT') && process.env.TELEGRAM_SOCKS5_PORT !== ''
     if (this.socks5) {
@@ -22,7 +22,7 @@ class TelegramController {
     return new Promise((resolve, reject) => {
       const params = {
         method: 'GET',
-        url: `https://api.telegram.org/bot${this.botAccessToken}/sendMessage`,
+        url: `https://api.telegram.org/bot${this.botToken}/sendMessage`,
         qs: {
           chat_id: this.chatId,
           text: description,

@@ -1,6 +1,5 @@
 const ContestController = require('../controllers/contest')
 const { ContestFinishedError, ContestPausedError, ContestNotStartedError, InternalError } = require('../utils/errors')
-const axios = require('axios')
 
 function getContest (request, response, next) {
   ContestController.get(function (err, contest) {
@@ -14,26 +13,9 @@ function getContest (request, response, next) {
 }
 module.exports.getContest = getContest
 
-let contestTitle = null
-
 function getContestTitle (request, response, next) {
-  if (contestTitle) {
-    request.contestTitle = contestTitle
-    next()
-  } else {
-    const customizerHost = process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_HOST
-    const customizerPort = parseInt(process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_PORT, 10)
-    const url = `http://${customizerHost}:${customizerPort}/event-title`
-    axios.get(url)
-      .then(function (response) {
-        contestTitle = response.data
-        request.contestTitle = contestTitle
-        next()
-      })
-      .catch(function (err) {
-        next(err)
-      })
-  }
+  request.contestTitle = process.env.VOLGACTF_QUALIFIER_EVENT_TITLE || 'VolgaCTF Qualifier'
+  next()
 }
 module.exports.getContestTitle = getContestTitle
 

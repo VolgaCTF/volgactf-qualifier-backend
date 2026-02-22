@@ -3,14 +3,14 @@ const Knex = require('knex')
 module.exports = Knex({
   client: 'postgresql',
   connection: {
-    database: process.env.POSTGRES_DBNAME,
-    host: process.env.POSTGRES_HOST,
-    port: parseInt(process.env.POSTGRES_PORT, 10),
-    user: process.env.POSTGRES_USERNAME,
-    password: process.env.POSTGRES_PASSWORD
+    database: process.env.PG_DATABASE,
+    host: process.env.PG_HOST,
+    port: parseInt(process.env.PG_PORT, 10),
+    user: process.env.PG_USERNAME,
+    password: process.env.PG_PASSWORD,
   },
   pool: {
-    min: 2,
-    max: 10
+    min: parseInt(process.env.DB_POOL_MIN_SIZE || '2', 10),
+    max: parseInt(process.env.DB_POOL_MAX_SIZE || '10', 10),
   }
 })

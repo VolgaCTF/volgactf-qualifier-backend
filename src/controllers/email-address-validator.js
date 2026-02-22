@@ -22,8 +22,8 @@ class EmailAddressValidator {
         return
       }
 
-      const emailValidator = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR
-      if (emailValidator === 'default') {
+      const emailValidatorType = process.env.VOLGACTF_QUALIFIER_EMAIL_ADDRESS_VALIDATOR_TYPE
+      if (emailValidatorType === 'default') {
         deepEmailValidate({
           email,
           sender: email,

@@ -323,7 +323,7 @@ const multidataParser = busboy({
   limits: {
     fieldSize: 200,
     fields: 10,
-    fileSize: parseInt(process.env.VOLGACTF_QUALIFIER_POST_MAX_TEAM_LOGO_SIZE, 10) * 1024 * 1024,
+    fileSize: parseInt(process.env.VOLGACTF_QUALIFIER_UPLOAD_MAX_TEAM_LOGO_SIZE, 10) * 1024 * 1024,
     files: 1
   }
 })

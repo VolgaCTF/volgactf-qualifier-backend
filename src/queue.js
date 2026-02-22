@@ -84,7 +84,7 @@ function getChecksum (path) {
 }
 
 queue('createLogoQueue').process(function (job, done) {
-  const newFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGOS_DIR, `${job.data.id}.png`)
+  const newFilename = path.join(process.env.VOLGACTF_QUALIFIER_TEAM_LOGO_DIR, `${job.data.id}.png`)
   gm(job.data.filename)
     .resize(48, 48)
     .write(newFilename, function (err) {

@@ -9,12 +9,12 @@ class TemplateStore {
   constructor () {
     this.cache = {}
     this.metadata = {}
-    this.distFrontendDir = process.env.VOLGACTF_QUALIFIER_DIST_FRONTEND_DIR
-    this.checkTemplateMtime = process.env.VOLGACTF_QUALIFIER_CHECK_TEMPLATE_MTIME === 'yes'
+    this.frontendDistDir = process.env.VOLGACTF_QUALIFIER_FRONTEND_DIST_DIR
+    this.templateCheckMtime = process.env.VOLGACTF_QUALIFIER_TEMPLATE_CHECK_MTIME === 'yes'
   }
 
   register (templateId, templateSrcPath) {
-    this.metadata[templateId] = path.join(this.distFrontendDir, templateSrcPath)
+    this.metadata[templateId] = path.join(this.frontendDistDir, templateSrcPath)
   }
 
   updateTemplate (templateId, resolve, reject) {
@@ -41,7 +41,7 @@ class TemplateStore {
           this.updateTemplate(templateId, resolve, reject)
         }
       } else {
-        if (this.checkTemplateMtime) {
+        if (this.templateCheckMtime) {
           fs.stat(this.metadata[templateId], (err, stat) => {
             if (err) {
               logger.error(err)

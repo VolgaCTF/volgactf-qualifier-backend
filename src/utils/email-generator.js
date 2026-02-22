@@ -1,6 +1,8 @@
 const mustache = require('mustache')
 const async = require('async')
-const axios = require('axios')
+const path = require('path')
+const fs = require('fs')
+const logger = require('./logger')
 
 class EmailGenerator {
   constructor () {
@@ -13,32 +15,35 @@ class EmailGenerator {
       if (this.loaded) {
         resolve(true)
       } else {
-        const fetchFunc = function (url, next) {
-          axios.get(url)
-            .then(function (response) {
-              next(null, response.data)
-            })
-            .catch(function (error) {
+        const emailTemplatesVersion = process.env.VOLGACTF_QUALIFIER_EMAIL_TEMPLATES_VERSION || 'default'
+        const emailTemplatesRoot = path.join('email-templates', emailTemplatesVersion)
+
+        const loadFunc = function (relativePath, next) {
+          const fullPath = path.join(emailTemplatesRoot, relativePath)
+          fs.readFile(fullPath, 'utf8', function (err, data) {
+            if (err) {
+              logger.error(err)
               next(error, null)
-            })
+            }
+
+            next(null, data.trim())
+          })
         }
 
-        const customizerHost = process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_HOST
-        const customizerPort = parseInt(process.env.VOLGACTF_QUALIFIER_CUSTOMIZER_PORT, 10)
         async.map([
-          `http://${customizerHost}:${customizerPort}/mail/welcome/subject`,
-          `http://${customizerHost}:${customizerPort}/mail/welcome/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/welcome/html`,
-          `http://${customizerHost}:${customizerPort}/mail/restore/subject`,
-          `http://${customizerHost}:${customizerPort}/mail/restore/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/restore/html`,
-          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/subject`,
-          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/invite_supervisor/html`,
-          `http://${customizerHost}:${customizerPort}/mail/new_task_review/subject`,
-          `http://${customizerHost}:${customizerPort}/mail/new_task_review/plain`,
-          `http://${customizerHost}:${customizerPort}/mail/new_task_review/html`
-        ], fetchFunc, (err, results) => {
+          'welcome.subject.mustache',
+          'welcome.plain.mustache',
+          'welcome.html.mustache',
+          'restore.subject.mustache',
+          'restore.plain.mustache',
+          'restore.html.mustache',
+          'invite_supervisor.subject.mustache',
+          'invite_supervisor.plain.mustache',
+          'invite_supervisor.html.mustache',
+          'new_task_review.subject.mustache',
+          'new_task_review.plain.mustache',
+          'new_task_review.html.mustache',
+        ], loadFunc, (err, results) => {
           if (err) {
             reject(err)
           }
@@ -72,40 +77,23 @@ class EmailGenerator {
   }
 
   getWelcomeEmail (params) {
-    const plainMessage = mustache.render(this.templates.welcome.plain, params)
-    const htmlMessage = mustache.render(this.templates.welcome.html, params)
-
-    return {
-      subject: this.templates.welcome.subject,
-      plain: plainMessage,
-      html: htmlMessage
-    }
+    return this.renderEntry('welcome')
   }
 
   getRestoreEmail (params) {
-    const plainMessage = mustache.render(this.templates.restore.plain, params)
-    const htmlMessage = mustache.render(this.templates.restore.html, params)
-
-    return {
-      subject: this.templates.restore.subject,
-      plain: plainMessage,
-      html: htmlMessage
-    }
+    return this.renderEntry('restore')
   }
 
   getInviteSupervisorEmail (params) {
-    const plainMessage = mustache.render(this.templates.inviteSupervisor.plain, params)
-    const htmlMessage = mustache.render(this.templates.inviteSupervisor.html, params)
-
-    return {
-      subject: this.templates.inviteSupervisor.subject,
-      plain: plainMessage,
-      html: htmlMessage
-    }
+    return this.renderEntry('inviteSupervisor')
   }
 
   getNewTaskReviewEmail (params) {
-    const entry = this.templates.newTaskReview
+    return this.renderEntry('newTaskReview')
+  }
+
+  renderEntry (entryName) {
+    const entry = this.templates[entryName]
     return {
       subject: mustache.render(entry.subject, params),
       plain: mustache.render(entry.plain, params),
