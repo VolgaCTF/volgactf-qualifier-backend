@@ -3,7 +3,7 @@ const logger = require('../utils/logger')
 const eventStream = require('../controllers/event-stream')
 
 function getServerPort () {
-  return parseInt(process.argv[2] || '8000', 10)
+  return parseInt(process.env.VOLGACTF_QUALIFIER_PORT || '8000', 10)
 }
 
 function getServerHost () {
@@ -11,6 +11,6 @@ function getServerHost () {
 }
 
 const server = web.listen(getServerPort(), getServerHost(), function () {
-  logger.info(`Worker ${process.pid}, server listening on ${server.address().address}:${server.address().port}`)
+  logger.info(`Web worker ${process.pid}, server listening on ${server.address().address}:${server.address().port}`)
   eventStream.run()
 })

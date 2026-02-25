@@ -3,6 +3,5 @@ const eventStream = require('../controllers/event-stream')
 
 require('../queue')
 
-const processIndex = process.argv[2] ? `process ${process.argv[2]}` : 'single process';
-logger.info(`Queue ${process.pid} is running, ${processIndex}`)
+logger.info(`Queue worker ${process.pid} is running`)
 eventStream.run()

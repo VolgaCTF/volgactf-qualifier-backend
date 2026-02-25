@@ -20,6 +20,6 @@ COPY VERSION package*.json entrypoint.sh .
 COPY src ./src
 COPY email-templates ./email-templates
 RUN apk add --no-cache --virtual .gyp python3 make g++ postgresql-dev && npm ci --production && apk del .gyp
-RUN addgroup --gid ${GID} volgactf && adduser --uid ${UID} --disabled-password --gecos "" --ingroup volgactf --no-create-home volgactf && chown -R volgactf:volgactf .
+RUN apk add --no-cache graphicsmagick && addgroup --gid ${GID} volgactf && adduser --uid ${UID} --disabled-password --gecos "" --ingroup volgactf --no-create-home volgactf && chown -R volgactf:volgactf .
 USER volgactf
 ENTRYPOINT ["/bin/sh", "entrypoint.sh"]

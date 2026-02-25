@@ -77,22 +77,22 @@ class EmailGenerator {
   }
 
   getWelcomeEmail (params) {
-    return this.renderEntry('welcome')
+    return this.renderEntry('welcome', params)
   }
 
   getRestoreEmail (params) {
-    return this.renderEntry('restore')
+    return this.renderEntry('restore', params)
   }
 
   getInviteSupervisorEmail (params) {
-    return this.renderEntry('inviteSupervisor')
+    return this.renderEntry('inviteSupervisor', params)
   }
 
   getNewTaskReviewEmail (params) {
-    return this.renderEntry('newTaskReview')
+    return this.renderEntry('newTaskReview', params)
   }
 
-  renderEntry (entryName) {
+  renderEntry (entryName, params) {
     const entry = this.templates[entryName]
     return {
       subject: mustache.render(entry.subject, params),

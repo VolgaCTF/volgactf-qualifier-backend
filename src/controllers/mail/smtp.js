@@ -11,7 +11,11 @@ class SMTPController {
         auth: {
           user: process.env.SMTP_USERNAME,
           pass: process.env.SMTP_PASSWORD
-        }
+        },
+        tls: {
+          minVersion: "TLSv1.2",
+          rejectUnauthorized: true, // make sure cert is valid
+        },
       })
 
       const headers = JSON.parse(process.env.SMTP_HEADERS_JSON || '{}')
