@@ -7,5 +7,6 @@ case $command_arg in
   scheduler) node src/bin/scheduler.js ;;
   queue) node src/bin/queue.js ;;
   web) node src/bin/web.js ;;
+  cli) node --trace-warnings src/bin/cli.js "$@" ;;
   *) echo "Unsupported command $command_arg"
 esac

@@ -1,6 +1,5 @@
 const logger = require('./utils/logger')
-const parser = require('commander')
-const prompt = require('prompt')
+const inquirer = require('inquirer')
 const SupervisorController = require('./controllers/supervisor')
 const TeamController = require('./controllers/team')
 const StatController = require('./controllers/stat')
@@ -8,105 +7,118 @@ const Table = require('cli-table3')
 const _ = require('underscore')
 const numeral = require('numeral')
 const moment = require('moment')
+const { Command } = require('commander')
+const parser = new Command()
 
 parser
   .command('create_supervisor')
   .description('Create supervisor')
-  .option('-u, --username <username>', 'username')
-  .option('-r, --rights <rights>', 'rights (admin, manager)')
-  .option('-e --email <email>', 'email')
-  .action(function (options) {
-    prompt.start()
-    prompt.message = ''
-    prompt.get([{
-      name: 'password',
-      required: true,
-      hidden: true
-    }, {
-      name: 'confirmation',
-      required: true,
-      hidden: true,
-      conform: function (confirmation) {
-        if (prompt.history('password').value !== confirmation) {
-          logger.error('Verification has failed')
+  .requiredOption('-u, --username <username>', 'username')
+  .requiredOption('-r, --rights <rights>', 'rights (admin, manager)')
+  .requiredOption('-e --email <email>', 'email')
+  .action(async function (options) {
+    try {
+      const answers = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'password',
+          message: 'Password:',
+          mask: '*',
+          validate: (input) => input ? true : 'Password is required'
+        },
+        {
+          type: 'password',
+          name: 'confirmation',
+          message: 'Confirm password:',
+          mask: '*',
+          validate: (input, answers) => {
+            if (!input) return 'Confirmation is required'
+            if (input !== answers.password) {
+              return 'Verification has failed'
+            }
+            return true
+          }
+        }
+      ])
+
+      const supervisorOpts = {
+        username: options.username,
+        password: answers.password,
+        rights: options.rights,
+        email: options.email
+      }
+
+      SupervisorController.create(supervisorOpts, function (err, supervisor) {
+        if (err) {
+          logger.error(err)
           process.exit(1)
         } else {
-          return true
+          logger.info(`Supervisor ${supervisor.username} has been created!`)
+          process.exit(0)
         }
-      }
-    }], function (err, result) {
-      if (err) {
-        logger.error(err)
-        process.exit(1)
-      } else {
-        const supervisorOpts = {
-          username: options.username,
-          password: result.password,
-          rights: options.rights,
-          email: options.email
-        }
-        SupervisorController.create(supervisorOpts, function (err, supervisor) {
-          if (err) {
-            logger.error(err)
-            process.exit(1)
-          } else {
-            logger.info(`Supervisor ${supervisor.username} has been created!`)
-            process.exit(0)
-          }
-        })
-      }
-    })
+      })
+
+    } catch (err) {
+      logger.error(err)
+      process.exit(1)
+    }
   })
 
 parser
   .command('change_supervisor_password')
   .description("Change supervisor's password")
-  .option('-u, --username <user>', 'username')
-  .action(function (options) {
-    prompt.start()
-    prompt.message = ''
-    prompt.get([{
-      name: 'new_password',
-      required: true,
-      hidden: true
-    }, {
-      name: 'confirmation',
-      required: true,
-      hidden: true,
-      conform: function (confirmation) {
-        if (prompt.history('new_password').value !== confirmation) {
-          logger.err('Verification has failed')
-          process.exit(1)
+  .requiredOption('-u, --username <user>', 'username')
+  .action(async function (options) {
+    try {
+      // Prompt for new password and confirmation
+      const answers = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'new_password',
+          message: 'Enter new password:',
+          mask: '*',
+          validate: (input) => input ? true : 'Password is required',
+        },
+        {
+          type: 'password',
+          name: 'confirmation',
+          message: 'Confirm new password:',
+          mask: '*',
+          validate: (input, answers) => {
+            if (!input) return 'Confirmation is required';
+            if (input !== answers.new_password) return 'Verification has failed';
+            return true;
+          },
+        },
+      ]);
+
+      // Build supervisor options
+      const supervisorOpts = {
+        username: options.username,
+        password: answers.new_password,
+      };
+
+      // Call controller
+      SupervisorController.edit(supervisorOpts, (err, supervisor) => {
+        if (err) {
+          logger.error(err);
+          process.exit(1);
         } else {
-          return true
+          logger.info(`Password for supervisor ${options.username} has been updated!`);
+          process.exit(0);
         }
-      }
-    }], function (err, result) {
-      if (err) {
-        logger.error(err)
-        process.exit(1)
-      } else {
-        const supervisorOpts = {
-          username: options.username,
-          password: result.new_password
-        }
-        SupervisorController.edit(supervisorOpts, function (err, supervisor) {
-          if (err) {
-            logger.error(err)
-            process.exit(1)
-          } else {
-            logger.info(`Password for supervisor ${options.username} has been updated!`)
-            process.exit(0)
-          }
-        })
-      }
-    })
+      });
+
+    } catch (err) {
+      logger.error(err);
+      process.exit(1);
+    }
   })
 
 parser
   .command('delete_supervisor')
   .description('Delete supervisor user')
-  .option('-u, --username <username', 'username')
+  .requiredOption('-u, --username <username', 'username')
   .action(function (options) {
     SupervisorController.delete(options.username, function (err) {
       if (err) {
@@ -139,39 +151,39 @@ parser
 parser
   .command('disqualify_team')
   .description('Disqualify team')
-  .option('-t, --team-id <team>', 'teamId')
-  .action(function (options) {
-    prompt.start()
-    prompt.message = ''
-    prompt.get([{
-      name: 'confirmation',
-      required: true,
-      hidden: false,
-      conform: function (confirmation) {
-        if (confirmation !== 'yes') {
-          logger.err('You should have typed yes')
-          process.exit(1)
+  .requiredOption('-t, --team-id <team>', 'teamId')
+  .action(async function (options) {
+    try {
+      // Ask for confirmation
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'confirmation',
+          message: 'Type "yes" to confirm disqualification:',
+          validate: (input) => {
+            if (input !== 'yes') return 'You should type "yes" to proceed';
+            return true;
+          },
+        },
+      ]);
+
+      // Parse team ID
+      const teamId = parseInt(options.teamId, 10);
+
+      // Call the controller
+      TeamController.disqualify(teamId, (err) => {
+        if (err) {
+          logger.error(err);
+          process.exit(1);
         } else {
-          return true
+          logger.info(`Team ${teamId} has been disqualified!`);
+          process.exit(0);
         }
-      }
-    }], function (err, result) {
-      if (err) {
-        logger.error(err)
-        process.exit(1)
-      } else {
-        const teamId = parseInt(options.teamId, 10)
-        TeamController.disqualify(teamId, function (err) {
-          if (err) {
-            logger.error(err)
-            process.exit(1)
-          } else {
-            logger.info(`Team ${teamId} has been disqualified!`)
-            process.exit(0)
-          }
-        })
-      }
-    })
+      });
+    } catch (err) {
+      logger.error(err);
+      process.exit(1);
+    }
   })
 
 parser
