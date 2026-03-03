@@ -1,8 +1,0 @@
-.git
-.gitignore
-.editorconfig
-.env
-node_modules
-LICENSE
-README.md
-exclude.txt
