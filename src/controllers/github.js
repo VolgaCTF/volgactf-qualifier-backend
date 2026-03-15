@@ -1,10 +1,14 @@
 const request = require('request')
+const axios = require('axios')
 const _ = require('underscore')
 const gitPullOrClone = require('git-pull-or-clone')
 
 class GitHubController {
   constructor () {
     this.githubOrg = process.env.GITHUB_ORG
+    this.filterTopics = (process.env.GITHUB_FILTER_TOPICS || '').split(',').filter(function (x) {
+      return x.length > 0
+    })
   }
 
   listRepositoriesPage (pageNum) {
@@ -54,8 +58,68 @@ class GitHubController {
     })
   }
 
+  listRepositoriesByTopicPage(topic, page = 1, accumulated = []) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      axios.get('https://api.github.com/search/repositories', {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          'User-Agent': 'VolgaCTF'
+        },
+        params: {
+          q: `org:${that.githubOrg} topic:${topic}`,
+          per_page: 100,
+          page
+        }
+      })
+      .then(function (res) {
+        const repoNames = res.data.items.map(function (item) {
+          return item.full_name
+        })
+        accumulated.push(...repoNames)
+
+        const totalCount = res.data.total_count
+        const fetched = page * that.perPage
+        if (fetched < totalCount) {
+          that.listRepositoriesByTopicPage(page + 1, accumulated)
+          .then(resolve)
+          .catch(reject)
+        } else {
+          resolve(accumulated)
+        }
+      })
+      .catch(reject)
+    })
+  }
+
+  listRepositoriesByTopic(topic) {
+    return this.listRepositoriesByTopicPage(topic)
+  }
+
+  listRepositoriesByTopics(topics) {
+    const that = this
+    const promises = this.filterTopics.map(function (topic) {
+      return that.listRepositoriesByTopic(topic)
+    })
+
+    return Promise.all(promises)
+      .then(function (results) {
+        const allRepos = new Set()
+        results.forEach(function (arr) {
+          arr.forEach(function (name) {
+            allRepos.add(name)
+          })
+        })
+        return Array.from(allRepos)
+      })
+  }
+
   listRepositories () {
-    return this.listRepositoriesPage(1)
+    if (this.filterTopics.length == 0) {
+      return this.listRepositoriesPage(1)
+    } else {
+      return this.listRepositoriesByTopics()
+    }
   }
 
   cloneRepository (repository, path) {

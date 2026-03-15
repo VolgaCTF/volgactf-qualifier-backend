@@ -133,6 +133,10 @@ app.use('/api', apiRouter)
 
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
+const githubFilterTopics = (process.env.GITHUB_FILTER_TOPICS || '').split(',').filter(function (x) {
+  return x.length > 0
+})
+
 function voidPromise () {
   return new Promise(function (resolve, reject) {
     resolve(null)
@@ -689,6 +693,7 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
         google_tag_id: googleTagId,
         taskMinValue: TASK_MIN_VALUE,
         taskMaxValue: TASK_MAX_VALUE,
+        githubFilterTopics: githubFilterTopics,
         scoringDynlog,
         templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
         runtimeStorage: {}
