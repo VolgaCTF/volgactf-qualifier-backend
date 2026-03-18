@@ -7,6 +7,13 @@ class GitFlicController {
     this.gitFlicOwner = process.env.GITFLIC_ORG
   }
 
+  isEnabled () {
+    return Object.hasOwn(process.env, 'GITFLIC_ORG') &&
+      process.env.GITFLIC_ORG !== '' &&
+      Object.hasOwn(process.env, 'GITFLIC_API_TOKEN') &&
+      process.env.GITFLIC_API_TOKEN !== ''
+  }
+
   listRepositoriesPage (pageNum) {
     const that = this
     return new Promise(function (resolve, reject) {

@@ -71,6 +71,8 @@ const supervisorTaskSubscriptionSerializer = require('./serializers/supervisor-t
 const taskParam = require('./params/task')
 
 const ctftimeOAuthController = require('./controllers/ctftime-oauth')
+const githubController = require('./controllers/github')
+const gitflicController = require('./controllers/gitflic')
 const emailAddressValidator = require('./controllers/email-address-validator')
 const { SCOPE_TEAM } = require('./utils/constants')
 const EventController = require('./controllers/event')
@@ -133,9 +135,14 @@ app.use('/api', apiRouter)
 
 const googleTagId = (process.env.GOOGLE_TAG_ID && process.env.GOOGLE_TAG_ID !== '') ? process.env.GOOGLE_TAG_ID : null
 
+const githubEnabled = githubController.isEnabled()
+const gitflicEnabled = gitflicController.isEnabled()
+
 const githubFilterTopics = (process.env.GITHUB_FILTER_TOPICS || '').split(',').filter(function (x) {
   return x.length > 0
 })
+
+const ctftimeEnabled = ctftimeOAuthController.isEnabled()
 
 function voidPromise () {
   return new Promise(function (resolve, reject) {
@@ -158,7 +165,7 @@ templateStore.register(TEMPLATE_EVENT_LIVE_PAGE, 'html/event/live.html')
 templateStore.register(TEMPLATE_EVENT_HISTORY_PAGE, 'html/event/history.html')
 templateStore.register(TEMPLATE_SUPERVISOR_SIGNIN_PAGE, 'html/supervisor/signin.html')
 templateStore.register(TEMPLATE_TEAM_SIGNIN_PAGE, 'html/team/signin.html')
-if (ctftimeOAuthController.isEnabled()) {
+if (ctftimeEnabled) {
   templateStore.register(TEMPLATE_TEAM_CTFTIME_OAUTH_START_PAGE, 'html/team/ctftime/oauth/start.html')
   templateStore.register(TEMPLATE_TEAM_CTFTIME_OAUTH_COMPLETE_PAGE, 'html/team/ctftime/oauth/complete.html')
 }
@@ -300,6 +307,7 @@ app.get('/', detectScope, issueToken, getContestTitle, function (request, respon
         contest,
         contestTitle: request.contestTitle,
         google_tag_id: googleTagId,
+        ctftimeEnabled: ctftimeEnabled,
         templates: _.omit(templates, TEMPLATE_INDEX_PAGE),
         runtimeStorage: {}
       }))
@@ -529,6 +537,7 @@ app.get('/team/:teamId/profile', detectScope, issueToken, getGeoIPData, getConte
         teamTaskReviews,
         teamTaskReviewStatistics,
         google_tag_id: googleTagId,
+        ctftimeEnabled: ctftimeEnabled,
         templates: _.omit(templates, TEMPLATE_TEAM_PROFILE_PAGE),
         runtimeStorage: {}
       }))
@@ -693,6 +702,8 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
         google_tag_id: googleTagId,
         taskMinValue: TASK_MIN_VALUE,
         taskMaxValue: TASK_MAX_VALUE,
+        githubEnabled: githubEnabled,
+        gitflicEnabled: gitflicEnabled,
         githubFilterTopics: githubFilterTopics,
         scoringDynlog,
         templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
@@ -1262,6 +1273,7 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
         contest,
         contestTitle: request.contestTitle,
         google_tag_id: googleTagId,
+        ctftimeEnabled: ctftimeEnabled,
         templates: _.omit(templates, TEMPLATE_TEAM_SIGNIN_PAGE),
         runtimeStorage: {}
       }))
@@ -1272,7 +1284,7 @@ app.get('/team/signin', detectScope, issueToken, getContestTitle, function (requ
     })
 })
 
-if (ctftimeOAuthController.isEnabled()) {
+if (ctftimeEnabled) {
   app.get('/team/ctftime/oauth/start', detectScope, issueToken, getContestTitle, getTeamSafe, function (request, response, next) {
     if (request.scope.isGuest() || (request.team && !request.team.ctftimeTeamId)) {
       ctftimeOAuthController.setupState(request)
@@ -1572,6 +1584,7 @@ app.get('/team/signup', detectScope, issueToken, getGeoIPData, getContestTitle, 
         countries,
         geoIPData: request.geoIPData,
         google_tag_id: googleTagId,
+        ctftimeEnabled: ctftimeEnabled,
         templates: _.omit(templates, TEMPLATE_TEAM_SIGNUP_PAGE),
         runtimeStorage: {}
       }))

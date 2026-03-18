@@ -11,6 +11,13 @@ class GitHubController {
     })
   }
 
+  isEnabled () {
+    return Object.hasOwn(process.env, 'GITHUB_ORG') &&
+      process.env.GITHUB_ORG !== '' &&
+      Object.hasOwn(process.env, 'GITHUB_TOKEN') &&
+      process.env.GITHUB_TOKEN !== ''
+  }
+
   listRepositoriesPage (pageNum) {
     const that = this
     return new Promise(function (resolve, reject) {
