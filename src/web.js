@@ -62,6 +62,8 @@ const taskHintSerializer = require('./serializers/task-hint')
 const taskValueController = require('./controllers/task-value')
 const taskValueSerializer = require('./serializers/task-value')
 
+const taskFileController = require('./controllers/task-file')
+
 const taskRewardSchemeController = require('./controllers/task-reward-scheme')
 const taskRewardSchemeSerializer = require('./serializers/task-reward-scheme')
 
@@ -143,6 +145,8 @@ const githubFilterTopics = (process.env.GITHUB_FILTER_TOPICS || '').split(',').f
 })
 
 const ctftimeEnabled = ctftimeOAuthController.isEnabled()
+
+const remoteUploadEnabled = taskFileController.isRemoteUploadEnabled()
 
 function voidPromise () {
   return new Promise(function (resolve, reject) {
@@ -702,9 +706,10 @@ app.get('/tasks', detectScope, issueToken, getContestTitle, function (request, r
         google_tag_id: googleTagId,
         taskMinValue: TASK_MIN_VALUE,
         taskMaxValue: TASK_MAX_VALUE,
-        githubEnabled: githubEnabled,
-        gitflicEnabled: gitflicEnabled,
-        githubFilterTopics: githubFilterTopics,
+        githubEnabled,
+        gitflicEnabled,
+        githubFilterTopics,
+        remoteUploadEnabled,
         scoringDynlog,
         templates: _.omit(templates, TEMPLATE_TASKS_PAGE),
         runtimeStorage: {}

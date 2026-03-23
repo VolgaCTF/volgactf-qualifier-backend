@@ -179,6 +179,10 @@ module.exports = {
     new Assert().Length({ min: 2, max: 64 }),
     new Assert().Regexp('^[\\d\\w\\.-]+(\\.[\\d\\w]+)?$', 'g')
   ],
+  uploadRemote: [
+    new Assert().Required(),
+    new Assert().Callback(is_.boolean)
+  ],
   supervisorRights: [
     new Assert().Required(),
     new Assert().Choice(['manager', 'admin'])

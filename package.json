@@ -17,6 +17,7 @@
     "url": "https://github.com/VolgaCTF/volgactf-qualifier-backend/issues"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1014.0",
     "async": "~0.9.0",
     "axios": "^1.13.6",
     "base64url": "~1.0.4",
@@ -50,6 +51,7 @@
     "markdown-it-mark": "^2.0.0",
     "markdown-it-sub": "^1.0.0",
     "markdown-it-sup": "^1.0.0",
+    "mime-types": "^3.0.2",
     "moment": "^2.20.1",
     "mustache": "~1.1.0",
     "nodemailer": "^6.3.0",

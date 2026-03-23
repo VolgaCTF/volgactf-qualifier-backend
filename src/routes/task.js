@@ -1144,7 +1144,9 @@ router.get('/:taskId/file/index', needsToBeAuthorizedAdmin, getTask, function (r
 })
 
 router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, getTask, multidataParser, function (request, response, next) {
-  const taskFileMetadata = {}
+  const taskFileMetadata = {
+    uploadRemote: false
+  }
   const taskFile = tmp.fileSync({
     mode: 0o666,
     dir: process.env.VOLGACTF_QUALIFIER_UPLOAD_TMP_DIR,
@@ -1162,18 +1164,21 @@ router.post('/:taskId/file/create', contestNotFinished, checkToken, needsToBeAut
   request.busboy.on('field', function (fieldName, val, fieldNameTruncated, valTruncated) {
     if (fieldName === 'uploadName') {
       taskFileMetadata[fieldName] = val
+    } else if (fieldName === 'uploadRemote') {
+      taskFileMetadata[fieldName] = val === 'true'
     }
   })
 
   request.busboy.on('finish', function () {
     const uploadConstraints = {
-      uploadName: constraints.uploadName
+      uploadName: constraints.uploadName,
+      uploadRemote: constraints.uploadRemote
     }
 
     const validationResult = validator.validate(taskFileMetadata, uploadConstraints)
     if (validationResult === true) {
       taskFileController
-        .create(request.task.id, taskFile.name, taskFileMetadata.uploadName)
+        .create(request.task.id, taskFile.name, taskFileMetadata.uploadName, taskFileMetadata.uploadRemote)
         .then(function (taskFile) {
           response.json({ success: true })
         })

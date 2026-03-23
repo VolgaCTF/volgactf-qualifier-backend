@@ -1,6 +1,8 @@
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
+const { S3Client, PutObjectCommand, CreateBucketCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const mime = require('mime-types')
 
 const logger = require('../utils/logger')
 const { InternalError, DuplicateTaskFilenameError, TaskFileNotFoundError } = require('../utils/errors')
@@ -14,6 +16,34 @@ const DeleteTaskFileEvent = require('../events/delete-task-file')
 class TaskFileController {
   constructor () {
     this.taskFileBaseDir = process.env.VOLGACTF_QUALIFIER_TASK_FILE_DIR
+
+    if (this.isRemoteUploadEnabled()) {
+      const s3Params = {
+        region: process.env.AWS_REGION,
+        forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true',
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        },
+      }
+
+      if (process.env.AWS_ENDPOINT) {
+        s3Params['endpoint'] = process.env.AWS_ENDPOINT
+      }
+
+      this.s3Client = new S3Client(s3Params)
+    }
+  }
+
+  isRemoteUploadEnabled() {
+    return Object.hasOwn(process.env, 'AWS_REGION') &&
+      process.env.AWS_REGION !== '' &&
+      Object.hasOwn(process.env, 'AWS_ACCESS_KEY_ID') &&
+      process.env.AWS_ACCESS_KEY_ID !== '' &&
+      Object.hasOwn(process.env, 'AWS_SECRET_ACCESS_KEY') &&
+      process.env.AWS_SECRET_ACCESS_KEY !== '' &&
+      Object.hasOwn(process.env, 'VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_NAME') &&
+      process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_NAME !== ''
   }
 
   fetchById (id) {
@@ -64,21 +94,23 @@ class TaskFileController {
     return path.join(this.getTaskFileDir(taskFile), taskFile.filename)
   }
 
-  createTaskFile (taskId, filename) {
-    return new Promise((resolve, reject) => {
+  createTaskFile (taskId, filename, uploadRemote) {
+    const that = this
+    return new Promise(function (resolve, reject) {
       TaskFile
         .query()
         .insert({
           taskId,
           prefix: crypto.randomBytes(16).toString('hex'),
           filename,
+          remote: that.isRemoteUploadEnabled() && uploadRemote,
           createdAt: new Date()
         })
-        .then((taskFile) => {
+        .then(function (taskFile) {
           resolve(taskFile)
         })
-        .catch((err) => {
-          if (this.isTaskFilenameUniqueConstraintViolation(err)) {
+        .catch(function (err) {
+          if (that.isTaskFilenameUniqueConstraintViolation(err)) {
             reject(new DuplicateTaskFilenameError())
           } else {
             logger.error(err)
@@ -89,8 +121,8 @@ class TaskFileController {
   }
 
   makeTaskFileDir (filepath) {
-    return new Promise((resolve, reject) => {
-      fs.mkdir(filepath, (err) => {
+    return new Promise(function (resolve, reject) {
+      fs.mkdir(filepath, function (err) {
         if (err) {
           logger.error(err)
           reject(new InternalError())
@@ -101,9 +133,9 @@ class TaskFileController {
     })
   }
 
-  moveTaskFile (path1, path2) {
-    return new Promise((resolve, reject) => {
-      fs.rename(path1, path2, (err) => {
+  copyTaskFile (path1, path2) {
+    return new Promise(function (resolve, reject) {
+      fs.copyFile(path1, path2, function (err) {
         if (err) {
           logger.error(err)
           reject(new InternalError())
@@ -114,30 +146,101 @@ class TaskFileController {
     })
   }
 
-  create (taskId, tempPath, newFilename) {
-    return new Promise((resolve, reject) => {
-      let taskFile = null
-      this
-        .createTaskFile(taskId, newFilename)
-        .then((newTaskFile) => {
-          taskFile = newTaskFile
-          return this.makeTaskFileDir(this.getTaskFileDir(taskFile))
+  uploadTaskFileLocal(tempPath, taskFile) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      that
+        .makeTaskFileDir(that.getTaskFileDir(taskFile))
+        .then(function () {
+          return that.copyTaskFile(tempPath, that.getTaskFilePath(taskFile))
         })
-        .then(() => {
-          return this.moveTaskFile(tempPath, this.getTaskFilePath(taskFile))
-        })
-        .then(() => {
-          EventController.push(new CreateTaskFileEvent(taskFile))
+        .then(function () {
           resolve(taskFile)
         })
-        .catch((err) => {
+        .catch(function (err) {
           reject(err)
         })
     })
   }
 
-  deleteTaskFile (id, callback) {
-    return new Promise((resolve, reject) => {
+  getTaskFileKey (taskFile) {
+    return path.join(taskFile.prefix, taskFile.filename)
+  }
+
+  createBucketIfNotExists() {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      if (process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_CREATE !== 'yes') {
+        resolve()
+      } else {
+        const createCommand = new CreateBucketCommand({
+          Bucket: process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_NAME,
+        })
+
+        that.s3Client.send(createCommand)
+          .then(function () {
+            resolve()
+          })
+          .catch(function (err) {
+            if (err.name === 'BucketAlreadyOwnedByYou' || err.name === 'BucketAlreadyExists') {
+              resolve()
+            } else {
+              reject(err)
+            }
+          })
+      }
+    })
+  }
+
+  uploadTaskFileRemote(tempPath, taskFile) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      const fileStream = fs.createReadStream(tempPath)
+      const uploadCommand = new PutObjectCommand({
+        Bucket: process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_NAME,
+        ContentType: mime.lookup(tempPath) || 'application/octet-stream',
+        Key: that.getTaskFileKey(taskFile),
+        Body: fileStream,
+      })
+
+      that.createBucketIfNotExists()
+        .then(function() {
+          return that.s3Client.send(uploadCommand)
+        })
+        .then(function () {
+          resolve(taskFile)
+        })
+        .catch(function (err) {
+          logger.error(err)
+          reject(new InternalError())
+        })
+    })
+  }
+
+  create (taskId, tempPath, newFilename, uploadRemote) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      that
+        .createTaskFile(taskId, newFilename, uploadRemote)
+        .then(function (newTaskFile) {
+          if (newTaskFile.remote) {
+            return that.uploadTaskFileRemote(tempPath, newTaskFile)
+          } else {
+            return that.uploadTaskFileLocal(tempPath, newTaskFile)
+          }
+        })
+        .then(function (taskFile) {
+          EventController.push(new CreateTaskFileEvent(taskFile))
+          resolve(taskFile)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
+    })
+  }
+
+  deleteTaskFile (id) {
+    return new Promise(function (resolve, reject) {
       TaskFile
         .query()
         .delete()
@@ -158,8 +261,8 @@ class TaskFileController {
   }
 
   unlinkTaskFile (filepath) {
-    return new Promise((resolve, reject) => {
-      fs.unlink(filepath, (err) => {
+    return new Promise(function (resolve, reject) {
+      fs.unlink(filepath, function (err) {
         if (err) {
           logger.error(err)
           reject(new InternalError())
@@ -171,8 +274,8 @@ class TaskFileController {
   }
 
   removeTaskFileDir (filepath) {
-    return new Promise((resolve, reject) => {
-      fs.rmdir(filepath, (err) => {
+    return new Promise(function (resolve, reject) {
+      fs.rmdir(filepath, function (err) {
         if (err) {
           logger.error(err)
           reject(new InternalError())
@@ -183,23 +286,57 @@ class TaskFileController {
     })
   }
 
+  deleteTaskFileLocal(taskFile) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      that.unlinkTaskFile(that.getTaskFilePath(taskFile))
+        .then(function () {
+          return that.removeTaskFileDir(that.getTaskFileDir(taskFile))
+        })
+        .then(function () {
+          resolve(taskFile)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
+    })
+  }
+
+  deleteTaskFileRemote(taskFile) {
+    const that = this
+    return new Promise(function (resolve, reject) {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_S3_BUCKET_NAME,
+        Key: that.getTaskFileKey(taskFile),
+      })
+
+      that.s3Client.send(deleteCommand)
+        .then(function () {
+          resolve(taskFile)
+        })
+        .catch(function (err) {
+          reject(err)
+        })
+    })
+  }
+
   delete (taskFile) {
-    return new Promise((resolve, reject) => {
-      let deletedTaskFile = null
-      this
+    const that = this
+    return new Promise(function (resolve, reject) {
+      that
         .deleteTaskFile(taskFile.id)
-        .then((taskFile) => {
-          deletedTaskFile = taskFile
-          return this.unlinkTaskFile(this.getTaskFilePath(deletedTaskFile))
+        .then(function (deletedTaskFile) {
+          if (deletedTaskFile.remote) {
+            return that.deleteTaskFileRemote(deletedTaskFile)
+          } else {
+            return that.deleteTaskFileLocal(deletedTaskFile)
+          }
         })
-        .then(() => {
-          return this.removeTaskFileDir(this.getTaskFileDir(deletedTaskFile))
-        })
-        .then(() => {
+        .then(function (deletedTaskFile) {
           EventController.push(new DeleteTaskFileEvent(deletedTaskFile))
           resolve(deletedTaskFile)
         })
-        .catch((err) => {
+        .catch(function (err) {
           reject(err)
         })
     })
