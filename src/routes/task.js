@@ -840,9 +840,11 @@ function preprocessTaskConfigFromVcsRepository (taskConfig) {
 }
 
 router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  let uploadRemote = false
   TaskController
     .loadFromGitHub(request.body.repository)
     .then(function (taskConfig) {
+      uploadRemote = Object.hasOwn(taskConfig, 'files_upload_remote') ? taskConfig.files_upload_remote : false
       return preprocessTaskConfigFromVcsRepository(taskConfig)
     })
     .then(function (taskParams) {
@@ -850,7 +852,7 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
     })
     .then(function (task) {
       return TaskController
-        .loadFilesFromGitHubAndUpdateDescription(task, request.body.repository)
+        .loadFilesFromGitHubAndUpdateDescription(task, request.body.repository, uploadRemote)
     })
     .then(function (updatedTask) {
       response.json({ success: true })
@@ -861,9 +863,11 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
 })
 
 router.post('/create-from-gitflic', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
+  let uploadRemote = false
   TaskController
     .loadFromGitFlic(request.body.repository)
     .then(function (taskConfig) {
+      uploadRemote = Object.hasOwn(taskConfig, 'files_upload_remote') ? taskConfig.files_upload_remote : false
       return preprocessTaskConfigFromVcsRepository(taskConfig)
     })
     .then(function (taskParams) {
@@ -871,7 +875,7 @@ router.post('/create-from-gitflic', contestNotFinished, checkToken, needsToBeAut
     })
     .then(function (task) {
       return TaskController
-        .loadFilesFromGitFlicAndUpdateDescription(task, request.body.repository)
+        .loadFilesFromGitFlicAndUpdateDescription(task, request.body.repository, uploadRemote)
     })
     .then(function (updatedTask) {
       response.json({ success: true })

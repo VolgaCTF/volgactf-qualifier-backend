@@ -136,7 +136,16 @@ class TaskController {
     })
   }
 
-  static loadFilesFromGitHubAndUpdateDescription (task, repository) {
+  static getTaskFileUrl(taskFile) {
+    if (taskFile.remote) {
+      return `https://${process.env.VOLGACTF_QUALIFIER_REMOTE_FILESTORE_FQDN}/${taskFile.prefix}/${taskFile.filename}`
+    } else {
+      return `http${process.env.VOLGACTF_QUALIFIER_SECURE === 'yes' ? 's' : ''}://${process.env.VOLGACTF_QUALIFIER_FQDN}/files/${taskFile.prefix}/${taskFile.filename}`
+    }
+  }
+
+  static loadFilesFromGitHubAndUpdateDescription (task, repository, uploadRemote) {
+    const that = this
     return new Promise(function (resolve, reject) {
       const fileRefRegexp = /\[([\w\d .\-_]+)\]\(([\w\d .\-_/]+)\)/gm
       const matches = task.description.match(fileRefRegexp) || []
@@ -157,12 +166,12 @@ class TaskController {
               const resolveFile = function (name, url) {
                 return new Promise(function (_resolve, _reject) {
                   taskFileController
-                    .create(task.id, `${clonePath}/${url}`, name)
+                    .create(task.id, `${clonePath}/${url}`, name, uploadRemote && taskFileController.isRemoteUploadEnabled())
                     .then(function (taskFile) {
                       _resolve({
                         name,
                         url,
-                        updatedUrl: `${(process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'}://${process.env.VOLGACTF_QUALIFIER_FQDN}/files/${taskFile.prefix}/${taskFile.filename}`
+                        updatedUrl: that.getTaskFileUrl(taskFile)
                       })
                     })
                     .catch(function (err) {
@@ -229,7 +238,8 @@ class TaskController {
     })
   }
 
-  static loadFilesFromGitFlicAndUpdateDescription (task, repository) {
+  static loadFilesFromGitFlicAndUpdateDescription (task, repository, uploadRemote) {
+    const that = this
     return new Promise(function (resolve, reject) {
       const fileRefRegexp = /\[([\w\d .\-_]+)\]\(([\w\d .\-_/]+)\)/gm
       const matches = task.description.match(fileRefRegexp) || []
@@ -250,12 +260,12 @@ class TaskController {
               const resolveFile = function (name, url) {
                 return new Promise(function (_resolve, _reject) {
                   taskFileController
-                    .create(task.id, `${clonePath}/${url}`, name)
+                    .create(task.id, `${clonePath}/${url}`, name, uploadRemote && taskFileController.isRemoteUploadEnabled())
                     .then(function (taskFile) {
                       _resolve({
                         name,
                         url,
-                        updatedUrl: `${(process.env.VOLGACTF_QUALIFIER_SECURE === 'yes') ? 'https' : 'http'}://${process.env.VOLGACTF_QUALIFIER_FQDN}/files/${taskFile.prefix}/${taskFile.filename}`
+                        updatedUrl: that.getTaskFileUrl(taskFile)
                       })
                     })
                     .catch(function (err) {
