@@ -9,6 +9,7 @@ const { getTaskFile } = require('../middleware/task-file')
 
 const constraints = require('../utils/constraints')
 const logger = require('../utils/logger')
+const { BaseError } = require('../utils/errors')
 
 const bodyParser = require('body-parser')
 const Validator = require('validator.js')
@@ -839,23 +840,55 @@ function preprocessTaskConfigFromVcsRepository (taskConfig) {
   })
 }
 
+function importGitHubRepository(repository) {
+  return new Promise(function (resolve, reject) {
+    let uploadRemote = false
+    TaskController
+      .loadFromGitHub(repository)
+      .then(function (taskConfig) {
+        uploadRemote = Object.hasOwn(taskConfig, 'files_upload_remote') ? taskConfig.files_upload_remote : false
+        return preprocessTaskConfigFromVcsRepository(taskConfig)
+      })
+      .then(function (taskParams) {
+        return createTaskFromPayload(taskParams)
+      })
+      .then(function (task) {
+        return TaskController
+          .loadFilesFromGitHubAndUpdateDescription(task, repository, uploadRemote)
+      })
+      .then(function (updatedTask) {
+        resolve()
+      })
+      .catch(function (err) {
+        reject(err)
+      })
+  })
+}
+
 router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
-  let uploadRemote = false
-  TaskController
-    .loadFromGitHub(request.body.repository)
-    .then(function (taskConfig) {
-      uploadRemote = Object.hasOwn(taskConfig, 'files_upload_remote') ? taskConfig.files_upload_remote : false
-      return preprocessTaskConfigFromVcsRepository(taskConfig)
-    })
-    .then(function (taskParams) {
-      return createTaskFromPayload(taskParams)
-    })
-    .then(function (task) {
-      return TaskController
-        .loadFilesFromGitHubAndUpdateDescription(task, request.body.repository, uploadRemote)
-    })
-    .then(function (updatedTask) {
-      response.json({ success: true })
+  const promises = request.body.repositories.map(function (repository) {
+    return importGitHubRepository(repository)
+  })
+
+  Promise.allSettled(promises)
+    .then(function (results) {
+      const report = {}
+      results.forEach(function (result, index) {
+        const repository = request.body.repositories[index]
+        if (result.status === 'fulfilled') {
+          report[repository] = {
+            error: false
+          }
+        } else {
+          logger.error(`Failed importing GitHub repository ${repository}: ${result.reason}`)
+          report[repository] = {
+            error: true,
+            reason: (result.reason instanceof BaseError) ? result.reason.message : 'import failed'
+          }
+        }
+      })
+
+      response.json(report)
     })
     .catch(function (err) {
       next(err)
