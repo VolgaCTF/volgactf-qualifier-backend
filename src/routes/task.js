@@ -866,7 +866,12 @@ function importGitHubRepository(repository) {
 }
 
 router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuthorizedAdmin, urlencodedParser, function (request, response, next) {
-  const promises = request.body.repositories.map(function (repository) {
+  let repositories = request.body.repositories
+  if (is_.string(repositories)) {
+    repositories = [repositories]
+  }
+
+  const promises = repositories.map(function (repository) {
     return importGitHubRepository(repository)
   })
 
@@ -874,7 +879,7 @@ router.post('/create-from-github', contestNotFinished, checkToken, needsToBeAuth
     .then(function (results) {
       const report = {}
       results.forEach(function (result, index) {
-        const repository = request.body.repositories[index]
+        const repository = repositories[index]
         if (result.status === 'fulfilled') {
           report[repository] = {
             error: false
