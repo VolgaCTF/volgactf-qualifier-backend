@@ -24,5 +24,5 @@ RUN apk add --no-cache --virtual .gyp python3 make g++ postgresql-dev && npm ci 
 RUN apk add --no-cache graphicsmagick git && addgroup --gid ${GID} volgactf && adduser --uid ${UID} --disabled-password --gecos "" --ingroup volgactf --no-create-home volgactf && chown -R volgactf:volgactf .
 USER volgactf
 ENV VOLGACTF_QUALIFIER_EVENT_TITLE="SamaraCTF 2026"
-ENV VOLGACTF_QUALIFIER_EMAIL_TEMPLATES_VERSION=samaractf-20260
+ENV VOLGACTF_QUALIFIER_EMAIL_TEMPLATES_VERSION=samaractf-2026
 ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
