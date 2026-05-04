@@ -16,13 +16,13 @@ LABEL org.label-schema.vcs-ref=$VCS_REF
 LABEL org.label-schema.version=$BUILD_VERSION
 
 WORKDIR /app
-COPY VERSION package*.json entrypoint.sh .
+COPY VERSION package*.json entrypoint.sh ./
 COPY src ./src
 COPY email-templates/default ./email-templates/default
-COPY email-templates/volgactf-2026-qualifier ./email-templates/volgactf-2026-qualifier
+COPY email-templates/samaractf-2026 ./email-templates/samaractf-2026
 RUN apk add --no-cache --virtual .gyp python3 make g++ postgresql-dev && npm ci --production && apk del .gyp
 RUN apk add --no-cache graphicsmagick git && addgroup --gid ${GID} volgactf && adduser --uid ${UID} --disabled-password --gecos "" --ingroup volgactf --no-create-home volgactf && chown -R volgactf:volgactf .
 USER volgactf
-ENV VOLGACTF_QUALIFIER_EVENT_TITLE="VolgaCTF 2026 Qualifier"
-ENV VOLGACTF_QUALIFIER_EMAIL_TEMPLATES_VERSION=volgactf-2026-qualifier
+ENV VOLGACTF_QUALIFIER_EVENT_TITLE="SamaraCTF 2026"
+ENV VOLGACTF_QUALIFIER_EMAIL_TEMPLATES_VERSION=samaractf-20260
 ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
